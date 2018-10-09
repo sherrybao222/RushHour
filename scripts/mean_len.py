@@ -1,3 +1,4 @@
+# mean human length vs optimal length
 import json
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
@@ -53,6 +54,13 @@ fig = plt.figure()
 ax = fig.add_subplot(111)
 yvals1 = list(map(float,mean_dict.values())) # human data
 yvals2 = list(map(float,optimal_dict.values())) # optimal
+# # add seperation
+# yvals1.insert(18,0)
+# yvals1.insert(37,0)
+# yvals1.insert(55,0)
+# yvals2.insert(18,0)
+# yvals2.insert(37,0)
+# yvals2.insert(55,0)
 rect = ax.bar(np.arange(len(mean_dict)), yvals1, alpha=0.9, color='orange', label='human')
 rect = ax.bar(np.arange(len(optimal_dict)), yvals2, alpha=0.65, color='green', label='optimal')
 ax.set_xticklabels([])
@@ -65,5 +73,5 @@ plt.title('Human Length V.S. Optimal Length')
 # plt.hist(list(map(float,mean_dict.values())),bins=len(mean_dict), label='human')
 # plt.hist(list(map(float,optimal_dict.values())),bins=len(optimal_dict), label='optimal')
 plt.legend(loc='upper left')
-#plt.show()
-plt.savefig(out_dir)
+plt.show()
+#plt.savefig(out_dir)

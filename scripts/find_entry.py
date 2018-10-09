@@ -31,4 +31,8 @@ print(subject_list)
 print(len(subject_list))
 print(sorted_dict)
 print(len(sorted_dict))
+print(sum(value == 7 for value in len_dict.values()))
+print(sum(value == 11 for value in len_dict.values()))
+print(sum(value == 14 for value in len_dict.values()))
+print(sum(value == 16 for value in len_dict.values()))
 
