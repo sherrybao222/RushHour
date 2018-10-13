@@ -1,0 +1,9 @@
+digraph {
+	2 [label=2]
+	2 -> 7 [label="[(3, 4)]"]
+	dummy [label=dummy]
+	dummy -> r [label="[(1, 2), (3, 2), (0, 2), (2, 2)]"]
+	r [label=r]
+	r -> 2 [label="[(3, 2)]"]
+	r -> 6 [label="[(2, 2)]"]
+}

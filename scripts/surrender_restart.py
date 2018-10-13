@@ -45,6 +45,17 @@ print(len(success_dict))
 print('\n')
 print(restart_dict)
 print(surrender_dict)
+# print out interesting result
+for i in range(0, len(all_instances)):
+	ins = all_instances[i]
+	nsucc = success_dict[ins]
+	nsurr = surrender_dict[ins]
+	nrest = restart_dict[ins]
+	if nsucc <= nsurr:
+		print('more surrender: ' + ins)
+	elif nsucc <= nrest:
+		print('more restart: ' + ins)
+
 # plot
 fig = plt.figure()
 ax = fig.add_subplot(111)
@@ -65,9 +76,6 @@ y12 = list(map(int, y12.values()))
 y12.insert(18,0)
 y12.insert(37,0)
 y12.insert(55,0)
-print(yvals1)
-print(yvals2)
-print(y12)
 rect = ax.bar(np.arange(len(success_dict) + 3), yvals1, alpha=0.7, color='green', label='success')
 rect = ax.bar(np.arange(len(restart_dict) + 3), yvals2, bottom=yvals1,alpha=0.7, color='orange', label='restart')
 rect = ax.bar(np.arange(len(surrender_dict) + 3), yvals3, bottom=y12,alpha=0.7, color='red', label='surrender')
@@ -83,5 +91,5 @@ plt.title('#success(first trial) #restart #surender')
 # plt.hist(list(map(float,mean_dict.values())),bins=len(mean_dict), label='human')
 # plt.hist(list(map(float,optimal_dict.values())),bins=len(optimal_dict), label='optimal')
 plt.legend(loc='upper right')
-#plt.show()
-plt.savefig(out_dir)
+plt.show()
+#plt.savefig(out_dir)
