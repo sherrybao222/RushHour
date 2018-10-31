@@ -731,7 +731,10 @@ def instance_dict():
 
 # print 'hi'
 #draw({"cars": [{"player": false, "position": 4, "length": 3, "id": "1", "orientation": "vertical"}, {"player": false, "position": 19, "length": 3, "id": "2", "orientation": "vertical"}, {"player": false, "position": 14, "length": 2, "id": "5", "orientation": "vertical"}, {"player": false, "position": 18, "length": 3, "id": "7", "orientation": "vertical"}, {"player": false, "position": 5, "length": 2, "id": "6", "orientation": "vertical"}, {"player": false, "position": 33, "length": 2, "id": "0", "orientation": "horizontal"}, {"player": false, "position": 22, "length": 2, "id": "3", "orientation": "horizontal"}, {"player": true, "position": 12, "length": 2, "id": "r", "orientation": "horizontal"}, {"player": false, "position": 8, "length": 2, "id": "4", "orientation": "horizontal"}, {"player": false, "position": 1, "length": 3, "id": "9", "orientation": "horizontal"}, {"player": false, "position": 27, "length": 2, "id": "8", "orientation": "horizontal"}], "id": "prb5"})
-# myinstance = json_to_ins('/Users/chloe/Documents/RushHour/psiturk-rushhour/static/json/1509547485_18_prb29585_14_.json')
-# draw(myinstance)
-# mymag, mynodes = constuct_mag(myinstance)
-# mag2dot(mymag, view=True)
+
+myinstance = json_to_ins('/Users/chloe/Documents/RushHour/data/data_adopted/prb38526.json')
+draw(myinstance)
+mymag, mynodes = constuct_mag(myinstance)
+mag2dot(mymag, view=True)
+
+

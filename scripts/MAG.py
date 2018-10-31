@@ -1,3 +1,6 @@
+from graphviz import Digraph
+from json import dump,load
+
 class Car:
 	start, end, length = [0,0], [0,0], [0,0] #hor,ver
 	tag = ''
@@ -17,11 +20,6 @@ class Car:
 			self.end = [self.start[0], self.start[1] + self.length - 1]
 		self.edge_to = []
 		self.visited = False
-	def remove_edge_to(self, c):
-		if len(edge_to) == 0:
-			return -1
-		else:
-			self.remove(c)
 
 class Board:
 	height, width = 6, 6
@@ -31,10 +29,6 @@ class Board:
 		for i in range(0, self.height):
 			for j in range(0, self.width):
 				self.board_dict[(i, j)] = None
-
-
-from graphviz import Digraph
-from json import dump,load
 
 def json_to_car_list(filename):
 	with open(filename,'r') as data_file:
@@ -67,19 +61,29 @@ def construct_board(car_list):
 			board.board_dict[occupied_space[j]] = car
 	return board
 
-def construct_mag(board, red, filename):
+def construct_mag(board, red):
 	print(board.board_dict)
-	red_end = red.end
 	queue = []
 	finished_list = []
 	i = board.width - 1
-	for i in range(red_end[0], board.width): #in front of red
-		cur_car = board.board_dict[(i, red_end[1])]
+	for i in range(red.end[0], board.width): # in front of red
+		cur_car = board.board_dict[(i, red.end[1])]
 		if cur_car is not None: #exists on board
 			print("queue append: " + cur_car.tag)
 			queue.append(cur_car)
 			if cur_car.tag != 'r':
 				red.edge_to.append(cur_car)
+				cur_car.visited = True
+	i = red.start[0] - 1 # behind of red
+	while i >= 0:
+		cur_car = board.board_dict[(i, red.start[1])]
+		if cur_car is not None: #exists on board
+			print("queue append: " + cur_car.tag)
+			queue.append(cur_car)
+			if cur_car.tag != 'r':
+				red.edge_to.append(cur_car)
+				cur_car.visited = True
+		i -= 1
 	red.visited = True
 	finished_list.append(red)
 	while len(queue) != 0:
@@ -101,6 +105,7 @@ def construct_mag(board, red, filename):
 							print('add edge to: ' + meet_car.tag)
 							if not meet_car.visited:
 								queue.append(meet_car)
+								meet_car.visited = True
 								print("queue append " + meet_car.tag)
 					j -= 1
 			if cur_car.end[1] < board.height - 1:
@@ -114,6 +119,7 @@ def construct_mag(board, red, filename):
 							print('add edge to: ' + meet_car.tag)
 							if not meet_car.visited:
 								queue.append(meet_car)
+								meet_car.visited = True
 								print("queue append " + meet_car.tag)
 					k += 1
 		elif cur_car.orientation == 'horizontal':
@@ -129,6 +135,7 @@ def construct_mag(board, red, filename):
 							print('add edge to: ' + meet_car.tag)
 							if not meet_car.visited:
 								queue.append(meet_car)
+								meet_car.visited = True
 								print("queue append " + meet_car.tag)
 					j = j - 1
 			if cur_car.end[0] < board.width - 1:
@@ -142,6 +149,7 @@ def construct_mag(board, red, filename):
 							print('add edge to: ' + meet_car.tag)
 							if not meet_car.visited:
 								queue.append(meet_car)
+								meet_car.visited = True
 								print("queue append " + meet_car.tag)
 					k += 1
 		cur_car.visited = True
@@ -152,6 +160,10 @@ def construct_mag(board, red, filename):
 			cur_car = board.board_dict[(i, j)]
 			if cur_car is not None:
 				cur_car.visited = False
+	return finished_list
+	
+
+def visualize_mag(finished_list, filename):	
 	#visualization
 	dot = Digraph()
 	dot.node('dummy')
@@ -161,17 +173,37 @@ def construct_mag(board, red, filename):
 		dot.node(f.tag)
 		print(f.tag)
 		for edge_car in f.edge_to:
+			dot.node(edge_car.tag)
 			dot.edge(f.tag, edge_car.tag)
 			print("edge: " + edge_car.tag)
 	# save and visualize 
 	dot.render(filename, view=True)
 
 
+def get_mag_attr(finished_list):
+	num_node = 0
+	num_edge = 0
+	visited_node = []
+	for f in finished_list:
+		if f not in visited_node:
+			visited_node.append(f)
+			num_node += 1
+		for edge_car in f.edge_to:
+			num_edge += 1
+			if edge_car not in visited_node:
+				visited_node.append(edge_car)
+				num_node += 1
+	return num_node, num_edge
 
 # testing
-my_car_list, my_red = json_to_car_list("/Users/chloe/Documents/RushHour/data/data_adopted/prb3217.json")
+
+my_car_list, my_red = json_to_car_list("/Users/chloe/Documents/RushHour/data/data_adopted/prb54506.json")
 my_board = construct_board(my_car_list)
-construct_mag(my_board, my_red, "/Users/chloe/Desktop/test_mag.gv")
+new_car_list = construct_mag(my_board, my_red)
+visualize_mag(new_car_list, "/Users/chloe/Desktop/test_mag.gv")
+n_node, n_edge = get_mag_attr(new_car_list)
+print("num_node: " + str(n_node))
+print("num_edge: " + str(n_edge))
 
 
 
