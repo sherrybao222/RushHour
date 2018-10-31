@@ -39,7 +39,7 @@ def json_to_car_list(filename):
 			cur_car = Car(s = [int(c['position'])%6, int(c['position']/6)], \
 				l = int(c['length']), t = c['id'], o = c['orientation'], p = data['id'])
 			car_list.append(cur_car)
-			print("car list : " + cur_car.tag + " start: " + str(cur_car.start) + " end: "  + str(cur_car.end) + " orientation: " + str(cur_car.orientation))
+			#print("car list : " + cur_car.tag + " start: " + str(cur_car.start) + " end: "  + str(cur_car.end) + " orientation: " + str(cur_car.orientation))
 			if cur_car.tag == 'r':
 				red = cur_car
 	return car_list,red
@@ -62,23 +62,23 @@ def construct_board(car_list):
 	return board
 
 def construct_mag(board, red):
-	print(board.board_dict)
+	#print(board.board_dict)
 	queue = []
 	finished_list = []
 	i = board.width - 1
-	for i in range(red.end[0], board.width): # in front of red
+	for i in range(red.end[0], board.width): # obstacles in front of red
 		cur_car = board.board_dict[(i, red.end[1])]
 		if cur_car is not None: #exists on board
-			print("queue append: " + cur_car.tag)
+			#print("queue append: " + cur_car.tag)
 			queue.append(cur_car)
 			if cur_car.tag != 'r':
 				red.edge_to.append(cur_car)
 				cur_car.visited = True
-	i = red.start[0] - 1 # behind of red
+	i = red.start[0] - 1 # obstacles behind red
 	while i >= 0:
 		cur_car = board.board_dict[(i, red.start[1])]
 		if cur_car is not None: #exists on board
-			print("queue append: " + cur_car.tag)
+			#print("queue append: " + cur_car.tag)
 			queue.append(cur_car)
 			if cur_car.tag != 'r':
 				red.edge_to.append(cur_car)
@@ -86,27 +86,27 @@ def construct_mag(board, red):
 		i -= 1
 	red.visited = True
 	finished_list.append(red)
-	while len(queue) != 0:
+	while len(queue) != 0: # obstacle blockers
 		cur_car	= queue.pop()
 		if cur_car.tag == 'r':
 			continue
-		print('queue pop: ' + cur_car.tag)
-		for e in range(0, len(cur_car.edge_to)):
-			print("list contain: " + cur_car.edge_to[e].tag)
-		if cur_car.orientation == 'vertical':
+		#print('queue pop: ' + cur_car.tag)
+		#for e in range(0, len(cur_car.edge_to)):
+			#print("list contain: " + cur_car.edge_to[e].tag)
+		if cur_car.orientation == 'vertical': # vertical
 			if cur_car.start[1] > 0:
 				j = cur_car.start[1] - 1
 				while j >= 0: # upper
 					meet_car =  board.board_dict[(cur_car.start[0], j)]
 					if meet_car is not None:
 						if meet_car not in cur_car.edge_to:
-							print("meet car: " + meet_car.tag)
+							#print("meet car: " + meet_car.tag)
 							cur_car.edge_to.append(meet_car)
-							print('add edge to: ' + meet_car.tag)
+							#print('add edge to: ' + meet_car.tag)
 							if not meet_car.visited:
 								queue.append(meet_car)
 								meet_car.visited = True
-								print("queue append " + meet_car.tag)
+								#print("queue append " + meet_car.tag)
 					j -= 1
 			if cur_car.end[1] < board.height - 1:
 				k = cur_car.end[1] + 1
@@ -114,29 +114,29 @@ def construct_mag(board, red):
 					meet_car =  board.board_dict[(cur_car.start[0], k)]
 					if meet_car is not None:
 						if meet_car not in cur_car.edge_to:
-							print("meet car: " + meet_car.tag)
+							#print("meet car: " + meet_car.tag)
 							cur_car.edge_to.append(meet_car)
-							print('add edge to: ' + meet_car.tag)
+							#print('add edge to: ' + meet_car.tag)
 							if not meet_car.visited:
 								queue.append(meet_car)
 								meet_car.visited = True
-								print("queue append " + meet_car.tag)
+								#print("queue append " + meet_car.tag)
 					k += 1
-		elif cur_car.orientation == 'horizontal':
+		elif cur_car.orientation == 'horizontal': # or horizontal
 			if cur_car.start[0] > 0:
 				j = cur_car.start[0] - 1
 				while j >= 0: # left
-					print("j = " + str(j))
+					#print("j = " + str(j))
 					meet_car =  board.board_dict[(j, cur_car.start[1])]
 					if meet_car is not None:
 						if meet_car not in cur_car.edge_to:
-							print("meet car: " + meet_car.tag)
+							#print("meet car: " + meet_car.tag)
 							cur_car.edge_to.append(meet_car)
-							print('add edge to: ' + meet_car.tag)
+							#print('add edge to: ' + meet_car.tag)
 							if not meet_car.visited:
 								queue.append(meet_car)
 								meet_car.visited = True
-								print("queue append " + meet_car.tag)
+								#print("queue append " + meet_car.tag)
 					j = j - 1
 			if cur_car.end[0] < board.width - 1:
 				k = cur_car.end[0] + 1
@@ -144,16 +144,16 @@ def construct_mag(board, red):
 					meet_car =  board.board_dict[(k, cur_car.start[1])]
 					if meet_car is not None:
 						if meet_car not in cur_car.edge_to:
-							print("meet car: " + meet_car.tag)
+							#print("meet car: " + meet_car.tag)
 							cur_car.edge_to.append(meet_car)
-							print('add edge to: ' + meet_car.tag)
+							#print('add edge to: ' + meet_car.tag)
 							if not meet_car.visited:
 								queue.append(meet_car)
 								meet_car.visited = True
-								print("queue append " + meet_car.tag)
+								#print("queue append " + meet_car.tag)
 					k += 1
-		cur_car.visited = True
-		finished_list.append(cur_car)
+		cur_car.visited = True # mark
+		finished_list.append(cur_car) # list to be returned
 	# clean all visited flags
 	for i in range(0, board.height):
 		for j in range(0, board.width):
@@ -164,23 +164,22 @@ def construct_mag(board, red):
 	
 
 def visualize_mag(finished_list, filename):	
-	#visualization
 	dot = Digraph()
 	dot.node('dummy')
 	dot.node('r')
 	dot.edge('dummy', 'r')
 	for f in finished_list:
 		dot.node(f.tag)
-		print(f.tag)
+		#print(f.tag)
 		for edge_car in f.edge_to:
 			dot.node(edge_car.tag)
 			dot.edge(f.tag, edge_car.tag)
-			print("edge: " + edge_car.tag)
-	# save and visualize 
+			#print("edge: " + edge_car.tag)
+	# save and show 
 	dot.render(filename, view=True)
 
 
-def get_mag_attr(finished_list):
+def get_mag_attr(finished_list): # get num_node, num_edge
 	num_node = 0
 	num_edge = 0
 	visited_node = []
@@ -197,13 +196,13 @@ def get_mag_attr(finished_list):
 
 # testing
 
-my_car_list, my_red = json_to_car_list("/Users/chloe/Documents/RushHour/data/data_adopted/prb54506.json")
-my_board = construct_board(my_car_list)
-new_car_list = construct_mag(my_board, my_red)
-visualize_mag(new_car_list, "/Users/chloe/Desktop/test_mag.gv")
-n_node, n_edge = get_mag_attr(new_car_list)
-print("num_node: " + str(n_node))
-print("num_edge: " + str(n_edge))
+# my_car_list, my_red = json_to_car_list("/Users/chloe/Documents/RushHour/data/data_adopted/prb54506.json")
+# my_board = construct_board(my_car_list)
+# new_car_list = construct_mag(my_board, my_red)
+# visualize_mag(new_car_list, "/Users/chloe/Desktop/test_mag.gv")
+# n_node, n_edge = get_mag_attr(new_car_list)
+# print("num_node: " + str(n_node))
+# print("num_edge: " + str(n_edge))
 
 
 

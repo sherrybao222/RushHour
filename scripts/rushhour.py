@@ -473,7 +473,7 @@ def mag2dot(mag,view=False):
         for n1,c in mag[n].iteritems():
             dot.edge(n,n1,label=str(c))
         while 1:
-            dotfile='tmp{}.gv'.format(ind)
+            dotfile='/Users/chloe/Documents/RushHour/figures/tmp{}.gv'.format(ind)
             if not path.isfile(dotfile):
                 break
             ind+=1
