@@ -105,10 +105,11 @@ ax.set_ylabel('#moves, #nodes, #edges')
 plt.plot(np.arange(len(all_instances)), y_nodes, color='blue', label='#nodes')
 plt.plot(np.arange(len(all_instances)), y_edges, color='red', label='#edges')
 plt.title('Human Length, Optimal Length, # MAG Nodes, # MAG Edges')
+#plt.title('Human Length, Optimal Length')
 plt.legend(loc='upper left')
-plt.show()
-#plt.savefig(out_dir)
-#plt.close()
+#plt.show()
+plt.savefig(out_dir)
+plt.close()
 
 # calculate pearson correlation and p-value
 corr_list = []
@@ -139,6 +140,16 @@ p_list.append(p)
 print("P-corr opt_len & #edges: %s, P-value is %s\n" % (str(format(corr, '.6f')), str(format(p, '.6f'))))
 np.save(corr_out_dir, corr_list)
 np.save(p_out_dir, p_list)
+
+print(y_nodes)
+print(y_opt)
+print(stats.spearmanr(y_opt,y_nodes))
+a = np.random.rand(len(y_nodes))
+print(stats.spearmanr(np.array(y_opt), a))
+fig1 = plt.figure()
+ax1 = fig1.add_subplot(111)
+ax1.scatter(y_opt+0.1*np.random.rand(len(y_nodes)),y_nodes+0.1*np.random.rand(len(y_nodes)))
+plt.show()
 
 '''
 results:

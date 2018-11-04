@@ -725,16 +725,28 @@ def read_instances_json(json_dir='../psiturk-rushhour/static/json'):
 def instance_dict():
     return dict((x.name, x) for x in read_instances_json())
 
+
+
+def draw_save(instance, filepath):
+    with open(filepath, 'w') as f:
+        b = ground_instance(instance)
+        f.write(' _'+"".join([str(_) for _ in range(instance.length)]) + '_' + '\n')
+        i = 0
+        for l in b:
+            f.write(str(i)+'|'+"".join(l)+'|')
+            f.write('\n')
+            i+=1
+        f.write(' -'+"".join([str(_) for _ in range(instance.length)]) + '-')    
+        f.close()
+
 # opt_solution_instances_mag={ 0:9, 1:10, 2:15, 3:10, 4:10, 5:11, 6:14, 7:14, 8:13, 9:21, 10:27, 11:19, 12:24, 13:18, 14:24, 15:28, 16:28, 17:27, 18:23, 19:13, 20:22, 21:29, 22:30, 23:29, 24:41, 25:32, 26:34, 27:33, 28:34, 29:38, 30:39, 31:39, 32:49, 33:45, 34:48, 35:46, 36:49, 37:50, 38:58, 39:58}
-
 # opt_solution_instances= {'Jam-29': 31, 'Jam-28': 30, 'Jam-21': 21, 'Jam-20': 10, 'Jam-23': 29, 'Jam-22': 26, 'Jam-25': 27, 'Jam-24': 25, 'Jam-27': 28, 'Jam-26': 28, 'Jam-2': 8, 'Jam-3': 14, 'Jam-1': 8, 'Jam-6': 9, 'Jam-7': 13, 'Jam-4': 9, 'Jam-5': 9, 'Jam-8': 12, 'Jam-9': 12, 'Jam-40': 51, 'Jam-14': 17, 'Jam-15': 23, 'Jam-16': 21, 'Jam-17': 24, 'Jam-10': 17, 'Jam-11': 25, 'Jam-12': 17, 'Jam-13': 16, 'Jam-18': 25, 'Jam-19': 22, 'Jam-38': 48, 'Jam-39': 50, 'Jam-32': 37, 'Jam-33': 40, 'Jam-30': 32, 'Jam-31': 37, 'Jam-36': 44, 'Jam-37': 47, 'Jam-34': 43, 'Jam-35': 43}
-
 # print 'hi'
 #draw({"cars": [{"player": false, "position": 4, "length": 3, "id": "1", "orientation": "vertical"}, {"player": false, "position": 19, "length": 3, "id": "2", "orientation": "vertical"}, {"player": false, "position": 14, "length": 2, "id": "5", "orientation": "vertical"}, {"player": false, "position": 18, "length": 3, "id": "7", "orientation": "vertical"}, {"player": false, "position": 5, "length": 2, "id": "6", "orientation": "vertical"}, {"player": false, "position": 33, "length": 2, "id": "0", "orientation": "horizontal"}, {"player": false, "position": 22, "length": 2, "id": "3", "orientation": "horizontal"}, {"player": true, "position": 12, "length": 2, "id": "r", "orientation": "horizontal"}, {"player": false, "position": 8, "length": 2, "id": "4", "orientation": "horizontal"}, {"player": false, "position": 1, "length": 3, "id": "9", "orientation": "horizontal"}, {"player": false, "position": 27, "length": 2, "id": "8", "orientation": "horizontal"}], "id": "prb5"})
 
-myinstance = json_to_ins('/Users/chloe/Documents/RushHour/data/data_adopted/prb38526.json')
-draw(myinstance)
-mymag, mynodes = constuct_mag(myinstance)
-mag2dot(mymag, view=True)
+# myinstance = json_to_ins('/Users/chloe/Documents/RushHour/data/data_adopted/prb38526.json')
+# draw(myinstance)
+# mymag, mynodes = constuct_mag(myinstance)
+# mag2dot(mymag, view=True)
 
 
