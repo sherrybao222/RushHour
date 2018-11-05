@@ -14,8 +14,8 @@ for instance in all_instances:
 	cur_ins = rushhour.json_to_ins(ins_json_file)
 	# # make instance directory
 	ins_dir = out_file + instance + '/'
-	if os.path.exists(ins_dir):
-		shutil.rmtree(ins_dir)
+	if not os.path.exists(ins_dir):
+		os.mkdir(ins_dir)
     # save current drawing in this dir
-	ins_vis_dir = out_file + instance + '.txt'
+	ins_vis_dir = ins_dir+ instance + '.txt'
 	rushhour.draw_save(cur_ins, ins_vis_dir)

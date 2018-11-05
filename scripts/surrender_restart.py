@@ -1,4 +1,4 @@
-# number of surrender and restart
+# number of surrender and restart for all puzzles
 import json
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator

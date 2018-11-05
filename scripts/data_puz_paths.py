@@ -29,11 +29,16 @@ with open(pathfile) as f:
 		cur_data = out_data[ins_index]
 		cur_data.append(cur_line)
 		out_data[ins_index] =  cur_data
+def sort_by_sub(d):
+    '''a helper function for sorting'''
+    return d['subject']
 # write to file
 for i in range(0, len(all_instances)):
     cur_data = out_data[i]
+    cur_data = sorted(cur_data, key=sort_by_sub) # sort data by subject
     cur_file = out_file[i]
     cur_file = open(cur_file, 'w+')
     for j in range(0, len(cur_data)):
 	    json.dump(cur_data[j], cur_file)
 	    cur_file.write('\n')
+	    

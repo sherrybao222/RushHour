@@ -177,7 +177,7 @@ def visualize_mag(finished_list, filename):
 			dot.edge(f.tag, edge_car.tag)
 			#print("edge: " + edge_car.tag)
 	# save and show 
-	dot.render(filename, view=True)
+	dot.render(filename, view=False)
 
 
 def get_mag_attr(finished_list): # get num_node, num_edge

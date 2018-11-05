@@ -1,5 +1,5 @@
 # mean human length, optimal length, old MAG attributes
-import json
+import json, math
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 import numpy as np
@@ -20,7 +20,7 @@ humanlen_dict = {}
 mean_dict = {}
 optimal_dict = {}
 all_human_len = []
-y_human_std = []
+y_human_err = []
 
 # preprocess human & optimal len dict
 for i in range(len(all_instances)):
@@ -52,7 +52,7 @@ for i in range(len(all_instances)): # calculate mean human len and std
 		continue
 	else:
 		mean_dict[all_instances[i]] = humanlen_dict[all_instances[i] + '_len'] / humanlen_dict[all_instances[i] + '_count']
-	y_human_std.append(np.std(all_human_len[i]))
+	y_human_err.append(np.std(all_human_len[i]) / math.sqrt(humanlen_dict[all_instances[i] + '_count']))
 	print(all_human_len[i])
 	#if np.std(all_human_len[i]) > 40:
 	#	print(np.std(all_human_len[i]))
@@ -93,7 +93,7 @@ for i in range(len(all_instances)):
 fig = plt.figure()
 ax = fig.add_subplot(111)
 ax.bar(np.arange(len(all_instances)), y_human, alpha=0.9, color='orange', label='human')
-ax.errorbar(np.arange(len(all_instances)), y_human, yerr=[np.zeros(len(y_human_std)),y_human_std], alpha=0.5, c='red', fmt='none')
+ax.errorbar(np.arange(len(all_instances)), y_human, yerr=y_human_err, alpha=0.5, c='red', fmt='none')
 ax.bar(np.arange(len(all_instances)), y_opt, alpha=0.65, color='green', label='optimal')
 ax.set_xticklabels([])
 ax.yaxis.set_major_locator(MaxNLocator(20))
@@ -112,30 +112,30 @@ plt.close()
 # calculate pearson correlation and p-value
 corr_list = []
 p_list = []
-corr, p = stats.pearsonr(y_human, np.array(y_nodes)+np.array(y_edges))
+corr, p = stats.spearmanr(y_human, np.array(y_nodes)+np.array(y_edges))
 corr_list.append(corr)
 p_list.append(p)
-print("P-corr human_len & #nodes+#edges: %s, P-value is %s\n" % (str(format(corr, '.6f')), str(format(p, '.6f'))))
-corr, p = stats.pearsonr(y_opt, np.array(y_nodes)+np.array(y_edges))
+print("SP-corr human_len & #nodes+#edges: %s, P-value is %s\n" % (str(format(corr, '.6f')), str(format(p, '.6f'))))
+corr, p = stats.spearmanr(y_opt, np.array(y_nodes)+np.array(y_edges))
 corr_list.append(corr)
 p_list.append(p)
-print("P-corr opt_len & #nodes+#edges: %s, P-value is %s\n" % (str(format(corr, '.6f')), str(format(p, '.6f'))))
-corr, p = stats.pearsonr(y_human, y_nodes)
+print("SP-corr opt_len & #nodes+#edges: %s, P-value is %s\n" % (str(format(corr, '.6f')), str(format(p, '.6f'))))
+corr, p = stats.spearmanr(y_human, y_nodes)
 corr_list.append(corr)
 p_list.append(p)
-print("P-corr human_len & #nodes: %s, P-value is %s\n" % (str(format(corr, '.6f')), str(format(p, '.6f'))))
-corr, p = stats.pearsonr(y_human, y_edges)
+print("SP-corr human_len & #nodes: %s, P-value is %s\n" % (str(format(corr, '.6f')), str(format(p, '.6f'))))
+corr, p = stats.spearmanr(y_human, y_edges)
 corr_list.append(corr)
 p_list.append(p)
-print("P-corr human_len & #edges: %s, P-value is %s\n" % (str(format(corr, '.6f')), str(format(p, '.6f'))))
-corr, p = stats.pearsonr(y_opt, y_nodes)
+print("SP-corr human_len & #edges: %s, P-value is %s\n" % (str(format(corr, '.6f')), str(format(p, '.6f'))))
+corr, p = stats.spearmanr(y_opt, y_nodes)
 corr_list.append(corr)
 p_list.append(p)
-print("P-corr opt_len & #nodes: %s, P-value is %s\n" % (str(format(corr, '.6f')), str(format(p, '.6f'))))
-corr, p = stats.pearsonr(y_opt, y_edges)
+print("SP-corr opt_len & #nodes: %s, P-value is %s\n" % (str(format(corr, '.6f')), str(format(p, '.6f'))))
+corr, p = stats.spearmanr(y_opt, y_edges)
 corr_list.append(corr)
 p_list.append(p)
-print("P-corr opt_len & #edges: %s, P-value is %s\n" % (str(format(corr, '.6f')), str(format(p, '.6f'))))
+print("SP-corr opt_len & #edges: %s, P-value is %s\n" % (str(format(corr, '.6f')), str(format(p, '.6f'))))
 np.save(corr_out_dir, corr_list)
 np.save(p_out_dir, p_list)
 
@@ -153,6 +153,19 @@ P-corr human_len & #edges: 0.353791, P-value is 0.002660
 P-corr opt_len & #nodes: 0.263168, P-value is 0.027727
 
 P-corr opt_len & #edges: 0.306560, P-value is 0.009847
+
+SP-corr human_len & #nodes+#edges: 0.362871, P-value is 0.002020
+
+SP-corr opt_len & #nodes+#edges: 0.296653, P-value is 0.012642
+
+SP-corr human_len & #nodes: 0.338189, P-value is 0.004191
+
+SP-corr human_len & #edges: 0.368244, P-value is 0.001710
+
+SP-corr opt_len & #nodes: 0.268502, P-value is 0.024612
+
+SP-corr opt_len & #edges: 0.304543, P-value is 0.010368
+
 '''
 
 
