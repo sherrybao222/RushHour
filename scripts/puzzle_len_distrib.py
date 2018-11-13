@@ -3,6 +3,7 @@ import json
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 import numpy as np
+from numpy import median
 
 datafile = '/Users/chloe/Documents/RushHour/data/'
 # sorted according to optimal length
@@ -14,46 +15,56 @@ data = []
 for i in range(0, len(all_instances)):
 	instance = all_instances[i]
 	ins_path_file = datafile + instance + '_paths.json'
-	ins_distrib = [0] * 10 
+	ins_distrib = [0] * 8
 	#print(ins_distrib)
 	opt_len = 0
 	# 0[0,7], 1(7,11], 2(11,14], 3(14,16], 4(16,25], 5(25,35], 6(35,45], 7(45-55], 8(55,65], 9(65s, +)
 	# load json data
 	with open(ins_path_file) as f:
+		human_len_list = []
 		for line in f:
 			cur_data = json.loads(line)
 			if cur_data['complete'] == 'False':
 				continue
 			human_len = int(cur_data['human_length'])
 			opt_len = int(cur_data['optimal_length'])
-			if 0 <= human_len <= 7:
+			human_len_list.append(human_len)
+			if 0 <= human_len <= opt_len:
 				ins_distrib[0] += 1
-			elif 7 < human_len <= 11:
+			elif opt_len < human_len <= opt_len+10:
 				ins_distrib[1] += 1
-			elif 11 < human_len <= 14:
+			elif opt_len+10 < human_len <= opt_len+20:
 				ins_distrib[2] += 1
-			elif 14 < human_len <= 16:
+			elif opt_len+20 < human_len <= opt_len+30:
 				ins_distrib[3] += 1
-			elif 16 < human_len <= 25:
+			elif opt_len+30 < human_len <= opt_len+40:
 				ins_distrib[4] += 1
-			elif 25 < human_len <= 35:
+			elif opt_len+40 < human_len <= opt_len+50:
 				ins_distrib[5] += 1
-			elif 35 < human_len <= 45:
+			elif opt_len+50 < human_len <= opt_len+60:
 				ins_distrib[6] += 1
-			elif 45 < human_len <= 55:
-				ins_distrib[7] += 1
-			elif 55 < human_len <= 65:
-				ins_distrib[8] += 1
-			elif 65 < human_len:
-				ins_distrib[9] += 1
+			elif opt_len+60 < human_len:
+				ins_distrib[7] +=1
+		# calculate portion
+		ins_distrib = np.array(ins_distrib) / float(len(human_len_list))
+		#print(sum(ins_distrib))
 	# visualize distribution for current puzzle
-	fig = plt.figure()
+	fig = plt.figure(figsize=(5.5,6))
 	ax = fig.add_subplot(111)
-	x_axis = ['0-7', '8-11', '12-14', '15-16', '17-25', '26-35', '36-45', '46-55', '56-65', '65+']
-	ax.bar(x_axis, ins_distrib, alpha=0.9, color='green')
-	ax.set_xlabel('#moves human take')
-	ax.set_ylabel('frequency')
-	plt.title('Human len frequency puzzle ' + instance + ', opt_len=' + str(opt_len))
+	x_axis = [str(opt_len),str(opt_len+10),str(opt_len+20),str(opt_len+30),\
+				str(opt_len+40),str(opt_len+50),str(opt_len+60),'+']
+	ax.bar(x_axis, ins_distrib, width=-0.8, align='edge',alpha=0.9, color='gray')
+	ax.set_xlabel('human_len',fontsize=14)
+	# ax.set_ylabel('proportion',fontsize=14)
+	ax.yaxis.set_major_locator(MaxNLocator(integer=False))
+	plt.xticks(fontsize=14)
+	plt.yticks(fontsize=14)
+	plt.title('Human_len distribution:' + \
+				'mean=%.1f'%(sum(human_len_list) / float(len(human_len_list))) \
+				+ ',median=' + str(median(human_len_list)),\
+				fontsize=15)
+	plt.suptitle(instance + ', opt_len=' + str(opt_len), \
+				fontsize=18)
 	fig_out_dir = out_dir + instance + '/' + instance + '_hum_len_distr.png'
 	ax.grid(axis = 'y', alpha = 0.3)
 	plt.savefig(fig_out_dir)

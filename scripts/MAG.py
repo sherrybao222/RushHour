@@ -165,10 +165,10 @@ def construct_mag(board, red):
 	
 
 def visualize_mag(finished_list, filename):	
-	dot = Digraph()
-	dot.node('dummy')
-	dot.node('r')
-	dot.edge('dummy', 'r')
+	dot = Digraph(format='png')
+	# dot.node('dummy')
+	dot.node('r',label='R')
+	# dot.edge('dummy', 'r')
 	for f in finished_list:
 		dot.node(f.tag)
 		#print(f.tag)

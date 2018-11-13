@@ -1,5 +1,5 @@
 # visualize new MAG for each puzzle (from puzzle path data)
-import json, os
+import json, os, sys
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 import numpy as np
@@ -23,3 +23,5 @@ for i in range(0, len(all_instances)):
 	MAG.visualize_mag(new_car_list, ins_out_dir)
 	if os.path.exists(ins_out_dir):
 		os.remove(ins_out_dir)
+	if os.path.exists(ins_out_dir + '.pdf'):
+		os.remove(ins_out_dir + '.pdf')
