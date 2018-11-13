@@ -2,7 +2,8 @@
 #SCC: 1, max SCC len: 7
 SCC list:
 [0, 2, 4, 7, 5, 3, 6]
-#cycles: 10, max cycle len: 7, #cycles in cycle: 27
+#cycles: 9, max cycle len: 7
+#cycles in cycle: 19
 cycle list:
 [0, 7, 6, 3, 5]
 [0, 7, 4, 2, 6, 3, 5]
@@ -13,7 +14,6 @@ cycle list:
 [2, 6, 3, 5, 7, 4]
 [3, 5, 7, 6]
 [3, 5, 7]
-[7]
 longest path len from red: 7
 longest paths:
 [7, 4, 2, 6, 3, 5, 0]

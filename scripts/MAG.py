@@ -219,7 +219,6 @@ def find_SCC(finished_list):
 	g = list_to_graph(finished_list)
 	return g.find_SCC()
 
-
 def find_cycles(finished_list): 
 # print all cycles
 	g = list_to_graph(finished_list)

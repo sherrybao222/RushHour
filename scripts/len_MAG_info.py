@@ -163,6 +163,31 @@ plt.close()
 # plt.savefig(out_dir_1)
 # plt.close()
 
+fig, axarr = plt.subplots(2, 4)
+axarr[0,0].scatter(y_opt, y_human)
+axarr[0,0].set_ylabel('y_opt')
+axarr[0,1].scatter(y_nodes, y_human)
+axarr[0,1].set_ylabel('y_nodes')
+axarr[0,2].scatter(y_edges, y_human)
+axarr[0,2].set_ylabel('y_edges')
+axarr[0,3].scatter(y_countscc, y_human)
+axarr[0,3].set_ylabel('y_countscc')
+axarr[1,0].scatter(y_maxscc, y_human)
+axarr[1,0].set_ylabel('y_maxscc')
+axarr[1,1].scatter(y_countcycle, y_human)
+axarr[1,1].set_ylabel('y_countcycle')
+axarr[1,2].scatter(y_maxcycle, y_human)
+axarr[1,2].set_ylabel('y_maxcycle')
+axarr[1,3].scatter(y_depth, y_human)
+axarr[1,3].set_ylabel('y_depth')
+plt.tight_layout(pad=2, h_pad=1, w_pad=1, rect=None) 
+# plt.show()
+plt.suptitle('human_len vs MAG info')
+plt.savefig('/Users/chloe/Documents/RushHour/figures/len_MAG_info_scatter.png')
+plt.close()
+
+
+
 # calculate pearson correlation and p-value
 corr_list = []
 p_list = []

@@ -2,7 +2,8 @@
 #SCC: 1, max SCC len: 9
 SCC list:
 [0, 'R', 3, 7, 2, 5, 6, 1, 4]
-#cycles: 5, max cycle len: 4, #cycles in cycle: 0
+#cycles: 5, max cycle len: 4
+#cycles in cycle: 0
 cycle list:
 [0, 1, 6, 'R']
 [1, 6, 'R', 5]

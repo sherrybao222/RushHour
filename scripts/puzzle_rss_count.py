@@ -55,18 +55,17 @@ for i in range(0, len(all_instances)):
 	ins_distrib[3] = n_surrender
 	# make portion
 	ins_distrib = np.array(ins_distrib) / float(len(sub_list))
-	print(sum(ins_distrib))
+	# print(sum(ins_distrib))
 	# visualize distribution for current puzzle
 	fig = plt.figure(figsize=(4.5,6))
 	ax = fig.add_subplot(111)
 	x_axis = ['1st success', 'restart 1', 'restart 2+', 'surrender']
 	ax.bar(x_axis, ins_distrib, width=0.4, alpha=0.6, color='gray')
 	plt.xticks(rotation=12, fontsize=14)
-	# ax.set_ylabel('portion',fontsize=14)
-	ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+	ax.set_ylim([0,1])
 	plt.yticks(fontsize=14)
-	plt.title('Success/restart/surrender distribution', fontsize=15)
-	plt.suptitle(instance + ', opt_len=' + str(opt_len), fontsize=18)
+	plt.suptitle('Success/restart/surrender distribution', fontsize=15)
+	plt.title(instance + ', opt_len=' + str(opt_len), fontsize=15)
 	fig_out_dir = out_dir + instance + '/' + instance + '_rss_count.png'
 	ax.grid(axis = 'y', alpha = 0.3)
 	plt.savefig(fig_out_dir)

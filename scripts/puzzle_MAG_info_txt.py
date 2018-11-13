@@ -32,7 +32,7 @@ for i in range(0, len(all_instances)):
 	countc, clist, maxc = MAG.find_cycles(new_car_list)
 	clist = MAG.replace(clist, 8, 'R')
 	out_string += "#cycles: "+ str(countc)+ ", max cycle len: "+ str(maxc) \
-					+ ', #cycles in cycle: ' + str(MAG.num_in_cycles(new_car_list)) + '\n'
+					+ '\n#cycles in cycle: ' + str(MAG.num_in_cycles(new_car_list)) + '\n'
 	out_string += 'cycle list:\n'
 	for c in clist:
 		out_string += str(c) + '\n'
@@ -42,7 +42,8 @@ for i in range(0, len(all_instances)):
 	out_string += 'longest paths:\n'
 	for p in paths:
 		out_string += str(p) + '\n'
-	print(out_string)
+	if instance == 'prb10206':
+		print(out_string)
 	with open(out_file, "w") as text_file:
 		text_file.write(out_string)
 

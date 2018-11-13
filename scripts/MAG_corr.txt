@@ -1,0 +1,13 @@
+SP-corr human_len & #nodes: 0.485286, P-value is 0.000024
+
+SP-corr human_len & #edges: 0.367864, P-value is 0.001873
+
+SP-corr human_len & #scc: -0.073755, P-value is 0.546986
+
+SP-corr human_len & maxscc: 0.258833, P-value is 0.031754
+
+SP-corr human_len & #cycle: 0.156970, P-value is 0.197720
+
+SP-corr human_len & max cycle: 0.267493, P-value is 0.026281
+
+SP-corr human_len & max depth: 0.374932, P-value is 0.001503

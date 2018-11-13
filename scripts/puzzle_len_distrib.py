@@ -55,16 +55,15 @@ for i in range(0, len(all_instances)):
 				str(opt_len+40),str(opt_len+50),str(opt_len+60),'+']
 	ax.bar(x_axis, ins_distrib, width=-0.8, align='edge',alpha=0.9, color='gray')
 	ax.set_xlabel('human_len',fontsize=14)
-	# ax.set_ylabel('proportion',fontsize=14)
-	ax.yaxis.set_major_locator(MaxNLocator(integer=False))
+	ax.set_ylim([0,1])
 	plt.xticks(fontsize=14)
 	plt.yticks(fontsize=14)
-	plt.title('Human_len distribution:' + \
-				'mean=%.1f'%(sum(human_len_list) / float(len(human_len_list))) \
-				+ ',median=' + str(median(human_len_list)),\
+	plt.suptitle('Human_len distribution: ' + \
+				instance + ', opt_len=' + str(opt_len),\
 				fontsize=15)
-	plt.suptitle(instance + ', opt_len=' + str(opt_len), \
-				fontsize=18)
+	plt.title('mean=%.1f'%(sum(human_len_list) / float(len(human_len_list))) \
+				+ ', median=' + str(median(human_len_list)),\
+				fontsize=15)
 	fig_out_dir = out_dir + instance + '/' + instance + '_hum_len_distr.png'
 	ax.grid(axis = 'y', alpha = 0.3)
 	plt.savefig(fig_out_dir)

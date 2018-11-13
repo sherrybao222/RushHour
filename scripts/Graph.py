@@ -15,7 +15,7 @@ class Graph:
     def DFSUtil(self,v,visited, cur_scc): 
         # Mark the current node as visited and print it 
         visited[v]= True
-        print v,
+        # print v,
         cur_scc.append(v)
         #Recur for all the vertices adjacent to this vertex 
         for i in self.graph[v]: 
@@ -43,7 +43,7 @@ class Graph:
     
     def find_SCC(self): # find all strongly connected components,
     # return number of scc, scc list, and max scc len
-        print('--------all scc--------')
+        # print('--------all scc--------')
         num_scc = 0
         stack = [] 
         all_scc = []
@@ -65,20 +65,25 @@ class Graph:
             if visited[i]==False: 
                 cur_scc = []
                 gr.DFSUtil(i, visited, cur_scc) 
-                print","
+                # print","
                 num_scc += 1
                 all_scc.append(cur_scc)
-        print('------end all scc-------')
+        # print('------end all scc-------')
         for i in all_scc:
             if len(i) == 1: # remove size 1 scc
                 all_scc.remove(i)
                 num_scc -= 1
-            elif max_len < len(i): # compare max len
-                max_len = len(i)
-        for i in all_scc: # clean remove size 1 scc
+        for i in all_scc: # clean size 1 scc again
             if len(i) == 1: 
                 all_scc.remove(i)
                 num_scc -= 1
+        for i in all_scc: # clean size 1 scc again
+            if len(i) == 1: 
+                all_scc.remove(i)
+                num_scc -= 1
+        for i in all_scc: # compare max len
+            if max_len < len(i):
+                max_len = len(i)
         return num_scc, all_scc, max_len
 
 
@@ -89,7 +94,19 @@ class Graph:
         max_len = 0
         num_cycles = len(cycle_list)
         for i in cycle_list:
-            if max_len < len(i):
+            if len(i) == 1: # remove size 1 cycle
+                cycle_list.remove(i)
+                num_cycles -= 1
+        for i in cycle_list: # clean size 1 cycle again
+            if len(i) == 1:
+                cycle_list.remove(i)
+                num_cycles -= 1
+        for i in cycle_list: # clean size 1 cycle again
+            if len(i) == 1:
+                cycle_list.remove(i)
+                num_cycles -= 1
+        for i in cycle_list: # compare max len
+            if max_len < len(i): 
                 max_len = len(i)
         return num_cycles, cycle_list, max_len
 

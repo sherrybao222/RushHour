@@ -1,9 +1,10 @@
 #nodes: 9, #edges: 14
-#SCC: 2, max SCC len: 0
+#SCC: 2, max SCC len: 5
 SCC list:
 [1, 2, 7, 4, 6]
 [0, 5]
-#cycles: 4, max cycle len: 5, #cycles in cycle: 2
+#cycles: 4, max cycle len: 5
+#cycles in cycle: 2
 cycle list:
 [1, 4, 7, 2]
 [1, 4, 6, 7, 2]

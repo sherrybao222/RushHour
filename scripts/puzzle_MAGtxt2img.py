@@ -17,8 +17,8 @@ for i in range(0, len(all_instances)):
 	ins_txt_dir = datafile + instance + '/' + instance + '_MAG_info.txt'
 	ins_out_dir = out_dir + instance + '/' + instance + '_MAG_info.png'
 	txt = open(ins_txt_dir).read()
-	fig = plt.figure(figsize=(8,10))
-	plt.text(0,0,txt,fontsize=20, \
+	fig = plt.figure(figsize=(6,16))
+	plt.text(0,0,txt,fontsize=24, \
 			horizontalalignment='left',verticalalignment='baseline')
 			# fontweight='bold')
 	plt.xticks([])

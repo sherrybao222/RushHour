@@ -162,8 +162,8 @@ for i in range(0, len(all_instances)):
 	ins_surr_distrib = np.array(ins_surr_distrib) / float(len(time_list))
 	ins_rc1_distrib = np.array(ins_rc1_distrib) / float(len(time_list))
 	ins_rcm_distrib = np.array(ins_rcm_distrib) / float(len(time_list))
-	print(sum(ins_distrib)+sum(ins_rest_distrib)+sum(ins_surr_distrib)\
-			+sum(ins_rc1_distrib)+sum(ins_rcm_distrib))
+	# print(sum(ins_distrib)+sum(ins_rest_distrib)+sum(ins_surr_distrib)\
+			# +sum(ins_rc1_distrib)+sum(ins_rcm_distrib))
 	# visualize distribution for current puzzle
 	fig = plt.figure(figsize=(5.5,6))
 	ax = fig.add_subplot(111)
@@ -183,14 +183,14 @@ for i in range(0, len(all_instances)):
 			bottom=ins_distrib+ins_rest_distrib+ins_surr_distrib+ins_rc1_distrib,\
 			width=-0.8, align='edge', alpha=0.4, color='blue',label='success after 2+ restart')
 	ax.set_xlabel('human_time (second)',fontsize=14)
-	ax.set_ylabel('portion',fontsize=14)
-	plt.title('Human time frequency puzzle ' + instance + ', opt_len=' + str(opt_len))
-	plt.title('Human_time distribution:' + \
-				'mean=%.1f'%(sum(time_list) / float(len(time_list))) \
-				+ ',median=%.1f'%median(time_list),\
+	# ax.set_ylabel('portion',fontsize=14)
+	ax.set_ylim([0,1])
+	plt.suptitle('Human_time distribution: ' + \
+				instance + ', opt_len=' + str(opt_len),\
 				fontsize=15)
-	plt.suptitle(instance + ', opt_len=' + str(opt_len), \
-				fontsize=18)
+	plt.title('mean=%.1f'%(sum(time_list) / float(len(time_list))) \
+				+ ', median=%.1f'%median(time_list),\
+				fontsize=15)
 	fig_out_dir = out_dir + instance + '/' + instance + '_hum_time_distr.png'
 	ax.grid(axis = 'y', alpha = 0.3)
 	plt.legend(loc='upper right')

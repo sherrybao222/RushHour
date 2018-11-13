@@ -1,5 +1,5 @@
-# combining all visualization and MAG info
-import json
+# combining all visualization and MAG info for each puzzle
+import json, os
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 from matplotlib.ticker import MaxNLocator
@@ -21,32 +21,29 @@ for i in range(0, len(all_instances)):
 	time_file = sub_dir + instance + '_hum_time_distr.png'
 	length_file = sub_dir + instance + '_hum_len_distr.png'
 	MAG_file = sub_dir + instance + '_MAG.png'
-	sub_out = sub_dir + instance + '_all_fig.png'
+	sub_out = sub_dir 
 
+	# initialize whole figure
 	fig = plt.figure(figsize=(24, 12))#,frameon=False)
 	grid = plt.GridSpec(24, 48, wspace=0, hspace=0)
 	
-	txt = fig.add_subplot(grid[0:12, 0:10],xticklabels=[],yticklabels=[])
-	rss = plt.subplot(grid[12:, 0:12],xticklabels=[],yticklabels=[])
-	time = plt.subplot(grid[0:12, 12:26],xticklabels=[],yticklabels=[])
-	length = plt.subplot(grid[12:, 12:26],xticklabels=[],yticklabels=[])
-	MAG_info = fig.add_subplot(grid[:, 26:40],xticklabels=[],yticklabels=[])
-	MAG = plt.subplot(grid[:, 40:],xticklabels=[],yticklabels=[])
+	# initialize subplots
+	txt = fig.add_subplot(grid[0:12, 0:12],xticklabels=[],yticklabels=[])
+	rss = plt.subplot(grid[12:, 0:14],xticklabels=[],yticklabels=[])
+	time = plt.subplot(grid[0:12, 14:30],xticklabels=[],yticklabels=[])
+	length = plt.subplot(grid[12:, 14:30],xticklabels=[],yticklabels=[])
+	MAG_info = fig.add_subplot(grid[:, 30:38],xticklabels=[],yticklabels=[])
+	MAG = plt.subplot(grid[:, 38:],xticklabels=[],yticklabels=[])
 	
+	# load images
 	txt.imshow(mpimg.imread(txt_file))
 	MAG_info.imshow(mpimg.imread(MAG_info_file))
 	rss.imshow(mpimg.imread(rss_file))
 	time.imshow(mpimg.imread(time_file))
 	length.imshow(mpimg.imread(length_file))
 	MAG.imshow(mpimg.imread(MAG_file))
-	
-	# txt.tick_params(bottom=False,top=False,left=False,right=False)
-	# MAG_info.tick_params(bottom=False,top=False,left=False,right=False)
-	# rss.tick_params(bottom=False,top=False,left=False,right=False)
-	# time.tick_params(bottom=False,top=False,left=False,right=False)
-	# length.tick_params(bottom=False,top=False,left=False,right=False)
-	# MAG.tick_params(bottom=False,top=False,left=False,right=False)
 
+	# remove frames
 	txt.axis('off')
 	MAG_info.axis('off')
 	rss.axis('off')
@@ -54,7 +51,7 @@ for i in range(0, len(all_instances)):
 	length.axis('off')
 	MAG.axis('off')
 
-	# get number of subject
+	# get number of subject and optlen
 	ins_path_file = '/Users/chloe/Documents/RushHour/data/' + instance + '_paths.json'
 	sub_list = []
 	opt_len = ''
@@ -64,10 +61,19 @@ for i in range(0, len(all_instances)):
 			opt_len = cur_data['optimal_length']
 			if cur_data['subject'] not in sub_list:
 				sub_list.append(cur_data['subject'])
-	plt.tight_layout(pad=4, h_pad=0, w_pad=0, rect=None) # white space to figure edges
+	
+	# finalize plot
+	plt.tight_layout(pad=2, h_pad=0, w_pad=0, rect=None) # white space to figure edges
 	plt.suptitle(instance + ', opt_len=' + str(opt_len) \
 				+ ', #subjects=' + str(len(sub_list)), \
-				fontsize=18)
-	# plt.show()
-	plt.savefig(sub_out)
+				x = 0.15, y = 0.98, \
+				fontsize=20, fontweight='bold')
+	if opt_len == '7':
+		opt_len = '07'
+	else:
+		opt_len = str(opt_len)
+	plt.savefig(sub_out + 'opt_' + opt_len + '_' + instance + '_all.png')
 	plt.close()
+	# # remove duplicated files
+	# if os.path.exists(sub_out + 'opt_7_' + instance + '_all.png'):
+	# 	os.remove(sub_out + 'opt_7_' + instance + '_all.png')
