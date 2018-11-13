@@ -1,5 +1,7 @@
 from graphviz import Digraph
 from json import dump,load
+import Graph
+from networkx import DiGraph, simple_cycles
 
 class Car:
 	start, end, length = [0,0], [0,0], [0,0] #hor,ver
@@ -154,7 +156,7 @@ def construct_mag(board, red):
 								#print("queue append " + meet_car.tag)
 					k += 1
 		cur_car.visited = True # mark
-		finished_list.append(cur_car) # list to be returned
+		finished_list.append(cur_car) # list to be returned, all cars in MAG
 	# clean all visited flags
 	for i in range(0, board.height):
 		for j in range(0, board.width):
@@ -195,15 +197,78 @@ def get_mag_attr(finished_list): # get num_node, num_edge
 				num_node += 1
 	return num_node, num_edge
 
+def list_to_graph(finished_list): #convert list to graph
+	g = Graph.Graph(9)
+	#print(len(finished_list))
+	for car in finished_list:
+		if car.tag == 'r':
+			car_tag = len(finished_list) - 1
+		else: 
+			car_tag = int(car.tag)
+		for adj_car in car.edge_to:
+			if adj_car.tag == 'r':
+				adj_car_tag = len(finished_list) - 1
+			else:
+				adj_car_tag = int(adj_car.tag)
+			g.addEdge(car_tag, adj_car_tag)
+	return g
+
+
+def find_SCC(finished_list): 
+# print and count number of SCC, return allscc list, return max scc len
+	g = list_to_graph(finished_list)
+	return g.find_SCC()
+
+
+def find_cycles(finished_list): 
+# print all cycles
+	g = list_to_graph(finished_list)
+	return g.all_cycles()
+
+def num_cycles(finished_list): # number of cycles
+	g = list_to_graph(finished_list)
+	return len(g.all_cycles())
+
+def num_in_cycles(finished_list):
+	g = list_to_graph(finished_list)
+	return g.cycle_in_cycle()
+
+def longest_path(finished_list): # return longest path from red
+	g = list_to_graph(finished_list)
+	return g.longest_path(len(finished_list) - 1)
+
+def replace(elist, old_e, new_e): # replace a certain element in list
+	for i in range(len(elist)):
+		row = elist[i]
+		for j in range(len(row)):
+			e = row[j]
+			if e == old_e:
+				elist[i][j] = new_e
+	return elist
+
 # testing
 
-# my_car_list, my_red = json_to_car_list("/Users/chloe/Documents/RushHour/data/data_adopted/prb54506.json")
+# my_car_list, my_red = json_to_car_list("/Users/chloe/Documents/RushHour/data/data_adopted/prb2834.json")
 # my_board = construct_board(my_car_list)
 # new_car_list = construct_mag(my_board, my_red)
-# visualize_mag(new_car_list, "/Users/chloe/Desktop/test_mag.gv")
+# visualize_mag(new_car_list, "/Users/chloe/Desktop/test_mag")
 # n_node, n_edge = get_mag_attr(new_car_list)
 # print("num_node: " + str(n_node))
 # print("num_edge: " + str(n_edge))
+# countscc, scclist, maxlen = find_SCC(new_car_list)
+# scclist = replace(scclist, 8, 'R')
+# print("num_scc:\n" + str(countscc) + "\nscc list:\n" \
+# 		+ str(scclist) +  "\nmax scc len:\n" +  str(maxlen))
+# countc, clist, maxc = find_cycles(new_car_list)
+# clist = replace(clist, 8, 'R')
+# print("num_cycles:\n"+ str(countc)+ "\ncycle list:\n"\
+# 		+ str(clist)+ "\nmax cycle len:\n"+ str(maxc))
+# print("number of cycles in cycle: " + str(num_in_cycles(new_car_list)))
+# depth, paths = longest_path(new_car_list)
+# paths = replace(paths, 8, 'R')
+# print("longest path len from red:" + str(depth) + "\npath:\n" + str(paths))
+
+
 
 
 

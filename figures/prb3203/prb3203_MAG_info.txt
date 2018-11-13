@@ -1,0 +1,19 @@
+#nodes: 8, #edges: 13
+#SCC: 1, max SCC len: 7
+SCC list:
+[0, 2, 4, 7, 5, 3, 6]
+#cycles: 10, max cycle len: 7, #cycles in cycle: 27
+cycle list:
+[0, 7, 6, 3, 5]
+[0, 7, 4, 2, 6, 3, 5]
+[0, 7, 4, 2]
+[0, 7, 3, 5]
+[0, 5, 7, 4, 2]
+[0, 5]
+[2, 6, 3, 5, 7, 4]
+[3, 5, 7, 6]
+[3, 5, 7]
+[7]
+longest path len from red: 7
+longest paths:
+[7, 4, 2, 6, 3, 5, 0]
