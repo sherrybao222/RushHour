@@ -21,7 +21,9 @@ mag_countscc_dict = {}
 mag_maxscc_dict = {}
 mag_countcycle_dict = {}
 mag_maxcycle_dict = {}
+mag_c_cycle_dict = {}
 mag_depth_dict = {}
+mag_ndepth_dict = {}
 humanlen_dict = {}
 mean_dict = {}
 optimal_dict = {}
@@ -67,22 +69,31 @@ for i in range(len(all_instances)): # calculate mean human len and std
 
 # process mag attributes
 for i in range(len(all_instances)):
+	# construct mag
 	cur_ins = all_instances[i]
 	ins_dir = ins_file + all_instances[i] + '.json'
 	my_car_list, my_red = MAG.json_to_car_list(ins_dir)
 	my_board = MAG.construct_board(my_car_list)
 	new_car_list = MAG.construct_mag(my_board, my_red)
+	# num nodes, num edges
 	n_node, n_edge = MAG.get_mag_attr(new_car_list)
 	mag_node_dict[cur_ins] = n_node
 	mag_edge_dict[cur_ins] = n_edge
+
 	countscc, _, maxlen = MAG.find_SCC(new_car_list)
 	mag_countscc_dict[cur_ins] = countscc
 	mag_maxscc_dict[cur_ins] = maxlen
+
 	countc, _, maxc = MAG.find_cycles(new_car_list)
 	mag_countcycle_dict[cur_ins] = countc
 	mag_maxcycle_dict[cur_ins] = maxc
-	depth, _ = MAG.longest_path(new_car_list)
+
+	c_cycle = MAG.num_in_cycles(new_car_list)
+	mag_c_cycle_dict[cur_ins] = c_cycle
+
+	depth, paths = MAG.longest_path(new_car_list)
 	mag_depth_dict[cur_ins] = depth
+	mag_ndepth_dict[cur_ins] = len(paths)
 
 
 # print special results
@@ -104,7 +115,9 @@ y_countscc = []
 y_maxscc = []
 y_countcycle = []
 y_maxcycle = []
+y_c_incycle = [] ##
 y_depth = []
+y_ndepth = [] ##
 for i in range(len(all_instances)):
 	y_human.append(mean_dict[all_instances[i]])
 	y_opt.append(optimal_dict[all_instances[i]])
@@ -112,9 +125,11 @@ for i in range(len(all_instances)):
 	y_edges.append(mag_edge_dict[all_instances[i]])
 	y_countscc.append(mag_countscc_dict[all_instances[i]])
 	y_maxscc.append(mag_maxscc_dict[all_instances[i]])
+	y_c_incycle.append(mag_c_cycle_dict[all_instances[i]])
 	y_countcycle.append(mag_countcycle_dict[all_instances[i]])
 	y_maxcycle.append(mag_maxcycle_dict[all_instances[i]])
 	y_depth.append(mag_depth_dict[all_instances[i]])
+	y_ndepth.append(mag_ndepth_dict[all_instances[i]])
 # generate figure
 fig = plt.figure()
 ax = fig.add_subplot(111)
@@ -131,9 +146,11 @@ plt.plot(np.arange(len(all_instances)), y_nodes, color='blue', label='#node')
 plt.plot(np.arange(len(all_instances)), y_edges, color='red', label='#edge')
 plt.plot(np.arange(len(all_instances)), y_countscc, color='coral', label='#scc')
 plt.plot(np.arange(len(all_instances)), y_maxscc, color='cyan', label='max scc')
+plt.plot(np.arange(len(all_instances)), y_c_incycle, color='blueviolet', label='#cycles in cycle')
 plt.plot(np.arange(len(all_instances)), y_countcycle, color='magenta', label='#cycle')
 plt.plot(np.arange(len(all_instances)), y_maxcycle, color='brown', label='max cycle')
 plt.plot(np.arange(len(all_instances)), y_depth, color='chartreuse', label='max depth')
+plt.plot(np.arange(len(all_instances)), y_ndepth, color='olive', label='#longest paths')
 # scatter1.set_zorder(2) # layer
 # scatter2.set_zorder(2) 
 # plt.plot(np.arange(len(all_instances)), y_nodes, color='blue', label='#nodes')
@@ -144,124 +161,120 @@ plt.legend(loc='upper left')
 plt.savefig(out_dir)
 plt.close()
 
-# # plot nodes vs len, edges vs len
-# fig, axarr = plt.subplots(2,2)
-# axarr[0,0].scatter(y_nodes, y_human, color='orange')
-# # axarr[0,0].set_xlabel('#nodes')
-# axarr[0,0].set_ylabel('human_len')
-# axarr[1,0].scatter(y_nodes, y_opt, color='green')
-# axarr[1,0].set_xlabel('#nodes')
-# axarr[1,0].set_ylabel('opt_len')
-# axarr[0,1].scatter(y_edges, y_human, alpha=0.8, color='red')
-# # axarr[0,1].set_xlabel('#edges')
-# # axarr[0,1].set_ylabel('human_len')
-# axarr[1,1].scatter(y_edges, y_opt, alpha=0.8, color='blue')
-# axarr[1,1].set_xlabel('#edges')
-# # axarr[1,1].set_ylabel('opt_len')
-# axarr[0,0].set_title('new MAG #nodes vs len, #edges vs len', loc='left')
-# #plt.show()
-# plt.savefig(out_dir_1)
-# plt.close()
-
-fig, axarr = plt.subplots(2, 4)
-axarr[0,0].scatter(y_opt, y_human)
-axarr[0,0].set_ylabel('y_opt')
-axarr[0,1].scatter(y_nodes, y_human)
-axarr[0,1].set_ylabel('y_nodes')
-axarr[0,2].scatter(y_edges, y_human)
-axarr[0,2].set_ylabel('y_edges')
-axarr[0,3].scatter(y_countscc, y_human)
-axarr[0,3].set_ylabel('y_countscc')
-axarr[1,0].scatter(y_maxscc, y_human)
-axarr[1,0].set_ylabel('y_maxscc')
-axarr[1,1].scatter(y_countcycle, y_human)
-axarr[1,1].set_ylabel('y_countcycle')
-axarr[1,2].scatter(y_maxcycle, y_human)
-axarr[1,2].set_ylabel('y_maxcycle')
-axarr[1,3].scatter(y_depth, y_human)
-axarr[1,3].set_ylabel('y_depth')
-plt.tight_layout(pad=2, h_pad=1, w_pad=1, rect=None) 
-# plt.show()
-plt.suptitle('human_len vs MAG info')
-plt.savefig('/Users/chloe/Documents/RushHour/figures/len_MAG_info_scatter.png')
-plt.close()
-
-
 
 # calculate pearson correlation and p-value
 corr_list = []
 p_list = []
+
+corr, p = stats.spearmanr(y_human, y_opt)
+corr_list.append(corr)
+p_list.append(p)
+print("SP-corr human_len & opt_len: %s, P-value is %s\n" % (str(format(corr, '.6f')), str(format(p, '.6f'))))
+
 corr, p = stats.spearmanr(y_human, y_nodes)
 corr_list.append(corr)
 p_list.append(p)
 print("SP-corr human_len & #nodes: %s, P-value is %s\n" % (str(format(corr, '.6f')), str(format(p, '.6f'))))
+
 corr, p = stats.spearmanr(y_human, y_edges)
 corr_list.append(corr)
 p_list.append(p)
 print("SP-corr human_len & #edges: %s, P-value is %s\n" % (str(format(corr, '.6f')), str(format(p, '.6f'))))
+
 corr, p = stats.spearmanr(y_human, y_countscc)
 corr_list.append(corr)
 p_list.append(p)
 print("SP-corr human_len & #scc: %s, P-value is %s\n" % (str(format(corr, '.6f')), str(format(p, '.6f'))))
+
 corr, p = stats.spearmanr(y_human, y_maxscc)
 corr_list.append(corr)
 p_list.append(p)
 print("SP-corr human_len & maxscc: %s, P-value is %s\n" % (str(format(corr, '.6f')), str(format(p, '.6f'))))
+
 corr, p = stats.spearmanr(y_human, y_countcycle)
 corr_list.append(corr)
 p_list.append(p)
 print("SP-corr human_len & #cycle: %s, P-value is %s\n" % (str(format(corr, '.6f')), str(format(p, '.6f'))))
+
 corr, p = stats.spearmanr(y_human, y_maxcycle)
 corr_list.append(corr)
 p_list.append(p)
 print("SP-corr human_len & max cycle: %s, P-value is %s\n" % (str(format(corr, '.6f')), str(format(p, '.6f'))))
+
+corr, p = stats.spearmanr(y_human, y_c_incycle)
+corr_list.append(corr)
+p_list.append(p)
+print("SP-corr human_len & #cycles in cycle: %s, P-value is %s\n" % (str(format(corr, '.6f')), str(format(p, '.6f'))))
+
 corr, p = stats.spearmanr(y_human, y_depth)
 corr_list.append(corr)
 p_list.append(p)
 print("SP-corr human_len & max depth: %s, P-value is %s\n" % (str(format(corr, '.6f')), str(format(p, '.6f'))))
 
+corr, p = stats.spearmanr(y_human, y_ndepth)
+corr_list.append(corr)
+p_list.append(p)
+print("SP-corr human_len & #longtest paths: %s, P-value is %s\n" % (str(format(corr, '.6f')), str(format(p, '.6f'))))
 
 
+# create correlation plot
+fig, axarr = plt.subplots(2, 5, figsize=(15, 6))
 
-# DEBUG:
-# print(y_nodes)
-# print(y_opt)
-# print(stats.spearmanr(y_opt,y_nodes))
-# a = np.random.rand(len(y_nodes))
-# print(stats.spearmanr(np.array(y_opt), a))
-# fig1 = plt.figure()
-# ax1 = fig1.add_subplot(111)
-# ax1.scatter(y_opt+0.1*np.random.rand(len(y_nodes)),y_nodes+0.1*np.random.rand(len(y_nodes)))
+axarr[0,0].scatter(y_opt, y_human)
+axarr[0,0].set_ylabel('opt_len')
+t = 'Spearman corr: %1.5f,\nP-value=%1.5f'%(corr_list[0],p_list[0])
+axarr[0,0].set_title(t,y=0.85,fontsize=8,fontweight='bold')
+
+axarr[0,1].scatter(y_nodes, y_human)
+axarr[0,1].set_ylabel('#node')
+t = 'Spearman corr: %1.5f,\nP-value=%1.5f'%(corr_list[1],p_list[1])
+axarr[0,1].set_title(t,y=0.85,fontsize=8,fontweight='bold')
+
+axarr[0,2].scatter(y_edges, y_human)
+axarr[0,2].set_ylabel('#edge')
+t = 'Spearman corr: %1.5f,\nP-value=%1.5f'%(corr_list[2],p_list[2])
+axarr[0,2].set_title(t,y=0.85,fontsize=8,fontweight='bold')
+
+axarr[0,3].scatter(y_countscc, y_human)
+axarr[0,3].set_ylabel('#scc')
+t = 'Spearman corr: %1.5f,\nP-value=%1.5f'%(corr_list[3],p_list[3])
+axarr[0,3].set_title(t,y=0.85,fontsize=8,fontweight='bold')
+
+axarr[0,4].scatter(y_maxscc, y_human)
+axarr[0,4].set_ylabel('max scc size')
+t = 'Spearman corr: %1.5f,\nP-value=%1.5f'%(corr_list[4],p_list[4])
+axarr[0,4].set_title(t,y=0.85,fontsize=8,fontweight='bold')
+
+axarr[1,0].scatter(y_countcycle, y_human)
+axarr[1,0].set_ylabel('#cycle')
+t = 'Spearman corr: %1.5f,\nP-value=%1.5f'%(corr_list[5],p_list[5])
+axarr[1,0].set_title(t,y=0.85,fontsize=8,fontweight='bold')
+
+axarr[1,1].scatter(y_maxcycle, y_human)
+axarr[1,1].set_ylabel('max cycle size')
+t = 'Spearman corr: %1.5f,\nP-value=%1.5f'%(corr_list[6],p_list[6])
+axarr[1,1].set_title(t,y=0.85,fontsize=8,fontweight='bold')
+
+axarr[1,2].scatter(y_c_incycle, y_human)
+axarr[1,2].set_ylabel('#cycles in cycle')
+t = 'Spearman corr: %1.5f,\nP-value=%1.5f'%(corr_list[7],p_list[7])
+axarr[1,2].set_title(t,y=0.85,fontsize=8,fontweight='bold')
+
+axarr[1,3].scatter(y_depth, y_human)
+axarr[1,3].set_ylabel('longtest path len from red')
+t = 'Spearman corr: %1.5f,\nP-value=%1.5f'%(corr_list[8],p_list[8])
+axarr[1,3].set_title(t,y=0.85,fontsize=8,fontweight='bold')
+
+axarr[1,4].scatter(y_ndepth, y_human)
+axarr[1,4].set_ylabel('#longest paths')
+t = 'Spearman corr: %1.5f,\nP-value=%1.5f'%(corr_list[9],p_list[9])
+axarr[1,4].set_title(t,y=0.85,fontsize=8,fontweight='bold')
+
+plt.tight_layout(pad=1.5, h_pad=1, w_pad=1, rect=None) 
+plt.suptitle('human_len vs MAG info', y=0.99, fontsize=13, fontweight='bold')
 # plt.show()
+plt.savefig('/Users/chloe/Documents/RushHour/figures/len_MAG_info_scatter.png')
+plt.close()
 
-
-'''
-results:
-
-P-corr human_len & #nodes+#edges: 0.388062, P-value is 0.000902
-
-P-corr opt_len & #nodes+#edges: 0.352236, P-value is 0.002786
-
-P-corr human_len & #nodes: 0.418855, P-value is 0.000308
-
-P-corr human_len & #edges: 0.358257, P-value is 0.002325
-
-P-corr opt_len & #nodes: 0.355621, P-value is 0.002518
-
-P-corr opt_len & #edges: 0.332458, P-value is 0.004925
-
-
-SP-corr human_len & #nodes+#edges: 0.373598, P-value is 0.001444
-
-SP-corr opt_len & #nodes+#edges: 0.302283, P-value is 0.010980
-
-SP-corr human_len & #nodes: 0.475145, P-value is 0.000032
-
-SP-corr human_len & #edges: 0.348554, P-value is 0.003106
-
-SP-corr opt_len & #nodes: 0.352581, P-value is 0.002757
-
-SP-corr opt_len & #edges: 0.286088, P-value is 0.016355
-'''
 
 
