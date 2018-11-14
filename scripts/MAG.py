@@ -71,7 +71,7 @@ def construct_mag(board, red):
 	for i in range(red.end[0], board.width): # obstacles in front of red, include red
 		cur_car = board.board_dict[(i, red.end[1])]
 		if cur_car is not None: #exists on board
-			#print("queue append: " + cur_car.tag)
+			# print("queue append: " + cur_car.tag)
 			queue.append(cur_car)
 			if cur_car.tag != 'r':
 				red.edge_to.append(cur_car)
@@ -80,10 +80,10 @@ def construct_mag(board, red):
 		i = red.start[0] - 1 # obstacles behind red
 		while i >= 0:
 			cur_car = board.board_dict[(i, red.start[1])]
-			if cur_car is not None: #exists on board
-				#print("queue append: " + cur_car.tag)
-				queue.append(cur_car)
-				if cur_car.tag != 'r':
+			if cur_car is not None: #exists on board, not include red
+				if cur_car.tag != 'r' and cur_car.visited != True: # can be horizontal
+					queue.append(cur_car)
+					# print("queue append: " + cur_car.tag)
 					red.edge_to.append(cur_car)
 					cur_car.visited = True
 			i -= 1
@@ -91,6 +91,7 @@ def construct_mag(board, red):
 	finished_list.append(red)
 	while len(queue) != 0: # obstacle blockers
 		cur_car	= queue.pop()
+		# print('pop ', cur_car.tag)
 		if cur_car.tag == 'r':
 			continue
 		#print('queue pop: ' + cur_car.tag)
@@ -213,7 +214,6 @@ def list_to_graph(finished_list): #convert list to graph
 			g.addEdge(car_tag, adj_car_tag)
 	return g
 
-
 def find_SCC(finished_list): 
 # print and count number of SCC, return allscc list, return max scc len
 	g = list_to_graph(finished_list)
@@ -228,11 +228,11 @@ def num_cycles(finished_list): # number of cycles
 	g = list_to_graph(finished_list)
 	return len(g.all_cycles())
 
-def num_in_cycles(finished_list):
+def num_in_cycles(finished_list): # number of small cycles in larger cycles
 	g = list_to_graph(finished_list)
 	return g.cycle_in_cycle()
 
-def longest_path(finished_list): # return longest path from red
+def longest_path(finished_list): # longest path from red, len and paths
 	g = list_to_graph(finished_list)
 	return g.longest_path(len(finished_list) - 1)
 
@@ -245,27 +245,88 @@ def replace(elist, old_e, new_e): # replace a certain element in list
 				elist[i][j] = new_e
 	return elist
 
+def replace_1d(elist, old_e, new_e): #replace function for 1d list
+	for i in range(len(elist)):
+		e = elist[i]
+		if e == old_e:
+			elist[i] = new_e
+	return elist
+
+def num_nodes_in_cycle(finished_list): # return number of nodes in cycles
+	g = list_to_graph(finished_list)
+	_, cycle_list, _ = g.all_cycles() # list of all cycles
+	cycle_nodes = [] # list of nodes belong to some cycle
+	# iterate through cycle list to collect nodes
+	for i in range(len(cycle_list)):
+		row = cycle_list[i]
+		for j in range(len(row)):
+			e = row[j]
+			if e not in cycle_nodes:
+				cycle_nodes.append(e)
+	# return number of nodes in cycles, and list of nodes in cycle
+	return len(cycle_nodes), cycle_nodes
+
+def pro_nodes_in_cycle(finished_list): # proportion of nodes in cycles
+	num, _ = num_nodes_in_cycle(finished_list) # get number of nodes in cycles
+	n_nodes, _ = get_mag_attr(finished_list) # total number of nodes
+	return format(float(num)/n_nodes, '.2f')
+
+def e_by_n(finished_list): # #edges / #nodes
+	n_nodes, n_edges = get_mag_attr(finished_list)
+	return format(float(n_edges)/n_nodes, '.2f')
+
+def e_by_pn(finished_list): # #edges / (#nodes - #leaf_nodes)
+	n_nodes, n_edges = get_mag_attr(finished_list)
+	leaf_list = [] # list of leaf nodes
+	# iterate through finished_list to find all leaf nodes
+	for i in finished_list:
+		if len(i.edge_to) == 0 and i not in leaf_list:
+			leaf_list.append(i)
+	return format(float(n_edges)/(n_nodes - len(leaf_list)), '.2f')
+
+
+
 # testing
 
-# my_car_list, my_red = json_to_car_list("/Users/chloe/Documents/RushHour/data/data_adopted/prb2834.json")
+# my_car_list, my_red = json_to_car_list("/Users/chloe/Documents/RushHour/data/data_adopted/prb6671.json")
 # my_board = construct_board(my_car_list)
 # new_car_list = construct_mag(my_board, my_red)
 # visualize_mag(new_car_list, "/Users/chloe/Desktop/test_mag")
+
 # n_node, n_edge = get_mag_attr(new_car_list)
 # print("num_node: " + str(n_node))
 # print("num_edge: " + str(n_edge))
+
 # countscc, scclist, maxlen = find_SCC(new_car_list)
 # scclist = replace(scclist, 8, 'R')
-# print("num_scc:\n" + str(countscc) + "\nscc list:\n" \
-# 		+ str(scclist) +  "\nmax scc len:\n" +  str(maxlen))
+# print("num_scc:\n" + str(countscc) \
+# 	+ "\nscc list:\n" + str(scclist) \
+# 	+ "\nmax scc len:\n" +  str(maxlen))
+
 # countc, clist, maxc = find_cycles(new_car_list)
 # clist = replace(clist, 8, 'R')
-# print("num_cycles:\n"+ str(countc)+ "\ncycle list:\n"\
-# 		+ str(clist)+ "\nmax cycle len:\n"+ str(maxc))
-# print("number of cycles in cycle: " + str(num_in_cycles(new_car_list)))
+# print("num_cycles:\n"+ str(countc)\
+# 		+ "\ncycle list:\n" + str(clist)\
+# 		+ "\nmax cycle len:\n"+ str(maxc))
+# print("number of cycles in cycle: " \
+# 		+ str(num_in_cycles(new_car_list)))
+
 # depth, paths = longest_path(new_car_list)
 # paths = replace(paths, 8, 'R')
-# print("longest path len from red:" + str(depth) + "\npath:\n" + str(paths))
+# print("longest path len from red:" + str(depth) \
+# 		+ "\npath:\n" + str(paths))
+
+# n_nc, cycle_nodes = num_nodes_in_cycle(new_car_list)
+# cycle_nodes = replace_1d(cycle_nodes, 8, 'R')
+# pro = pro_nodes_in_cycle(new_car_list)
+# print('number of nodes in cycles: ' + str(n_nc) \
+# 		+ '\nlist of nodes in cycles: ' + str(cycle_nodes)\
+# 		+ '\nproportion of nodes in cycles: ' + str(pro))
+
+# ebn = e_by_n(new_car_list)
+# ebpn = e_by_pn(new_car_list)
+# print('#edges/#nodes = ' + str(ebn)\
+# 		+ '\n#edges/(#nodes - #leaf) = ' + str(ebpn))
 
 
 

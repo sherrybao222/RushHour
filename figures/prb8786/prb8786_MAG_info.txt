@@ -12,3 +12,9 @@ longest paths:
 [5, 3, 2]
 [5, 3, 4]
 [5, 0, 2]
+#nodes in cycles: 4
+proportion of nodes in cycles: 0.67
+list of nodes in cycles:
+[0, 2, 5, 3]
+#edges / #nodes = 1.17
+#edges / (#nodes - #leaf) = 1.40

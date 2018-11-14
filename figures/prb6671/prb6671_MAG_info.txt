@@ -14,3 +14,9 @@ longest path len from red: 5
 longest paths:
 ['R', 4, 2, 0, 7]
 ['R', 4, 2, 1, 6]
+#nodes in cycles: 8
+proportion of nodes in cycles: 0.89
+list of nodes in cycles:
+['R', 4, 2, 5, 1, 6, 0, 7]
+#edges / #nodes = 1.33
+#edges / (#nodes - #leaf) = 1.50

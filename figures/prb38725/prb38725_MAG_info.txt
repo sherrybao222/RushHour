@@ -11,3 +11,9 @@ cycle list:
 longest path len from red: 5
 longest paths:
 ['R', 5, 2, 0, 6]
+#nodes in cycles: 6
+proportion of nodes in cycles: 0.67
+list of nodes in cycles:
+['R', 5, 2, 1, 4, 7]
+#edges / #nodes = 1.33
+#edges / (#nodes - #leaf) = 1.50

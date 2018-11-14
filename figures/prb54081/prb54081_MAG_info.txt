@@ -1,16 +1,16 @@
 #nodes: 9, #edges: 17
 #SCC: 1, max SCC len: 7
 SCC list:
-[0, 3, 2, 4, 1, 6, 'R']
+[0, 3, 2, 4, 'R', 1, 6]
 #cycles: 7, max cycle len: 6
 #cycles in cycle: 6
 cycle list:
-[0, 4, 2, 6]
 [0, 4, 2, 3]
 [0, 4, 2, 3, 'R', 6]
-[1, 4, 2, 6]
+[0, 4, 2, 6]
 [1, 4, 2, 3]
 [1, 4, 2, 3, 'R', 6]
+[1, 4, 2, 6]
 ['R', 4, 2, 3]
 longest path len from red: 7
 longest paths:
@@ -18,3 +18,9 @@ longest paths:
 ['R', 6, 1, 4, 2, 3, 5]
 ['R', 6, 0, 4, 2, 3, 1]
 ['R', 6, 0, 4, 2, 3, 5]
+#nodes in cycles: 7
+proportion of nodes in cycles: 0.78
+list of nodes in cycles:
+[0, 4, 2, 3, 'R', 6, 1]
+#edges / #nodes = 1.89
+#edges / (#nodes - #leaf) = 2.43

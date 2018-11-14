@@ -86,7 +86,6 @@ class Graph:
                 max_len = len(i)
         return num_scc, all_scc, max_len
 
-
     def all_cycles(self): # find all cycles 
     # return number of cycles, cycle list, and max cycle len
         DG = DiGraph(self.graph)

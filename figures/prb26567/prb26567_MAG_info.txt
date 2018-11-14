@@ -1,19 +1,25 @@
 #nodes: 8, #edges: 13
 #SCC: 1, max SCC len: 6
 SCC list:
-[2, 3, 6, 7, 4, 5]
+[2, 3, 7, 5, 4, 6]
 #cycles: 9, max cycle len: 6
 #cycles in cycle: 18
 cycle list:
-[2, 7, 6, 3]
-[2, 7, 3]
-[2, 5, 7, 6, 3]
-[2, 5, 7, 3]
 [2, 5, 4, 7, 6, 3]
 [2, 5, 4, 7, 3]
-[4, 7, 6]
-[4, 5, 7, 6]
+[2, 5, 7, 6, 3]
+[2, 5, 7, 3]
+[2, 7, 6, 3]
+[2, 7, 3]
 [4, 5]
+[4, 5, 7, 6]
+[4, 7, 6]
 longest path len from red: 6
 longest paths:
 [7, 6, 3, 2, 5, 4]
+#nodes in cycles: 6
+proportion of nodes in cycles: 0.75
+list of nodes in cycles:
+[2, 5, 4, 7, 6, 3]
+#edges / #nodes = 1.62
+#edges / (#nodes - #leaf) = 1.86
