@@ -1,6 +1,6 @@
 from collections import defaultdict 
 from networkx import DiGraph, simple_cycles
-import networkx as nx
+from networkx import transitivity, average_clustering
 # represents a directed graph using adjacency list representation 
 class Graph: 
     def __init__(self,vertices): 
@@ -140,5 +140,20 @@ class Graph:
         max_len = max(len(p) for p in paths)
         max_paths = [p for p in paths if len(p) == max_len]
         return max_len, max_paths
+
+    def global_cluster_coef(self): #global clustering coefficient
+        DG = DiGraph(self.graph)
+        return transitivity(DG)
+
+    def av_local_cluster_coef(self):
+        DG = DiGraph(self.graph)
+        return average_clustering(DG)
+
+
+
+
+
+
+
 
 

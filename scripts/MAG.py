@@ -284,11 +284,26 @@ def e_by_pn(finished_list): # #edges / (#nodes - #leaf_nodes)
 			leaf_list.append(i)
 	return format(float(n_edges)/(n_nodes - len(leaf_list)), '.2f')
 
+def e2_by_n(finished_list): # #edge^2 / #nodes
+	n_nodes, n_edges = get_mag_attr(finished_list)
+	return format(float(n_edges) * float(n_edges)/n_nodes, '.2f')
+
+def global_cluster_coef(finished_list):
+	g = list_to_graph(finished_list)
+	return g.global_cluster_coef()
+
+def av_local_cluster_coef(finished_list):
+	g = list_to_graph(finished_list)
+	return g.av_local_cluster_coef()
+
+
+
+
 
 
 # testing
 
-# my_car_list, my_red = json_to_car_list("/Users/chloe/Documents/RushHour/data/data_adopted/prb6671.json")
+# my_car_list, my_red = json_to_car_list("/Users/chloe/Documents/RushHour/exp_data/data_adopted/prb21272.json")
 # my_board = construct_board(my_car_list)
 # new_car_list = construct_mag(my_board, my_red)
 # visualize_mag(new_car_list, "/Users/chloe/Desktop/test_mag")
@@ -325,9 +340,15 @@ def e_by_pn(finished_list): # #edges / (#nodes - #leaf_nodes)
 
 # ebn = e_by_n(new_car_list)
 # ebpn = e_by_pn(new_car_list)
+# e2bn = e2_by_n(new_car_list)
 # print('#edges/#nodes = ' + str(ebn)\
+# 		+ '\n#edges2/#nodes = ' + str(e2bn)
 # 		+ '\n#edges/(#nodes - #leaf) = ' + str(ebpn))
 
+# gcluster = global_cluster_coef(new_car_list)
+# lcluster = av_local_cluster_coef(new_car_list)
+# print('global cluster coef = ' + str(gcluster)\
+# 		+ '\nmean local cluster coef = ' + str(lcluster))
 
 
 
