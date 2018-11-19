@@ -5,13 +5,13 @@ from sklearn import linear_model
 from sklearn.metrics import mean_squared_error, r2_score
 
 all_instances = ['prb8786', 'prb11647', 'prb21272', 'prb13171', 'prb1707', 'prb23259', 'prb10206', 'prb2834', 'prb28111', 'prb32795', 'prb26567', 'prb14047', 'prb14651', 'prb32695', 'prb29232', 'prb15290', 'prb12604', 'prb20059', 'prb9718', 'prb29414', 'prb22436', 'prb62015', 'prb38526', 'prb3217', 'prb34092', 'prb12715', 'prb54081', 'prb717', 'prb31907', 'prb42959', 'prb79230', 'prb14898', 'prb62222', 'prb68910', 'prb33509', 'prb46224', 'prb47495', 'prb29585', 'prb38725', 'prb33117', 'prb20888', 'prb55384', 'prb6671', 'prb343', 'prb68514', 'prb29600', 'prb23404', 'prb19279', 'prb3203', 'prb65535', 'prb14485', 'prb34551', 'prb72800', 'prb44171', 'prb1267', 'prb29027', 'prb24406', 'prb58853', 'prb24227', 'prb45893', 'prb25861', 'prb15595', 'prb54506', 'prb48146', 'prb78361', 'prb25604', 'prb46639', 'prb46580', 'prb10166', 'prb57223']
-features = ['y_opt', \
+features = [\
 		'y_nodes','y_edges', 'y_en', 'y_enp', 'y_e2n', \
 		'y_countscc', 'y_maxscc', \
 		'y_countcycle', 'y_maxcycle', 'y_c_incycle', 'y_nnc', \
 		'y_pnc', 'y_depth', 'y_ndepth', \
 		'y_gcluster', 'y_lcluster']
-feature_labels = ['opt_len', \
+feature_labels = [\
 				'#nodes','#edges', '#e/#n', '#e/(#n-#l)', '#e^2/#n',\
 				'#scc', 'max scc', \
 				'#cycles', 'max c', '#c in c', '#n in c', 'pro n in c', \
@@ -20,8 +20,8 @@ feature_labels = ['opt_len', \
 targets = ['y_human']
 data_dir = '/Users/chloe/Documents/RushHour/puzzle_model/in_data/'
 out_dir = '/Users/chloe/Documents/RushHour/puzzle_model/out_model/'
-fig_out = '/Users/chloe/Documents/RushHour/puzzle_model/out_model/linear_regr4.png'
-coef_out = '/Users/chloe/Documents/RushHour/puzzle_model/out_model/linear_regr_coef4.png'
+fig_out = '/Users/chloe/Documents/RushHour/puzzle_model/out_model/linear_regr6.png'
+coef_out = '/Users/chloe/Documents/RushHour/puzzle_model/out_model/linear_regr_coef6.png'
 
 # initialize feature data, [70,1]
 feature_data = np.expand_dims(np.load(data_dir + features[0] + '.npy'), axis=1) 
@@ -47,12 +47,16 @@ target_data = target_data.astype(np.float64)
 # linear regression
 regr = linear_model.LinearRegression()
 regr.fit(feature_data, target_data)
-predict = regr.predict(feature_data)
+predict = regr.predict(feature_data) # [70, 1]
+R2 = r2_score(target_data, predict)
+AdjR2 = 1 - (1 - R2) * (predict.shape[0] - 1) / (predict.shape[0] - len(features) - 1)
 print('Coefficients: \n' + str(regr.coef_)) # coefficients
 print("Mean squared error: %.2f" \
       % mean_squared_error(target_data, predict)) # mean squared error
 print('Variance score R2: %.2f' \
-		% r2_score(target_data, predict))# Explained variance perfect prediction
+		% R2)# Explained variance perfect prediction
+print('Adjusted R2: %.2f' \
+		% AdjR2)# Explained variance perfect prediction
 
 # plot outputs
 plt.figure(figsize=(9,7))
@@ -66,7 +70,7 @@ plt.legend(loc='upper left')
 plt.grid(axis = 'x', alpha = 0.3)
 plt.suptitle('Linear regression of MAG info to human_len', fontweight='bold')
 plt.title("Mean squared error: %.2f" % mean_squared_error(target_data, predict)\
-			+ ', Variance score R2: %.2f' % r2_score(target_data, predict), fontsize=10)
+			+ ', R2: %.2f' % R2 + ', AdjR2: %.2f' % AdjR2, fontsize=10)
 # plt.show()
 plt.savefig(fig_out)
 plt.close()
@@ -79,11 +83,12 @@ plt.grid(axis = 'y', alpha = 0.3)
 plt.grid(axis = 'x', alpha = 0.3)
 plt.suptitle('Linear regression coefficients', fontweight='bold')
 plt.title("Mean squared error: %.2f" % mean_squared_error(target_data, predict)\
-			+ ', Variance score R2: %.2f' % r2_score(target_data, predict), fontsize=10)
+			+ ', R2: %.2f' % R2 + ', AdjR2: %.2f' % AdjR2, fontsize=10)
 plt.savefig(coef_out)
 plt.close()
 
 '''
+1
 ['y_nodes','y_edges', 'y_en', 'y_enp', 'y_e2n', \
 'y_countscc', 'y_maxscc', \
 'y_countcycle', 'y_maxcycle', 'y_c_incycle', 'y_nnc', \
@@ -96,8 +101,8 @@ Coefficients:
 Mean squared error: 146.04
 Variance score R2: 0.23
 '''
-
 '''
+2
 ['y_opt', 'y_nodes','y_edges', 'y_en', 'y_enp', 'y_e2n', \
 'y_countscc', 'y_maxscc', \
 'y_countcycle', 'y_maxcycle', 'y_c_incycle', 'y_nnc', \
@@ -112,8 +117,8 @@ Variance score R2: 0.74
 '''
 
 
-
 '''
+3
 ['y_nodes','y_edges', 'y_en', 'y_enp', 'y_e2n', \
 'y_countscc', 'y_maxscc', \
 'y_countcycle', 'y_maxcycle', 'y_c_incycle', 'y_nnc', \
@@ -126,9 +131,10 @@ Coefficients:
    3.59780672e+00  6.70326673e-01 -2.88006408e+01  2.27430556e+01]]
 Mean squared error: 142.34
 Variance score R2: 0.25
+Adjusted R2: 0.02
 '''
-
 '''
+4
 ['y_opt', \
 'y_nodes','y_edges', 'y_en', 'y_enp', 'y_e2n', \
 'y_countscc', 'y_maxscc', \
@@ -143,4 +149,53 @@ Coefficients:
    3.26432365e+01]]
 Mean squared error: 46.92
 Variance score R2: 0.75
+Adjusted R2: 0.67
+'''
+'''
+5
+MAGs -> opt_len
+Coefficients:
+[[ 1.75775045e+01 -1.48126887e+01  4.60197283e+01  4.63939766e-02
+   3.01182536e+00 -7.67336127e-01 -1.88436173e-01 -1.93454679e-01
+  -4.07173644e-02  1.44032190e-02 -1.72310843e+00  1.90901499e+01
+   5.04233806e-01  1.71346817e-01  2.18247394e+00 -3.09743888e+00]]
+Mean squared error: 9.34
+Variance score R2: 0.19
+Adjusted R2: -0.05
+'''
+
+
+'''
+6
+updated global cc
+['y_nodes','y_edges', 'y_en', 'y_enp', 'y_e2n', \
+'y_countscc', 'y_maxscc', \
+'y_countcycle', 'y_maxcycle', 'y_c_incycle', 'y_nnc', \
+'y_pnc', 'y_depth', 'y_ndepth', \
+'y_gcluster', 'y_lcluster']
+Coefficients:
+[[ 4.78715397e+01 -3.74607227e+01  8.07231923e+01  1.56382314e+00
+   8.68262333e+00 -3.57821064e+00  8.08618388e-01 -9.93238525e-01
+   1.17105568e-02  8.97457541e-02 -6.34780289e+00  5.58889357e+01
+   3.03842911e+00  6.58906777e-01  3.04094912e+01 -5.74824071e+01]]
+Mean squared error: 142.99
+Variance score R2: 0.24
+Adjusted R2: 0.02
+'''
+'''
+7
+updated global cc
+['y_opt','y_nodes','y_edges', 'y_en', 'y_enp', 'y_e2n', \
+'y_countscc', 'y_maxscc', \
+'y_countcycle', 'y_maxcycle', 'y_c_incycle', 'y_nnc', \
+'y_pnc', 'y_depth', 'y_ndepth', \
+'y_gcluster', 'y_lcluster']
+[[ 3.18209538e+00 -1.08492522e+01  1.18338764e+01 -8.23684900e+01
+   1.37590254e+00 -1.00627245e+00 -1.29711118e+00  1.35058112e+00
+  -4.24304050e-01  2.12336240e-01  4.23345858e-02 -1.24364124e+00
+  -8.85047108e-01  1.43999372e+00  1.93118065e-01  2.43251973e+01
+  -4.15518315e+01]]
+Mean squared error: 48.37
+Variance score R2: 0.74
+Adjusted R2: 0.66
 '''

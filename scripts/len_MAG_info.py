@@ -14,7 +14,7 @@ data_out = '/Users/chloe/Documents/RushHour/exp_data/MAG_info/'
 # sorted according to optimal length
 all_instances = ['prb8786', 'prb11647', 'prb21272', 'prb13171', 'prb1707', 'prb23259', 'prb10206', 'prb2834', 'prb28111', 'prb32795', 'prb26567', 'prb14047', 'prb14651', 'prb32695', 'prb29232', 'prb15290', 'prb12604', 'prb20059', 'prb9718', 'prb29414', 'prb22436', 'prb62015', 'prb38526', 'prb3217', 'prb34092', 'prb12715', 'prb54081', 'prb717', 'prb31907', 'prb42959', 'prb79230', 'prb14898', 'prb62222', 'prb68910', 'prb33509', 'prb46224', 'prb47495', 'prb29585', 'prb38725', 'prb33117', 'prb20888', 'prb55384', 'prb6671', 'prb343', 'prb68514', 'prb29600', 'prb23404', 'prb19279', 'prb3203', 'prb65535', 'prb14485', 'prb34551', 'prb72800', 'prb44171', 'prb1267', 'prb29027', 'prb24406', 'prb58853', 'prb24227', 'prb45893', 'prb25861', 'prb15595', 'prb54506', 'prb48146', 'prb78361', 'prb25604', 'prb46639', 'prb46580', 'prb10166', 'prb57223']
 bar_out_dir = '/Users/chloe/Documents/RushHour/puzzle_figures/len_MAG_info.png'
-scatter_out = '/Users/chloe/Documents/RushHour/puzzle_figures/len_MAG_info_scatter2.png'
+scatter_out = '/Users/chloe/Documents/RushHour/puzzle_figures/len_MAG_info_scatter.png'
 data = []
 mag_node_dict = {} # number of nodes
 mag_edge_dict = {} # number of edges

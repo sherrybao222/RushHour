@@ -303,7 +303,7 @@ def av_local_cluster_coef(finished_list):
 
 # testing
 
-# my_car_list, my_red = json_to_car_list("/Users/chloe/Documents/RushHour/exp_data/data_adopted/prb21272.json")
+# my_car_list, my_red = json_to_car_list("/Users/chloe/Documents/RushHour/exp_data/data_adopted/prb13171.json")
 # my_board = construct_board(my_car_list)
 # new_car_list = construct_mag(my_board, my_red)
 # visualize_mag(new_car_list, "/Users/chloe/Desktop/test_mag")
