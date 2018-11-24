@@ -2,6 +2,7 @@ from graphviz import Digraph
 from json import dump,load
 import Graph
 from networkx import DiGraph, simple_cycles
+import solution
 
 class Car:
 	start, end, length = [0,0], [0,0], [0,0] #hor,ver
@@ -30,7 +31,7 @@ class Board:
 	def __init__(self):
 		for i in range(0, self.height):
 			for j in range(0, self.width):
-				self.board_dict[(i, j)] = None
+				self.board_dict[(j, i)] = None
 
 def json_to_car_list(filename):
 	with open(filename,'r') as data_file:
@@ -44,11 +45,14 @@ def json_to_car_list(filename):
 			#print("car list : " + cur_car.tag + " start: " + str(cur_car.start) + " end: "  + str(cur_car.end) + " orientation: " + str(cur_car.orientation))
 			if cur_car.tag == 'r':
 				red = cur_car
-	return car_list,red
+	return car_list, red
 
 def construct_board(car_list):
 	board = Board()
+	red = ''
 	for car in car_list:
+		if car.tag == 'r':
+			red = car
 		cur_start = car.start
 		cur_len = car.length
 		cur_orientation = car.orientation
@@ -61,7 +65,58 @@ def construct_board(car_list):
 				occupied_space.append((cur_start[0], cur_start[1] + i))
 		for j in range(0, len(occupied_space)):
 			board.board_dict[occupied_space[j]] = car
-	return board
+	return board, red
+
+def board_to_str(board):
+	out_str = ''
+	for i in range(board.height):
+		for j in range(board.width):
+			cur_car = board.board_dict[(j, i)]
+			if cur_car == None:
+				out_str += '.'
+				if i == 2 and j == 5:
+					out_str += '>'
+				continue
+			if cur_car.tag == 'r':
+				out_str += 'R'
+			else:
+				out_str += cur_car.tag
+			if i == 2 and j == 5:
+				out_str += '>'
+		out_str += '\n'
+	return out_str
+
+def board_freedom(board): # number of available moves
+	freedom = 0
+	visited_car = []
+	for i in range(board.height): # vertical
+		for j in range(board.width): # horizontal
+			cur_car = board.board_dict[(j, i)]
+			if cur_car == None:
+				continue
+			if cur_car.tag in visited_car:
+				continue
+			visited_car.append(cur_car.tag)
+			if cur_car.orientation == 'horizontal':
+				cur_position = cur_car.start[0] - 1 # search left
+				while(cur_position >= 0 and board.board_dict[(cur_position, i)] == None):
+					freedom += 1
+					cur_position -= 1
+				cur_position = cur_car.end[0] + 1 # search right
+				while(cur_position < board.width and board.board_dict[(cur_position, i)] == None):
+					freedom += 1
+					cur_position += 1
+			if cur_car.orientation == 'vertical':
+				cur_position = cur_car.start[1] - 1 # search up
+				while(cur_position >= 0 and board.board_dict[(j, cur_position)] == None):
+					freedom += 1
+					cur_position -= 1
+				cur_position = cur_car.end[1] + 1 # search down
+				while(cur_position < board.height and board.board_dict[(j, cur_position)] == None):
+					freedom += 1
+					cur_position += 1
+	return freedom
+
 
 def construct_mag(board, red):
 	#print(board.board_dict)
@@ -303,8 +358,14 @@ def av_local_cluster_coef(finished_list):
 
 # testing
 
-# my_car_list, my_red = json_to_car_list("/Users/chloe/Documents/RushHour/exp_data/data_adopted/prb13171.json")
-# my_board = construct_board(my_car_list)
+my_car_list, my_red = json_to_car_list("/Users/chloe/Documents/RushHour/exp_data/data_adopted/prb8786.json")
+my_board, my_red = construct_board(my_car_list)
+board_str = board_to_str(my_board)
+print(board_str)
+# sol_list = solution.main(board_str)
+# print(len(sol_list)) # number of steps in solution
+# print(sol_list)
+print(board_freedom(my_board))
 # new_car_list = construct_mag(my_board, my_red)
 # visualize_mag(new_car_list, "/Users/chloe/Desktop/test_mag")
 
