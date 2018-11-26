@@ -54,7 +54,7 @@ class Puzzle(object):
                     self.states.append(cs)
 
     def display(self):
-        '''Print the winner.'''
+        '''Print the solution/winner.'''
         out_list = []
         if self.winner is None:
             print("No winning moves found.")

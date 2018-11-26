@@ -47,6 +47,22 @@ def json_to_car_list(filename):
 				red = cur_car
 	return car_list, red
 
+def move(car_list, car_tag, to_position): 
+# make a move and return the new car list
+	red = ''
+	for i in range(len(car_list)):
+		cur_car = car_list[i]
+		if cur_car.tag == car_tag:
+			new_car = Car(s = [int(to_position)%6, int(to_position/6)],\
+				l = int(cur_car.length), t = car_tag, \
+				o = cur_car.orientation, p = cur_car.puzzle_tag)
+			car_list[i] = new_car
+			cur_car = car_list[i]
+		if cur_car.tag == 'r':
+			red = cur_car
+	return car_list, red
+
+
 def construct_board(car_list):
 	board = Board()
 	red = ''
@@ -117,6 +133,10 @@ def board_freedom(board): # number of available moves
 					cur_position += 1
 	return freedom
 
+def board_move(car_list, car_tag, to_position): 
+	# make a move and construct new board
+	new_car_list, _ = move(car_list, car_tag, to_position)
+	return construct_board(new_car_list)
 
 def construct_mag(board, red):
 	#print(board.board_dict)
@@ -253,6 +273,7 @@ def get_mag_attr(finished_list): # get num_node, num_edge
 				num_node += 1
 	return num_node, num_edge
 
+
 def list_to_graph(finished_list): #convert list to graph
 	g = Graph.Graph(9)
 	#print(len(finished_list))
@@ -358,14 +379,14 @@ def av_local_cluster_coef(finished_list):
 
 # testing
 
-my_car_list, my_red = json_to_car_list("/Users/chloe/Documents/RushHour/exp_data/data_adopted/prb8786.json")
-my_board, my_red = construct_board(my_car_list)
-board_str = board_to_str(my_board)
-print(board_str)
+# my_car_list, my_red = json_to_car_list("/Users/chloe/Documents/RushHour/exp_data/data_adopted/prb9718.json")
+# my_board, my_red = construct_board(my_car_list)
+# board_str = board_to_str(my_board)
+# print(board_str)
 # sol_list = solution.main(board_str)
 # print(len(sol_list)) # number of steps in solution
 # print(sol_list)
-print(board_freedom(my_board))
+# print(board_freedom(my_board))
 # new_car_list = construct_mag(my_board, my_red)
 # visualize_mag(new_car_list, "/Users/chloe/Desktop/test_mag")
 

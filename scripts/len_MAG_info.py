@@ -1,4 +1,4 @@
-# mean human length, optimal length, new MAG info
+# puzzle level (initial state): mean human length, optimal length, new MAG info 
 # visualize bar plots and scatter plots for correlation and p
 # save features data files
 import json, math
@@ -78,7 +78,7 @@ for i in range(len(all_instances)):
 	cur_ins = all_instances[i]
 	ins_dir = ins_file + all_instances[i] + '.json'
 	my_car_list, my_red = MAG.json_to_car_list(ins_dir)
-	my_board = MAG.construct_board(my_car_list)
+	my_board, my_red = MAG.construct_board(my_car_list)
 	new_car_list = MAG.construct_mag(my_board, my_red)
 	
 	# mag_node_dict = {} # number of nodes

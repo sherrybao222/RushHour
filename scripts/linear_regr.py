@@ -5,27 +5,28 @@ from sklearn import linear_model
 from sklearn.metrics import mean_squared_error, r2_score
 
 all_instances = ['prb8786', 'prb11647', 'prb21272', 'prb13171', 'prb1707', 'prb23259', 'prb10206', 'prb2834', 'prb28111', 'prb32795', 'prb26567', 'prb14047', 'prb14651', 'prb32695', 'prb29232', 'prb15290', 'prb12604', 'prb20059', 'prb9718', 'prb29414', 'prb22436', 'prb62015', 'prb38526', 'prb3217', 'prb34092', 'prb12715', 'prb54081', 'prb717', 'prb31907', 'prb42959', 'prb79230', 'prb14898', 'prb62222', 'prb68910', 'prb33509', 'prb46224', 'prb47495', 'prb29585', 'prb38725', 'prb33117', 'prb20888', 'prb55384', 'prb6671', 'prb343', 'prb68514', 'prb29600', 'prb23404', 'prb19279', 'prb3203', 'prb65535', 'prb14485', 'prb34551', 'prb72800', 'prb44171', 'prb1267', 'prb29027', 'prb24406', 'prb58853', 'prb24227', 'prb45893', 'prb25861', 'prb15595', 'prb54506', 'prb48146', 'prb78361', 'prb25604', 'prb46639', 'prb46580', 'prb10166', 'prb57223']
-features = [\
-		'y_nodes','y_edges', 'y_en', 'y_enp', 'y_e2n', \
-		'y_countscc', 'y_maxscc', \
-		'y_countcycle', 'y_maxcycle', 'y_c_incycle', 'y_nnc', \
-		'y_pnc', 'y_depth', 'y_ndepth', \
-		'y_gcluster', 'y_lcluster']
-feature_labels = [\
-				'#nodes','#edges', '#e/#n', '#e/(#n-#l)', '#e^2/#n',\
-				'#scc', 'max scc', \
-				'#cycles', 'max c', '#c in c', '#n in c', 'pro n in c', \
-				'maxpath', '#maxpath', \
-				'glb cluster', 'loc cluster']
+# features = [\
+# 		'y_nodes','y_edges', 'y_en', 'y_enp', 'y_e2n', \
+# 		'y_countscc', 'y_maxscc', \
+# 		'y_countcycle', 'y_maxcycle', 'y_c_incycle', 'y_nnc', \
+# 		'y_pnc', 'y_depth', 'y_ndepth', \
+# 		'y_gcluster', 'y_lcluster']
+# feature_labels = [\
+# 				'#nodes','#edges', '#e/#n', '#e/(#n-#l)', '#e^2/#n',\
+# 				'#scc', 'max scc', \
+# 				'#cycles', 'max c', '#c in c', '#n in c', 'pro n in c', \
+# 				'maxpath', '#maxpath', \
+# 				'glb cluster', 'loc cluster']
+features = ['y_opt', 'y_unsafe', 'y_backmove']
+feature_labels = ['opt_len', 'p_unsafe', 'p_backmove']
 targets = ['y_human']
-data_dir = '/Users/chloe/Documents/RushHour/puzzle_model/in_data/'
-out_dir = '/Users/chloe/Documents/RushHour/puzzle_model/out_model/'
-fig_out = '/Users/chloe/Documents/RushHour/puzzle_model/out_model/linear_regr6.png'
-coef_out = '/Users/chloe/Documents/RushHour/puzzle_model/out_model/linear_regr_coef6.png'
+data_dir = '/Users/chloe/Documents/RushHour/state_model/in_data/'
+out_dir = '/Users/chloe/Documents/RushHour/state_model/out_model/'
+fig_out = '/Users/chloe/Documents/RushHour/state_model/out_model/linear_regr2.png'
+coef_out = '/Users/chloe/Documents/RushHour/state_model/out_model/linear_regr_coef2.png'
 
 # initialize feature data, [70,1]
 feature_data = np.expand_dims(np.load(data_dir + features[0] + '.npy'), axis=1) 
-# print('feature shape: ', feature_data.shape)
 for i in range(1, len(features)):
 	d = features[i]
 	cur_data = np.expand_dims(np.load(data_dir + d + '.npy'), axis=1) # [70,1]
@@ -45,7 +46,7 @@ print('target shape: ', target_data.shape)
 target_data = target_data.astype(np.float64)
 
 # linear regression
-regr = linear_model.LinearRegression()
+regr = linear_model.LinearRegression(normalize=True)
 regr.fit(feature_data, target_data)
 predict = regr.predict(feature_data) # [70, 1]
 R2 = r2_score(target_data, predict)
@@ -59,16 +60,18 @@ print('Adjusted R2: %.2f' \
 		% AdjR2)# Explained variance perfect prediction
 
 # plot outputs
-plt.figure(figsize=(9,7))
-plt.scatter(np.arange(len(all_instances)), target_data.T, s=12, alpha=0.8, color='orangered')
-plt.scatter(np.arange(len(all_instances)), predict.T, s=12, alpha=0.8, color='green')
-plt.plot(np.arange(len(all_instances)), np.squeeze(target_data.T), alpha=0.8, color='orangered', label='target')
-plt.plot(np.arange(len(all_instances)), np.squeeze(predict.T), alpha=0.8, color='green', label='predict')
-plt.xlabel('puzzle')
-plt.ylabel('len')
-plt.legend(loc='upper left')
-plt.grid(axis = 'x', alpha = 0.3)
-plt.suptitle('Linear regression of MAG info to human_len', fontweight='bold')
+fig = plt.figure(figsize=(9,7))
+ax = fig.add_subplot(111)
+ax.scatter(np.arange(len(all_instances)), target_data.T, s=12, alpha=0.8, color='orangered')
+ax.scatter(np.arange(len(all_instances)), predict.T, s=12, alpha=0.8, color='green')
+ax.plot(np.arange(len(all_instances)), np.squeeze(target_data.T), alpha=0.8, color='orangered', label='target')
+ax.plot(np.arange(len(all_instances)), np.squeeze(predict.T), alpha=0.8, color='green', label='predict')
+ax.set_xticks([18,36,53,70])
+ax.set_xlabel('all puzzles')
+ax.set_ylabel('len')
+ax.legend(loc='upper left')
+ax.grid(axis = 'x', alpha = 0.3)
+plt.suptitle('Linear regression of dynamic MAG to human_len', fontweight='bold')
 plt.title("Mean squared error: %.2f" % mean_squared_error(target_data, predict)\
 			+ ', R2: %.2f' % R2 + ', AdjR2: %.2f' % AdjR2, fontsize=10)
 # plt.show()
@@ -199,3 +202,36 @@ Mean squared error: 48.37
 Variance score R2: 0.74
 Adjusted R2: 0.66
 '''
+
+
+############# DYNAMIC MAG #############
+
+'''
+1
+features = ['y_unsafe', 'y_backmove']
+feature_labels = ['p_unsafe', 'p_backmove']
+Coefficients:
+[[251.5606217   19.42850038]]
+Mean squared error: 135.90
+Variance score R2: 0.28
+Adjusted R2: 0.26
+
+'''
+'''
+2
+features = ['y_opt', 'y_unsafe', 'y_backmove']
+feature_labels = ['opt_len', 'p_unsafe', 'p_backmove']
+Coefficients:
+[[ 3.12042993 67.39396073  0.52571981]]
+Mean squared error: 55.23
+Variance score R2: 0.71
+Adjusted R2: 0.69
+'''
+
+
+
+
+
+
+
+
