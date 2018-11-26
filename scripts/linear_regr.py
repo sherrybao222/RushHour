@@ -17,13 +17,21 @@ all_instances = ['prb8786', 'prb11647', 'prb21272', 'prb13171', 'prb1707', 'prb2
 # 				'#cycles', 'max c', '#c in c', '#n in c', 'pro n in c', \
 # 				'maxpath', '#maxpath', \
 # 				'glb cluster', 'loc cluster']
-features = ['y_opt', 'y_unsafe', 'y_backmove']
-feature_labels = ['opt_len', 'p_unsafe', 'p_backmove']
+features = ['y_opt',\
+        'y_unsafesol', 'y_backmovesol', \
+        'y_avgnodesol', 'y_avgedgesol', \
+        'y_avgncycle', 'y_avgmaxcycle', \
+        'y_avgcnode', 'y_avgdepth']
+feature_labels = ['opt_len',\
+      'p_unsafe_sol', 'p_backmove_sol', \
+      'avg_node_sol', 'avg_edge_sol', \
+      'avg_ncycle_sol', 'avg_maxcycle',\
+      'avg_node_incycle', 'avg_depth']
 targets = ['y_human']
 data_dir = '/Users/chloe/Documents/RushHour/state_model/in_data/'
 out_dir = '/Users/chloe/Documents/RushHour/state_model/out_model/'
-fig_out = '/Users/chloe/Documents/RushHour/state_model/out_model/linear_regr2.png'
-coef_out = '/Users/chloe/Documents/RushHour/state_model/out_model/linear_regr_coef2.png'
+fig_out = '/Users/chloe/Documents/RushHour/state_model/out_model/linear_regr4.png'
+coef_out = '/Users/chloe/Documents/RushHour/state_model/out_model/linear_regr_coef4.png'
 
 # initialize feature data, [70,1]
 feature_data = np.expand_dims(np.load(data_dir + features[0] + '.npy'), axis=1) 
@@ -226,6 +234,43 @@ Coefficients:
 Mean squared error: 55.23
 Variance score R2: 0.71
 Adjusted R2: 0.69
+'''
+'''
+3
+features = [\
+        'y_unsafesol', 'y_backmovesol', \
+        'y_avgnodesol', 'y_avgedgesol', \
+        'y_avgncycle', 'y_avgmaxcycle', \
+        'y_avgcnode', 'y_avgdepth']
+feature_labels = [\
+      'p_unsafe_sol', 'p_backmove_sol', \
+      'avg_node_sol', 'avg_edge_sol', \
+      'avg_ncycle_sol', 'avg_maxcycle',\
+      'avg_node_incycle', 'avg_depth']
+Coefficients:
+[[ 2.41287048e+00  7.63184521e+01  2.07487321e+00  1.55819640e+00
+  -4.39596449e-02  2.66935349e+00 -6.73393944e+00 -1.04201141e+01]]
+Mean squared error: 73.40
+Variance score R2: 0.61
+Adjusted R2: 0.56
+'''
+'''
+features = ['y_opt',\
+        'y_unsafesol', 'y_backmovesol', \
+        'y_avgnodesol', 'y_avgedgesol', \
+        'y_avgncycle', 'y_avgmaxcycle', \
+        'y_avgcnode', 'y_avgdepth']
+feature_labels = ['opt_len',\
+      'p_unsafe_sol', 'p_backmove_sol', \
+      'avg_node_sol', 'avg_edge_sol', \
+      'avg_ncycle_sol', 'avg_maxcycle',\
+      'avg_node_incycle', 'avg_depth']
+Coefficients:
+[[ 2.41913939 -0.61727163 -2.83487274  1.70280217  0.6998818   0.31588492
+  -0.43439405 -2.22424912 -6.18695997]]
+Mean squared error: 42.20
+Variance score R2: 0.78
+Adjusted R2: 0.74
 '''
 
 

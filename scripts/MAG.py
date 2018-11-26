@@ -47,8 +47,25 @@ def json_to_car_list(filename):
 				red = cur_car
 	return car_list, red
 
+# def move(car_list, car_tag, to_position): 
+# # make a move and return the new car list
+# 	red = ''
+# 	for i in range(len(car_list)):
+# 		cur_car = car_list[i]
+# 		if cur_car.tag == car_tag:
+# 			new_car = Car(s = [int(to_position)%6, int(to_position/6)],\
+# 				l = int(cur_car.length), t = car_tag, \
+# 				o = cur_car.orientation, p = cur_car.puzzle_tag)
+# 			car_list[i] = new_car
+# 			cur_car = car_list[i]
+# 		if cur_car.tag == 'r':
+# 			red = cur_car
+# 	return car_list, red
+
+
 def move(car_list, car_tag, to_position): 
 # make a move and return the new car list
+	new_list = []
 	red = ''
 	for i in range(len(car_list)):
 		cur_car = car_list[i]
@@ -56,11 +73,38 @@ def move(car_list, car_tag, to_position):
 			new_car = Car(s = [int(to_position)%6, int(to_position/6)],\
 				l = int(cur_car.length), t = car_tag, \
 				o = cur_car.orientation, p = cur_car.puzzle_tag)
-			car_list[i] = new_car
-			cur_car = car_list[i]
-		if cur_car.tag == 'r':
-			red = cur_car
-	return car_list, red
+		else:
+			new_car = Car(s = [int(cur_car.start[0]), int(cur_car.start[1])], \
+							l = int(cur_car.length), t = cur_car.tag,\
+							o = cur_car.orientation, p = cur_car.puzzle_tag)
+		new_list.append(new_car)
+		if new_list[i].tag == 'r':
+			red = new_list[i]
+	return new_list, red
+
+def move_by(car_list, car_tag, move_by): 
+# make a move and return the new car list
+	new_list = []
+	red = ''
+	for i in range(len(car_list)):
+		cur_car = car_list[i]
+		if cur_car.tag == car_tag:
+			if cur_car.orientation == 'horizontal':
+				new_car = Car(s = [cur_car.start[0] + move_by, cur_car.start[1]],\
+						l = int(cur_car.length), t = car_tag, \
+						o = cur_car.orientation, p = cur_car.puzzle_tag)
+			if cur_car.orientation == 'vertical':
+				new_car = Car(s = [cur_car.start[0], cur_car.start[1] + move_by],\
+						l = int(cur_car.length), t = car_tag, \
+						o = cur_car.orientation, p = cur_car.puzzle_tag)
+		else:
+			new_car = Car(s = [int(cur_car.start[0]), int(cur_car.start[1])], \
+							l = int(cur_car.length), t = cur_car.tag,\
+							o = cur_car.orientation, p = cur_car.puzzle_tag)
+		new_list.append(new_car)
+		if new_list[i].tag == 'r':
+			red = new_list[i]
+	return new_list, red
 
 
 def construct_board(car_list):
@@ -379,16 +423,25 @@ def av_local_cluster_coef(finished_list):
 
 # testing
 
-# my_car_list, my_red = json_to_car_list("/Users/chloe/Documents/RushHour/exp_data/data_adopted/prb9718.json")
+# my_car_list, my_red = json_to_car_list("/Users/chloe/Documents/RushHour/exp_data/data_adopted/prb2834.json")
 # my_board, my_red = construct_board(my_car_list)
-# board_str = board_to_str(my_board)
-# print(board_str)
-# sol_list = solution.main(board_str)
-# print(len(sol_list)) # number of steps in solution
-# print(sol_list)
-# print(board_freedom(my_board))
+# # board_str = board_to_str(my_board)
+# # print(board_str)
+# # sol_list = solution.main(board_str)
+# # print(len(sol_list)) # number of steps in solution
+# # print(sol_list)
+# # print(board_freedom(my_board))
 # new_car_list = construct_mag(my_board, my_red)
-# visualize_mag(new_car_list, "/Users/chloe/Desktop/test_mag")
+# visualize_mag(new_car_list, "/Users/chloe/Desktop/test_mag0")
+# actions = [(u'1', 3), (u'3', 19), (u'7', 28), (u'2', 29), (u'7', 16), (u'2', 23), (u'0', 33), (u'7', 22), (u'4', 1), (u'5', 0), (u'6', 18), (u'0', 31), (u'0', 30), (u'1', 21), (u'r', 13), (u'r', 16)]
+# for a in range(len(actions)):
+# 	my_car_list, my_red = move(my_car_list, \
+# 									actions[a][0], actions[a][1])
+# 	my_board, my_red = construct_board(my_car_list)
+# 	new_car_list = construct_mag(my_board, my_red)
+# 	n_node, n_edge = get_mag_attr(new_car_list)
+# 	print(n_node, n_edge)
+# 	visualize_mag(new_car_list, "/Users/chloe/Desktop/test_mag_" + str(a))
 
 # n_node, n_edge = get_mag_attr(new_car_list)
 # print("num_node: " + str(n_node))

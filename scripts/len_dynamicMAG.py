@@ -9,6 +9,17 @@ import MAG, solution
 from scipy import stats
 
 
+
+
+def get_solution(insdatafile, solutionfile):
+	my_car_list, my_red = MAG.json_to_car_list(insdatafile)
+	my_board, my_red = MAG.construct_board(my_car_list)
+	board_str = MAG.board_to_str(my_board)
+	print(board_str)
+	sol_list = solution.main(board_str)
+	print(sol_list)
+	np.save(solutionfile, np.array(sol_list))
+
 def prop_unsafe(insdatafile, datafile):
 	instance_data = []
 	trial_data = []
@@ -64,32 +75,6 @@ def prop_unsafe(insdatafile, datafile):
 	return total_unsafe_prop / len(trial_data)
 
 
-def prop_unsafe_solution(insdatafile):
-	my_car_list, my_red = MAG.json_to_car_list(insdatafile)
-	my_board, my_red = MAG.construct_board(my_car_list)
-	board_str = MAG.board_to_str(my_board)
-	print(board_str)
-	sol_list = solution.main(board_str)
-	print(sol_list)
-	unsafe = 0
-	for move in sol_list:
-		new_car_list = MAG.construct_mag(my_board, my_red)
-		n_node, n_edge = MAG.get_mag_attr(new_car_list)
-		car_to_move = move[0]
-		if car_to_move == 'R':
-			car_to_move = 'r'
-		move_to_position = int(move[2:])
-		my_board, my_red = MAG.board_move(new_car_list, \
-										car_to_move, move_to_position)
-		new_car_list = MAG.construct_mag(my_board, my_red)
-		cur_node, cur_edge = MAG.get_mag_attr(new_car_list)
-		if cur_edge > n_edge:
-			unsafe += 1
-		n_node = cur_node
-		n_edge = cur_edge
-	return float(unsafe) / float(len(sol_list) + 1), sol_list
-
-
 def prop_back_move(insdatafile, datafile):
 	instance_data = []
 	trial_data = []
@@ -139,22 +124,6 @@ def prop_back_move(insdatafile, datafile):
 	return total_back_move / len(trial_data)
 
 
-def prop_back_move_solution(insdatafile, sol_list):
-	my_car_list, my_red = MAG.json_to_car_list(insdatafile)
-	back = 0
-	for move in sol_list:
-		car_to_move = move[0]
-		if car_to_move == 'R':
-			car_to_move = 'r'
-		move_to_position = int(move[2:])
-		my_board, new_red = MAG.move(my_car_list, \
-									car_to_move, move_to_position)
-		if new_red.start[0] < my_red.start[0]:
-				back += 1
-		my_red = new_red
-	return float(back) / float(len(sol_list) + 1), sol_list
-
-
 def avg_node_edge(insdatafile, datafile): # average number of node and edge
 	instance_data = []
 	trial_data = []
@@ -189,13 +158,11 @@ def avg_node_edge(insdatafile, datafile): # average number of node and edge
 			if not is_win:
 				trial_data.pop()
 	# process successful trials
+	useless_trial = 0
 	for i in range(len(trial_data)):
 		trial_node = 0
 		trial_edge = 0
 		my_car_list, my_red = MAG.json_to_car_list(insdatafile) # initial mag
-		my_board, my_red = MAG.construct_board(my_car_list)
-		new_car_list = MAG.construct_mag(my_board, my_red)
-		n_node, n_edge = MAG.get_mag_attr(new_car_list)
 		duplicate = -1
 		for j in range(len(trial_data[i])):
 			my_car_list, my_red = MAG.move(my_car_list, \
@@ -203,21 +170,169 @@ def avg_node_edge(insdatafile, datafile): # average number of node and edge
 			my_board, my_red = MAG.construct_board(my_car_list)
 			new_car_list = MAG.construct_mag(my_board, my_red)
 			n_node, n_edge = MAG.get_mag_attr(new_car_list)
-			trial_node += n_node
-			trial_edge += n_edge
-			# print(n_node, n_edge)
+			if duplicate > 3:
+				print(trial_data[i])
+				# break
 			if n_node == 1 and n_edge == 0:
 				duplicate += 1
-		if duplicate > 4:
-			print(insdatafile)
-			print(trial_data[i])
+			trial_node += n_node
+			trial_edge += n_edge
 		if duplicate < 0:
 			duplicate = 0
-		trial_node += float(trial_node) / float(len(trial_data[i]) - duplicate)
-		trial_edge += float(trial_edge) / float(len(trial_data[i]) - duplicate)
-		# print()
+		if duplicate > 3:				
+			print(insdatafile)
+			print()
+			useless_trial += 1
+			# continue
+		trial_node += float(trial_node) / float(len(trial_data[i]))
+		trial_edge += float(trial_edge) / float(len(trial_data[i]))
 
-	return float(trial_node) / len(trial_data), float(trial_edge) / len(trial_data)
+	# return float(trial_node) / float(len(trial_data) - useless_trial), \
+	# 		float(trial_edge) / float(len(trial_data) - useless_trial)
+	return float(trial_node) / float(len(trial_data)), \
+			float(trial_edge) / float(len(trial_data))
+
+
+
+##################################### SOLUTION WISE ############################
+
+def prop_unsafe_solution(insdatafile, solutionfile):
+	my_car_list, my_red = MAG.json_to_car_list(insdatafile)
+	my_board, my_red = MAG.construct_board(my_car_list)
+	new_car_list = MAG.construct_mag(my_board, my_red)
+	n_node, n_edge = MAG.get_mag_attr(new_car_list)
+	sol_list = np.load(solutionfile)
+	unsafe = 0
+	for move in sol_list:
+		car_to_move = move[0]
+		if car_to_move == 'R':
+			car_to_move = 'r'
+		move_by = int(move[2:])
+		my_car_list, my_red = MAG.move_by(my_car_list, \
+										car_to_move, move_by)
+		my_board, my_red = MAG.construct_board(my_car_list)
+		new_car_list = MAG.construct_mag(my_board, my_red)
+		cur_node, cur_edge = MAG.get_mag_attr(new_car_list)
+		if cur_edge > n_edge:
+			unsafe += 1
+		n_node = cur_node
+		n_edge = cur_edge
+	return float(unsafe) / float(len(sol_list) + 1)
+
+
+def prop_back_move_solution(insdatafile, solutionfile):
+	sol_list = np.load(solutionfile)
+	my_car_list, my_red = MAG.json_to_car_list(insdatafile)
+	back = 0
+	for move in sol_list:
+		car_to_move = move[0]
+		if car_to_move == 'R':
+			car_to_move = 'r'
+		move_by = int(move[2:])
+		my_car_list, new_red = MAG.move_by(my_car_list, \
+										car_to_move, move_by)
+		if new_red.start[0] < my_red.start[0]:
+				back += 1
+		my_red = new_red
+	return float(back) / float(len(sol_list) + 1)
+
+
+def avg_node_edge_solution(insdatafile, solutionfile):
+	sol_list = np.load(solutionfile)
+	total_node = 0
+	total_edge = 0
+	my_car_list, my_red = MAG.json_to_car_list(insdatafile)
+	my_board, my_red = MAG.construct_board(my_car_list)
+	new_car_list = MAG.construct_mag(my_board, my_red)
+	n_node, n_edge = MAG.get_mag_attr(new_car_list)
+	total_node += n_node
+	total_edge += n_edge
+	for move in sol_list:
+		car_to_move = move[0]
+		if car_to_move == 'R':
+			car_to_move = 'r'
+		move_by = int(move[2:])
+		my_car_list, my_red = MAG.move_by(my_car_list, \
+										car_to_move, move_by)
+		my_board, my_red = MAG.construct_board(my_car_list)
+		new_car_list = MAG.construct_mag(my_board, my_red)
+		n_node, n_edge = MAG.get_mag_attr(new_car_list)
+		total_node += n_node
+		total_edge += n_edge
+	return float(total_node) / float(len(sol_list) + 1),\
+			float(total_edge) / float(len(sol_list) + 1)
+
+
+def avg_cycle_solution(insdatafile, solutionfile):
+	# return average number of cycles and average max cycle size in solution
+	sol_list = np.load(solutionfile)
+	total_ncycle = 0
+	total_maxcycle = 0
+	my_car_list, my_red = MAG.json_to_car_list(insdatafile)
+	my_board, my_red = MAG.construct_board(my_car_list)
+	new_car_list = MAG.construct_mag(my_board, my_red)
+	ncycle, _, maxcycle = MAG.find_cycles(new_car_list) 
+	total_ncycle += ncycle
+	total_maxcycle += maxcycle
+	for move in sol_list:
+		car_to_move = move[0]
+		if car_to_move == 'R':
+			car_to_move = 'r'
+		move_by = int(move[2:])
+		my_board, new_red = MAG.move_by(my_car_list, \
+									car_to_move, move_by)
+		my_board, my_red = MAG.construct_board(my_car_list)
+		new_car_list = MAG.construct_mag(my_board, my_red)
+		ncycle, _, maxcycle = MAG.find_cycles(new_car_list) 
+		total_ncycle += ncycle
+		total_maxcycle += maxcycle
+	return float(total_ncycle) / float(len(sol_list) + 1),\
+			float(total_maxcycle) / float(len(sol_list) + 1)
+
+
+def avg_node_cycle_solution(insdatafile, solutionfile):
+	# return average number of nodes in cycles
+	sol_list = np.load(solutionfile)
+	total_cnode = 0
+	my_car_list, my_red = MAG.json_to_car_list(insdatafile)
+	my_board, my_red = MAG.construct_board(my_car_list)
+	new_car_list = MAG.construct_mag(my_board, my_red)
+	cnode, _ = MAG.num_nodes_in_cycle(new_car_list) 
+	total_cnode += cnode
+	for move in sol_list:
+		car_to_move = move[0]
+		if car_to_move == 'R':
+			car_to_move = 'r'
+		move_by = int(move[2:])
+		my_board, new_red = MAG.move_by(my_car_list, \
+									car_to_move, move_by)
+		my_board, my_red = MAG.construct_board(my_car_list)
+		new_car_list = MAG.construct_mag(my_board, my_red)
+		cnode, _ = MAG.num_nodes_in_cycle(new_car_list) 
+		total_cnode += cnode
+	return float(total_cnode) / float(len(sol_list) + 1)
+
+def avg_red_depth_solution(insdatafile, solutionfile):
+	# return average number of nodes in cycles
+	sol_list = np.load(solutionfile)
+	total_depth = 0
+	my_car_list, my_red = MAG.json_to_car_list(insdatafile)
+	my_board, my_red = MAG.construct_board(my_car_list)
+	new_car_list = MAG.construct_mag(my_board, my_red)
+	depth, _ = MAG.longest_path(new_car_list)
+	total_depth += depth
+	for move in sol_list:
+		car_to_move = move[0]
+		if car_to_move == 'R':
+			car_to_move = 'r'
+		move_by = int(move[2:])
+		my_board, new_red = MAG.move_by(my_car_list, \
+									car_to_move, move_by)
+		my_board, my_red = MAG.construct_board(my_car_list)
+		new_car_list = MAG.construct_mag(my_board, my_red)
+		depth, _ = MAG.longest_path(new_car_list)
+		total_depth += depth
+	return float(total_depth) / float(len(sol_list) + 1)
 
 
 # main
@@ -231,11 +346,19 @@ bar_out_dir = '/Users/chloe/Documents/RushHour/state_figures/len_dynamicMAG.png'
 scatter_out = '/Users/chloe/Documents/RushHour/state_figures/len_dynamicMAG_scatter.png'
 scatter_x = 4
 scatter_y = 4
-num_features = 6
-# label_list = ['human_len', 'opt_len', 'prop_unsafe', 'prop_opt_unsafe', '#backmove']
-# feature_list = ['y_human', 'y_opt', 'y_unsafe', 'y_optunsafe', 'y_backmove']
-label_list = ['human_len', 'opt_len', 'p_unsafe', 'p_backmove', 'mean_#node', 'mean_#edge', 'p_unsafe_sol', 'p_backmove_sol']
-feature_list = ['y_human', 'y_opt', 'y_unsafe', 'y_backmove', 'y_avgnode', 'y_avgedge', 'y_unsafesol' 'y_backmovesol']
+num_features = 8
+# label_list = ['human_len', 'opt_len', 'p_unsafe', 'p_backmove', 'mean_#node', 'mean_#edge', 'p_unsafe_sol', 'p_backmove_sol']
+# feature_list = ['y_human', 'y_opt', 'y_unsafe', 'y_backmove', 'y_avgnode', 'y_avgedge', 'y_unsafesol' 'y_backmovesol']
+label_list = ['human_len', 'opt_len', \
+			'p_unsafe_sol', 'p_backmove_sol', \
+			'avg_node_sol', 'avg_edge_sol', \
+			'avg_ncycle_sol', 'avg_maxcycle',\
+			'avg_node_incycle', 'avg_depth']
+feature_list = ['y_human', 'y_opt', \
+				'y_unsafesol', 'y_backmovesol', \
+				'y_avgnodesol', 'y_avgedgesol', \
+				'y_avgncycle', 'y_avgmaxcycle', \
+				'y_avgcnode', 'y_avgdepth']
 color_list = ['firebrick', 'lightcoral', 'maroon', 'salmon']
 dict_list = [{} for _ in range(num_features)]
 y_list = [[] for _ in range(num_features)]
@@ -287,14 +410,25 @@ for i in range(len(all_instances)):
 	cur_ins = all_instances[i]
 	ins_file = ins_dir + all_instances[i] + '.json'
 	move_file = move_dir + all_instances[i] + '_moves.json'
-	dict_list[0][cur_ins] = prop_unsafe(ins_file, move_file)
-	dict_list[1][cur_ins] = prop_back_move(ins_file, move_file)
-	dict_list[2][cur_ins], dict_list[3][cur_ins] = avg_node_edge(ins_file, move_file)
-	print('avg node, edge: ' + str(dict_list[2][cur_ins]) + ', ' + str(dict_list[3][cur_ins]))
-	# dict_list[4][cur_ins], sol_list = prop_unsafe_solution(ins_file)
-	# dict_list[5][cur_ins], sol_list = prop_back_move_solution(ins_file, sol_list)
-	# print('prop unsafe solution ', dict_list[4][cur_ins])
-	# print('prop backmove solution ', dict_list[5][cur_ins])
+	sol_file = move_dir + all_instances[i] + '_solution.npy'
+	# get_solution(ins_file, sol_file)
+	# dict_list[0][cur_ins] = prop_unsafe(ins_file, move_file)
+	# dict_list[1][cur_ins] = prop_back_move(ins_file, move_file)
+	# dict_list[2][cur_ins], dict_list[3][cur_ins] = avg_node_edge(ins_file, move_file)
+	print(cur_ins)
+	dict_list[0][cur_ins] = prop_unsafe_solution(ins_file, sol_file)
+	print('prop unsafe solution: ', dict_list[0][cur_ins])
+	dict_list[1][cur_ins] = prop_back_move_solution(ins_file, sol_file)
+	print('prop backmove solution: ', dict_list[1][cur_ins])
+	dict_list[2][cur_ins], dict_list[3][cur_ins] = avg_node_edge_solution(ins_file, sol_file)
+	print('avg node, edge solution: ' + str(dict_list[2][cur_ins]) \
+			+ ', ' + str(dict_list[3][cur_ins]))
+	dict_list[4][cur_ins], dict_list[5][cur_ins] = avg_cycle_solution(ins_file, sol_file)
+	print('avg ncycle, maxcycle solution: ' + str(dict_list[4][cur_ins]) \
+			+ ', ' + str(dict_list[5][cur_ins]))
+	dict_list[6][cur_ins] = avg_node_cycle_solution(ins_file, sol_file)
+	dict_list[7][cur_ins] = avg_red_depth_solution(ins_file, sol_file)
+
 
 # generate value lists
 for i in range(len(all_instances)):
