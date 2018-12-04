@@ -170,19 +170,19 @@ def avg_node_edge(insdatafile, datafile): # average number of node and edge
 			my_board, my_red = MAG.construct_board(my_car_list)
 			new_car_list = MAG.construct_mag(my_board, my_red)
 			n_node, n_edge = MAG.get_mag_attr(new_car_list)
-			if duplicate > 3:
+			if duplicate > 1:
 				print(trial_data[i])
-				# break
+				break
 			if n_node == 1 and n_edge == 0:
 				duplicate += 1
 			trial_node += n_node
 			trial_edge += n_edge
 		if duplicate < 0:
 			duplicate = 0
-		if duplicate > 3:				
-			print(insdatafile)
-			print()
-			useless_trial += 1
+		# if duplicate > 2:				
+		# 	print(insdatafile)
+		# 	print()
+			# useless_trial += 1
 			# continue
 		trial_node += float(trial_node) / float(len(trial_data[i]))
 		trial_edge += float(trial_edge) / float(len(trial_data[i]))
@@ -194,7 +194,7 @@ def avg_node_edge(insdatafile, datafile): # average number of node and edge
 
 
 
-##################################### SOLUTION WISE ############################
+##################################### SOLUTION WISE ###############################
 
 def prop_unsafe_solution(insdatafile, solutionfile):
 	my_car_list, my_red = MAG.json_to_car_list(insdatafile)
@@ -335,30 +335,42 @@ def avg_red_depth_solution(insdatafile, solutionfile):
 	return float(total_depth) / float(len(sol_list) + 1)
 
 
+def node_edge_rate(insdatafile, opt_len):
+	# rate of node decreasing = #initial node / human len
+	# rate of edge decreasing = #initial edge / human len
+	my_car_list, my_red = MAG.json_to_car_list(insdatafile)
+	my_board, my_red = MAG.construct_board(my_car_list)
+	new_car_list = MAG.construct_mag(my_board, my_red)
+	n_node, n_edge = MAG.get_mag_attr(new_car_list)
+	return float(n_node) / float(opt_len), float(n_edge) / float(opt_len)
+
+
 # main
 len_file = '/Users/chloe/Documents/RushHour/exp_data/paths.json'
 move_dir = '/Users/chloe/Documents/RushHour/exp_data/'
 ins_dir = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/'
-data_out = '/Users/chloe/Documents/RushHour/exp_data/dynamic_MAG/'
+data_out = '/Users/chloe/Documents/RushHour/state_model/in_data/'
 # sorted according to optimal length
 all_instances = ['prb8786', 'prb11647', 'prb21272', 'prb13171', 'prb1707', 'prb23259', 'prb10206', 'prb2834', 'prb28111', 'prb32795', 'prb26567', 'prb14047', 'prb14651', 'prb32695', 'prb29232', 'prb15290', 'prb12604', 'prb20059', 'prb9718', 'prb29414', 'prb22436', 'prb62015', 'prb38526', 'prb3217', 'prb34092', 'prb12715', 'prb54081', 'prb717', 'prb31907', 'prb42959', 'prb79230', 'prb14898', 'prb62222', 'prb68910', 'prb33509', 'prb46224', 'prb47495', 'prb29585', 'prb38725', 'prb33117', 'prb20888', 'prb55384', 'prb6671', 'prb343', 'prb68514', 'prb29600', 'prb23404', 'prb19279', 'prb3203', 'prb65535', 'prb14485', 'prb34551', 'prb72800', 'prb44171', 'prb1267', 'prb29027', 'prb24406', 'prb58853', 'prb24227', 'prb45893', 'prb25861', 'prb15595', 'prb54506', 'prb48146', 'prb78361', 'prb25604', 'prb46639', 'prb46580', 'prb10166', 'prb57223']
 bar_out_dir = '/Users/chloe/Documents/RushHour/state_figures/len_dynamicMAG.png'
-scatter_out = '/Users/chloe/Documents/RushHour/state_figures/len_dynamicMAG_scatter.png'
+scatter_out = '/Users/chloe/Documents/RushHour/state_figures/len_dynamicMAG_scatter2.png'
 scatter_x = 4
 scatter_y = 4
-num_features = 8
+num_features = 10
 # label_list = ['human_len', 'opt_len', 'p_unsafe', 'p_backmove', 'mean_#node', 'mean_#edge', 'p_unsafe_sol', 'p_backmove_sol']
 # feature_list = ['y_human', 'y_opt', 'y_unsafe', 'y_backmove', 'y_avgnode', 'y_avgedge', 'y_unsafesol' 'y_backmovesol']
 label_list = ['human_len', 'opt_len', \
 			'p_unsafe_sol', 'p_backmove_sol', \
 			'avg_node_sol', 'avg_edge_sol', \
 			'avg_ncycle_sol', 'avg_maxcycle',\
-			'avg_node_incycle', 'avg_depth']
+			'avg_node_incycle', 'avg_depth',\
+			'node_rate', 'edge_rate']
 feature_list = ['y_human', 'y_opt', \
 				'y_unsafesol', 'y_backmovesol', \
 				'y_avgnodesol', 'y_avgedgesol', \
 				'y_avgncycle', 'y_avgmaxcycle', \
-				'y_avgcnode', 'y_avgdepth']
+				'y_avgcnode', 'y_avgdepth',\
+				'y_noderate', 'y_edgerate']
 color_list = ['firebrick', 'lightcoral', 'maroon', 'salmon']
 dict_list = [{} for _ in range(num_features)]
 y_list = [[] for _ in range(num_features)]
@@ -417,17 +429,20 @@ for i in range(len(all_instances)):
 	# dict_list[2][cur_ins], dict_list[3][cur_ins] = avg_node_edge(ins_file, move_file)
 	print(cur_ins)
 	dict_list[0][cur_ins] = prop_unsafe_solution(ins_file, sol_file)
-	print('prop unsafe solution: ', dict_list[0][cur_ins])
+	# print('prop unsafe solution: ', dict_list[0][cur_ins])
 	dict_list[1][cur_ins] = prop_back_move_solution(ins_file, sol_file)
-	print('prop backmove solution: ', dict_list[1][cur_ins])
+	# print('prop backmove solution: ', dict_list[1][cur_ins])
 	dict_list[2][cur_ins], dict_list[3][cur_ins] = avg_node_edge_solution(ins_file, sol_file)
-	print('avg node, edge solution: ' + str(dict_list[2][cur_ins]) \
-			+ ', ' + str(dict_list[3][cur_ins]))
+	# print('avg node, edge solution: ' + str(dict_list[2][cur_ins]) \
+			# + ', ' + str(dict_list[3][cur_ins]))
 	dict_list[4][cur_ins], dict_list[5][cur_ins] = avg_cycle_solution(ins_file, sol_file)
-	print('avg ncycle, maxcycle solution: ' + str(dict_list[4][cur_ins]) \
-			+ ', ' + str(dict_list[5][cur_ins]))
+	# print('avg ncycle, maxcycle solution: ' + str(dict_list[4][cur_ins]) \
+			# + ', ' + str(dict_list[5][cur_ins]))
 	dict_list[6][cur_ins] = avg_node_cycle_solution(ins_file, sol_file)
 	dict_list[7][cur_ins] = avg_red_depth_solution(ins_file, sol_file)
+	dict_list[8][cur_ins], dict_list[9][cur_ins] = node_edge_rate(ins_file, optimal_dict[cur_ins])
+	# print('node rate, edge rate:' + str(dict_list[8][cur_ins]) + ' ' + str(dict_list[9][cur_ins]))
+	# dict_list[10][cur_ins] = avg_node_edge(ins_file, move_file)
 
 
 # generate value lists
@@ -482,13 +497,14 @@ for i in range(scatter_x):
 		if count >= len(y_list):
 			axarr[i,j].axis('off')
 			continue
-		axarr[i,j].scatter(y_human, y_list[count])
-		axarr[i,j].set_ylabel(label_list[count+2], fontsize=20, fontweight='bold')
+		axarr[i,j].scatter(y_list[count], y_human)
+		axarr[i,j].set_xlabel(label_list[count+2], fontsize=20, fontweight='bold')
 		t = 'rho=%s, p=%s'%(format(corr_list[count], '.3f'), format(p_list[count], '.2g'))
 		axarr[i,j].set_title(t,y=0.85,fontsize=17)
 		axarr[i,j].yaxis.set_major_locator(MaxNLocator(nbins=6,integer=True))
+		axarr[i,j].xaxis.set_major_locator(MaxNLocator(nbins=6,integer=True))
 		axarr[i,j].tick_params(axis='both', labelsize=17)
-		axarr[i,j].grid(True, axis='x', alpha=0.3)
+		axarr[i,j].grid(True, axis='y', alpha=0.3)
 		count += 1
 
 plt.tight_layout(pad=1.5, h_pad=1.5, w_pad=1.5, rect=None) 

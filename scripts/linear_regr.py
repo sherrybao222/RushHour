@@ -17,21 +17,23 @@ all_instances = ['prb8786', 'prb11647', 'prb21272', 'prb13171', 'prb1707', 'prb2
 # 				'#cycles', 'max c', '#c in c', '#n in c', 'pro n in c', \
 # 				'maxpath', '#maxpath', \
 # 				'glb cluster', 'loc cluster']
-features = ['y_opt',\
+features = [\
         'y_unsafesol', 'y_backmovesol', \
         'y_avgnodesol', 'y_avgedgesol', \
         'y_avgncycle', 'y_avgmaxcycle', \
-        'y_avgcnode', 'y_avgdepth']
-feature_labels = ['opt_len',\
+        'y_avgcnode', 'y_avgdepth',\
+        'y_noderate', 'y_edgerate']
+feature_labels = [\
       'p_unsafe_sol', 'p_backmove_sol', \
       'avg_node_sol', 'avg_edge_sol', \
       'avg_ncycle_sol', 'avg_maxcycle',\
-      'avg_node_incycle', 'avg_depth']
+      'avg_node_incycle', 'avg_depth',\
+      'node_rate', 'edge_rate']
 targets = ['y_human']
 data_dir = '/Users/chloe/Documents/RushHour/state_model/in_data/'
 out_dir = '/Users/chloe/Documents/RushHour/state_model/out_model/'
-fig_out = '/Users/chloe/Documents/RushHour/state_model/out_model/linear_regr4.png'
-coef_out = '/Users/chloe/Documents/RushHour/state_model/out_model/linear_regr_coef4.png'
+fig_out = '/Users/chloe/Documents/RushHour/state_model/out_model/linear_regr5.png'
+coef_out = '/Users/chloe/Documents/RushHour/state_model/out_model/linear_regr_coef5.png'
 
 # initialize feature data, [70,1]
 feature_data = np.expand_dims(np.load(data_dir + features[0] + '.npy'), axis=1) 
@@ -212,7 +214,7 @@ Adjusted R2: 0.66
 '''
 
 
-############# DYNAMIC MAG #############
+####################### DYNAMIC MAG #####################
 
 '''
 1
@@ -255,6 +257,7 @@ Variance score R2: 0.61
 Adjusted R2: 0.56
 '''
 '''
+4
 features = ['y_opt',\
         'y_unsafesol', 'y_backmovesol', \
         'y_avgnodesol', 'y_avgedgesol', \
@@ -272,11 +275,47 @@ Mean squared error: 42.20
 Variance score R2: 0.78
 Adjusted R2: 0.74
 '''
-
-
-
-
-
-
-
-
+'''
+5
+no car behind red henceforward
+features = [\
+        'y_unsafesol', 'y_backmovesol', \
+        'y_avgnodesol', 'y_avgedgesol', \
+        'y_avgncycle', 'y_avgmaxcycle', \
+        'y_avgcnode', 'y_avgdepth',\
+        'y_noderate', 'y_edgerate']
+feature_labels = [\
+      'p_unsafe_sol', 'p_backmove_sol', \
+      'avg_node_sol', 'avg_edge_sol', \
+      'avg_ncycle_sol', 'avg_maxcycle',\
+      'avg_node_incycle', 'avg_depth',\
+      'node_rate', 'edge_rate']
+Coefficients:
+[[-11.48919908 -28.41179201   0.77952853   2.20719239  -2.90389324
+   -3.70390593   2.65606275  -0.21088588 -30.87622426  -0.71330929]]
+Mean squared error: 46.86
+Variance score R2: 0.75
+Adjusted R2: 0.71
+'''
+'''
+6
+features = ['y_opt',\
+        'y_unsafesol', 'y_backmovesol', \
+        'y_avgnodesol', 'y_avgedgesol', \
+        'y_avgncycle', 'y_avgmaxcycle', \
+        'y_avgcnode', 'y_avgdepth',\
+        'y_noderate', 'y_edgerate']
+feature_labels = ['opt_len',\
+      'p_unsafe_sol', 'p_backmove_sol', \
+      'avg_node_sol', 'avg_edge_sol', \
+      'avg_ncycle_sol', 'avg_maxcycle',\
+      'avg_node_incycle', 'avg_depth',\
+      'node_rate', 'edge_rate']
+Coefficients:
+[[  2.1615126   -8.15594488 -14.2921397    0.37180278   1.71813503
+    0.19840921  -1.67968305  -0.6512975    0.61409549   7.51477288
+   -8.94120311]]
+Mean squared error: 44.05
+Variance score R2: 0.77
+Adjusted R2: 0.72
+'''

@@ -195,17 +195,17 @@ def construct_mag(board, red):
 			if cur_car.tag != 'r':
 				red.edge_to.append(cur_car)
 				cur_car.visited = True
-	if len(queue) != 1: # continue searching only if red front is not empty
-		i = red.start[0] - 1 # obstacles behind red
-		while i >= 0:
-			cur_car = board.board_dict[(i, red.start[1])]
-			if cur_car is not None: #exists on board, not include red
-				if cur_car.tag != 'r' and cur_car.visited != True: # can be horizontal
-					queue.append(cur_car)
-					# print("queue append: " + cur_car.tag)
-					red.edge_to.append(cur_car)
-					cur_car.visited = True
-			i -= 1
+	# if len(queue) != 1: # continue searching only if red front is not empty
+	# 	i = red.start[0] - 1 # obstacles behind red
+	# 	while i >= 0:
+	# 		cur_car = board.board_dict[(i, red.start[1])]
+	# 		if cur_car is not None: #exists on board, not include red
+	# 			if cur_car.tag != 'r' and cur_car.visited != True: # can be horizontal
+	# 				queue.append(cur_car)
+	# 				# print("queue append: " + cur_car.tag)
+	# 				red.edge_to.append(cur_car)
+	# 				cur_car.visited = True
+	# 		i -= 1
 	red.visited = True
 	finished_list.append(red)
 	while len(queue) != 0: # obstacle blockers
