@@ -127,6 +127,46 @@ def construct_board(car_list):
 			board.board_dict[occupied_space[j]] = car
 	return board, red
 
+
+
+def check_move(car_list, cur_board, car_tag, to_position): 
+# check if a move is valid, following move function
+	valid = True
+	car_found = False
+	for i in range(len(car_list)):
+		cur_car = car_list[i]
+		if cur_car.tag == car_tag:
+			car_found = True
+			if cur_car.orientation == 'horizontal':
+				# check each grid in the new position
+				new_start = [int(to_position)%6, int(to_position/6)]
+				for j in range(cur_car.length):
+					if j + new_start[0] >= cur_board.width:
+						valid = False
+						continue
+					cur_grid = cur_board.board_dict[(new_start[0] + j, new_start[1])]
+					if cur_grid is not None:
+						if cur_grid.tag == car_tag:
+							continue
+						else:
+							valid = False
+			if cur_car.orientation == 'vertical':
+				# check each grid in the new position
+				new_start = [int(to_position)%6, int(to_position/6)]
+				for j in range(cur_car.length):
+					if j + new_start[1] >= cur_board.height:
+						valid = False
+						continue
+					cur_grid = cur_board.board_dict[(new_start[0], j + new_start[1])]
+					if cur_grid is not None:
+						if cur_grid.tag == car_tag:
+							continue
+						else:
+							valid = False
+	return valid and car_found
+
+
+
 def board_to_str(board):
 	out_str = ''
 	for i in range(board.height):
