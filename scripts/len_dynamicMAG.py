@@ -8,10 +8,45 @@ import numpy as np
 import MAG, solution
 from scipy import stats
 
+# main
+len_file = '/Users/chloe/Documents/RushHour/exp_data/paths.json'
+move_dir = '/Users/chloe/Documents/RushHour/exp_data/'
+ins_dir = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/'
+data_out = '/Users/chloe/Documents/RushHour/state_model/in_data2/'
+# sorted according to optimal length
+all_instances = ['prb8786', 'prb11647', 'prb21272', 'prb13171', 'prb1707', 'prb23259', 'prb10206', 'prb2834', 'prb28111', 'prb32795', 'prb26567', 'prb14047', 'prb14651', 'prb32695', 'prb29232', 'prb15290', 'prb12604', 'prb20059', 'prb9718', 'prb29414', 'prb22436', 'prb62015', 'prb38526', 'prb3217', 'prb34092', 'prb12715', 'prb54081', 'prb717', 'prb31907', 'prb42959', 'prb79230', 'prb14898', 'prb62222', 'prb68910', 'prb33509', 'prb46224', 'prb47495', 'prb29585', 'prb38725', 'prb33117', 'prb20888', 'prb55384', 'prb6671', 'prb343', 'prb68514', 'prb29600', 'prb23404', 'prb19279', 'prb3203', 'prb65535', 'prb14485', 'prb34551', 'prb72800', 'prb44171', 'prb1267', 'prb29027', 'prb24406', 'prb58853', 'prb24227', 'prb45893', 'prb25861', 'prb15595', 'prb54506', 'prb48146', 'prb78361', 'prb25604', 'prb46639', 'prb46580', 'prb10166', 'prb57223']
+bar_out_dir = '/Users/chloe/Documents/RushHour/state_figures/len_dynamicMAG.png'
+scatter_out = '/Users/chloe/Documents/RushHour/state_figures/len_dynamicMAG_scatter2.png'
+scatter_x = 4
+scatter_y = 5
+num_features = 18
+# label_list = ['human_len', 'opt_len', 'p_unsafe', 'p_backmove', 'mean_#node', 'mean_#edge', 'p_unsafe_sol', 'p_backmove_sol']
+# feature_list = ['y_human', 'y_opt', 'y_unsafe', 'y_backmove', 'y_avgnode', 'y_avgedge', 'y_unsafesol' 'y_backmovesol']
+label_list = ['human_len', 'opt_len', \
+			'p_unsafe_sol', 'p_backmove_sol', \
+			'avg_node_sol', 'avg_edge_sol', \
+			'avg_ncycle_sol', 'avg_maxcycle',\
+			'avg_node_incycle', 'avg_depth',\
+			'node_rate', 'edge_rate', \
+			'p_unsafe_human', 'p_backmove_human', \
+			'avg_node_human', 'avg_edge_human', \
+			'avg_ncycle_human', 'avg_maxcycle_human',\
+			'avg_node_incycle_human', 'avg_depth_human']
+feature_list = ['y_human', 'y_opt', \
+				'y_unsafesol', 'y_backmovesol', \
+				'y_avgnodesol', 'y_avgedgesol', \
+				'y_avgncycle', 'y_avgmaxcycle', \
+				'y_avgcnode', 'y_avgdepth',\
+				'y_noderate', 'y_edgerate',
+				'y_unsafe_human', 'y_backmove_human', \
+				'y_avgnode_human', 'y_avgedge_human', \
+				'y_avgncycle_human', 'y_avgmaxcycle_human', \
+				'y_avgcnode_human', 'y_avgdepth_human']
+# color_list = ['firebrick', 'lightcoral', 'maroon', 'salmon']
 
 
 
-def get_solution(insdatafile, solutionfile):
+def get_solution(insdatafile, solutionfile): # create solution for puzzle
 	my_car_list, my_red = MAG.json_to_car_list(insdatafile)
 	my_board, my_red = MAG.construct_board(my_car_list)
 	board_str = MAG.board_to_str(my_board)
@@ -23,7 +58,6 @@ def get_solution(insdatafile, solutionfile):
 def prop_unsafe(insdatafile, datafile):
 	instance_data = []
 	trial_data = []
-	total_unsafe_prop = 0
 	is_win = False
 	# filter successful trials
 	with open(datafile) as f:
@@ -54,6 +88,7 @@ def prop_unsafe(insdatafile, datafile):
 			if not is_win:
 				trial_data.pop()
 	# process successful trials
+	total_unsafe_prop = 0
 	for i in range(len(trial_data)):
 		unsafe = 0
 		my_car_list, my_red = MAG.json_to_car_list(insdatafile) # initial mag
@@ -70,15 +105,13 @@ def prop_unsafe(insdatafile, datafile):
 			n_node = cur_node
 			n_edge = cur_edge
 		total_unsafe_prop += float(unsafe) / float(len(trial_data[i]) - 1)
-		# print(float(unsafe) / float(len(trial_data[i])))
 
-	return total_unsafe_prop / len(trial_data)
+	return total_unsafe_prop / float(len(trial_data))
 
 
 def prop_back_move(insdatafile, datafile):
 	instance_data = []
 	trial_data = []
-	total_back_move = 0
 	is_win = False
 	# filter successful trials
 	with open(datafile) as f:
@@ -109,6 +142,7 @@ def prop_back_move(insdatafile, datafile):
 			if not is_win:
 				trial_data.pop()
 	# process successful trials
+	total_back_move = 0
 	for i in range(len(trial_data)):
 		back = 0
 		my_car_list, my_red = MAG.json_to_car_list(insdatafile) # initial mag
@@ -119,15 +153,13 @@ def prop_back_move(insdatafile, datafile):
 				back += 1
 			my_red = new_red
 		total_back_move += float(back) / float(len(trial_data[i]) - 1)
-		# print(float(back) / float(len(trial_data[i])))
-	# print()
-	return total_back_move / len(trial_data)
+
+	return total_back_move / float(len(trial_data))
 
 
 def avg_node_edge(insdatafile, datafile): # average number of node and edge
 	instance_data = []
 	trial_data = []
-	total_back_move = 0
 	is_win = False
 	# filter successful trials
 	with open(datafile) as f:
@@ -158,39 +190,211 @@ def avg_node_edge(insdatafile, datafile): # average number of node and edge
 			if not is_win:
 				trial_data.pop()
 	# process successful trials
-	useless_trial = 0
+	total_node = 0
+	total_edge = 0
 	for i in range(len(trial_data)):
 		trial_node = 0
 		trial_edge = 0
 		my_car_list, my_red = MAG.json_to_car_list(insdatafile) # initial mag
-		duplicate = -1
+		my_board, my_red = MAG.construct_board(my_car_list)
+		new_car_list = MAG.construct_mag(my_board, my_red)
+		n_node, n_edge = MAG.get_mag_attr(new_car_list)
+		trial_node += n_node
+		trial_edge += n_edge
 		for j in range(len(trial_data[i])):
 			my_car_list, my_red = MAG.move(my_car_list, \
 										trial_data[i][j][0], trial_data[i][j][1])
 			my_board, my_red = MAG.construct_board(my_car_list)
 			new_car_list = MAG.construct_mag(my_board, my_red)
 			n_node, n_edge = MAG.get_mag_attr(new_car_list)
-			if duplicate > 1:
-				print(trial_data[i])
-				break
-			if n_node == 1 and n_edge == 0:
-				duplicate += 1
 			trial_node += n_node
 			trial_edge += n_edge
-		if duplicate < 0:
-			duplicate = 0
-		# if duplicate > 2:				
-		# 	print(insdatafile)
-		# 	print()
-			# useless_trial += 1
-			# continue
-		trial_node += float(trial_node) / float(len(trial_data[i]))
-		trial_edge += float(trial_edge) / float(len(trial_data[i]))
 
-	# return float(trial_node) / float(len(trial_data) - useless_trial), \
-	# 		float(trial_edge) / float(len(trial_data) - useless_trial)
-	return float(trial_node) / float(len(trial_data)), \
-			float(trial_edge) / float(len(trial_data))
+		total_node += float(trial_node) / float(len(trial_data[i]) - 1)
+		total_edge += float(trial_edge) / float(len(trial_data[i]) - 1)
+
+	return float(total_node) / float(len(trial_data)), \
+			float(total_edge) / float(len(trial_data))
+
+
+
+def avg_cycle(insdatafile, datafile):
+	# return average number of cycles and average max cycle size in human moves data
+	instance_data = []
+	trial_data = []
+	is_win = False
+	
+	# filter successful trials
+	with open(datafile) as f:
+		for line in f:
+			instance_data.append(json.loads(line))
+	for i in range(0, len(instance_data)): 
+		line = instance_data[i]
+		win = line['meta_move']
+		if win == 'win':
+			is_win = True
+		move_num = line['move_number']
+		cur_move = line['move']
+		car_to_move = cur_move[0]
+		try:
+   			move_to_position = int(cur_move[2:])
+		except ValueError:
+			print("Failure w/ value " + cur_move[2:] + ', ' + datafile + ' line' + str(i))
+			continue
+		if move_num == '0':
+			if not is_win and len(trial_data)>0:
+				trial_data.pop()
+			trial_data.append([])
+			trial_data[-1].append((car_to_move, move_to_position))
+			is_win = False
+			continue
+		trial_data[-1].append((car_to_move, move_to_position))
+		if i == len(instance_data) - 1:
+			if not is_win:
+				trial_data.pop()
+
+	# process successful trials
+	total_ncycle = 0
+	total_maxcycle = 0
+	for i in range(len(trial_data)): # each trial
+		trial_ncycle = 0
+		trial_maxcycle = 0
+		my_car_list, my_red = MAG.json_to_car_list(insdatafile) # initial MAG
+		my_board, my_red = MAG.construct_board(my_car_list)
+		new_car_list = MAG.construct_mag(my_board, my_red)
+		ncycle, _, maxcycle = MAG.find_cycles(new_car_list) 
+		trial_ncycle += ncycle
+		trial_maxcycle += maxcycle
+		for j in range(len(trial_data[i])): # each move
+			my_car_list, my_red = MAG.move(my_car_list, \
+										trial_data[i][j][0], trial_data[i][j][1])
+			my_board, my_red = MAG.construct_board(my_car_list)
+			new_car_list = MAG.construct_mag(my_board, my_red)
+			ncycle, _, maxcycle = MAG.find_cycles(new_car_list) 
+			trial_ncycle += ncycle
+			trial_maxcycle += maxcycle
+
+		total_ncycle += float(trial_ncycle) / float(len(trial_data[i]) - 1)
+		total_maxcycle += float(trial_maxcycle) / float(len(trial_data[i]) - 1)
+
+	return float(total_ncycle) / float(len(trial_data)),\
+			float(total_maxcycle) / float(len(trial_data))
+
+
+def avg_node_cycle(insdatafile, datafile):
+	# return average number of nodes in cycles for human moves data
+	instance_data = []
+	trial_data = []
+	is_win = False
+	
+	# filter successful trials
+	with open(datafile) as f:
+		for line in f:
+			instance_data.append(json.loads(line))
+	for i in range(0, len(instance_data)): 
+		line = instance_data[i]
+		win = line['meta_move']
+		if win == 'win':
+			is_win = True
+		move_num = line['move_number']
+		cur_move = line['move']
+		car_to_move = cur_move[0]
+		try:
+   			move_to_position = int(cur_move[2:])
+		except ValueError:
+			print("Failure w/ value " + cur_move[2:] + ', ' + datafile + ' line' + str(i))
+			continue
+		if move_num == '0':
+			if not is_win and len(trial_data)>0:
+				trial_data.pop()
+			trial_data.append([])
+			trial_data[-1].append((car_to_move, move_to_position))
+			is_win = False
+			continue
+		trial_data[-1].append((car_to_move, move_to_position))
+		if i == len(instance_data) - 1:
+			if not is_win:
+				trial_data.pop()
+
+	# process successful trials
+	total_cnode = 0
+	for i in range(len(trial_data)): # each trial
+		trial_cnode = 0
+		my_car_list, my_red = MAG.json_to_car_list(insdatafile) # initial MAG
+		my_board, my_red = MAG.construct_board(my_car_list)
+		new_car_list = MAG.construct_mag(my_board, my_red)
+		cnode, _ = MAG.num_nodes_in_cycle(new_car_list)  
+		trial_cnode += cnode
+		for j in range(len(trial_data[i])): # each move
+			my_car_list, my_red = MAG.move(my_car_list, \
+										trial_data[i][j][0], trial_data[i][j][1])
+			my_board, my_red = MAG.construct_board(my_car_list)
+			new_car_list = MAG.construct_mag(my_board, my_red)
+			cnode, _ = MAG.num_nodes_in_cycle(new_car_list)
+			trial_cnode += cnode
+			
+		total_cnode += float(trial_cnode) / float(len(trial_data[i]) - 1)
+
+	return float(total_cnode) / float(len(trial_data))
+
+
+def avg_red_depth(insdatafile, datafile):
+	# return average number of nodes in cycles
+	instance_data = []
+	trial_data = []
+	is_win = False
+	
+	# filter successful trials
+	with open(datafile) as f:
+		for line in f:
+			instance_data.append(json.loads(line))
+	for i in range(0, len(instance_data)): 
+		line = instance_data[i]
+		win = line['meta_move']
+		if win == 'win':
+			is_win = True
+		move_num = line['move_number']
+		cur_move = line['move']
+		car_to_move = cur_move[0]
+		try:
+   			move_to_position = int(cur_move[2:])
+		except ValueError:
+			print("Failure w/ value " + cur_move[2:] + ', ' + datafile + ' line' + str(i))
+			continue
+		if move_num == '0':
+			if not is_win and len(trial_data)>0:
+				trial_data.pop()
+			trial_data.append([])
+			trial_data[-1].append((car_to_move, move_to_position))
+			is_win = False
+			continue
+		trial_data[-1].append((car_to_move, move_to_position))
+		if i == len(instance_data) - 1:
+			if not is_win:
+				trial_data.pop()
+
+	# process successful trials
+	total_depth = 0
+	for i in range(len(trial_data)): # each trial
+		trial_depth = 0
+		my_car_list, my_red = MAG.json_to_car_list(insdatafile) # initial MAG
+		my_board, my_red = MAG.construct_board(my_car_list)
+		new_car_list = MAG.construct_mag(my_board, my_red)
+		depth, _ = MAG.longest_path(new_car_list)
+		trial_depth += depth
+		for j in range(len(trial_data[i])): # each move
+			my_car_list, my_red = MAG.move(my_car_list, \
+										trial_data[i][j][0], trial_data[i][j][1])
+			my_board, my_red = MAG.construct_board(my_car_list)
+			new_car_list = MAG.construct_mag(my_board, my_red)
+			depth, _ = MAG.longest_path(new_car_list)
+			trial_depth += depth
+			
+		total_depth += float(trial_depth) / float(len(trial_data[i]) - 1)
+
+	return float(total_depth) / float(len(trial_data))
+
+
 
 
 
@@ -335,6 +539,8 @@ def avg_red_depth_solution(insdatafile, solutionfile):
 	return float(total_depth) / float(len(sol_list) + 1)
 
 
+######################################### BOTH ##################################
+
 def node_edge_rate(insdatafile, opt_len):
 	# rate of node decreasing = #initial node / human len
 	# rate of edge decreasing = #initial edge / human len
@@ -345,33 +551,7 @@ def node_edge_rate(insdatafile, opt_len):
 	return float(n_node) / float(opt_len), float(n_edge) / float(opt_len)
 
 
-# main
-len_file = '/Users/chloe/Documents/RushHour/exp_data/paths.json'
-move_dir = '/Users/chloe/Documents/RushHour/exp_data/'
-ins_dir = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/'
-data_out = '/Users/chloe/Documents/RushHour/state_model/in_data/'
-# sorted according to optimal length
-all_instances = ['prb8786', 'prb11647', 'prb21272', 'prb13171', 'prb1707', 'prb23259', 'prb10206', 'prb2834', 'prb28111', 'prb32795', 'prb26567', 'prb14047', 'prb14651', 'prb32695', 'prb29232', 'prb15290', 'prb12604', 'prb20059', 'prb9718', 'prb29414', 'prb22436', 'prb62015', 'prb38526', 'prb3217', 'prb34092', 'prb12715', 'prb54081', 'prb717', 'prb31907', 'prb42959', 'prb79230', 'prb14898', 'prb62222', 'prb68910', 'prb33509', 'prb46224', 'prb47495', 'prb29585', 'prb38725', 'prb33117', 'prb20888', 'prb55384', 'prb6671', 'prb343', 'prb68514', 'prb29600', 'prb23404', 'prb19279', 'prb3203', 'prb65535', 'prb14485', 'prb34551', 'prb72800', 'prb44171', 'prb1267', 'prb29027', 'prb24406', 'prb58853', 'prb24227', 'prb45893', 'prb25861', 'prb15595', 'prb54506', 'prb48146', 'prb78361', 'prb25604', 'prb46639', 'prb46580', 'prb10166', 'prb57223']
-bar_out_dir = '/Users/chloe/Documents/RushHour/state_figures/len_dynamicMAG.png'
-scatter_out = '/Users/chloe/Documents/RushHour/state_figures/len_dynamicMAG_scatter2.png'
-scatter_x = 4
-scatter_y = 4
-num_features = 10
-# label_list = ['human_len', 'opt_len', 'p_unsafe', 'p_backmove', 'mean_#node', 'mean_#edge', 'p_unsafe_sol', 'p_backmove_sol']
-# feature_list = ['y_human', 'y_opt', 'y_unsafe', 'y_backmove', 'y_avgnode', 'y_avgedge', 'y_unsafesol' 'y_backmovesol']
-label_list = ['human_len', 'opt_len', \
-			'p_unsafe_sol', 'p_backmove_sol', \
-			'avg_node_sol', 'avg_edge_sol', \
-			'avg_ncycle_sol', 'avg_maxcycle',\
-			'avg_node_incycle', 'avg_depth',\
-			'node_rate', 'edge_rate']
-feature_list = ['y_human', 'y_opt', \
-				'y_unsafesol', 'y_backmovesol', \
-				'y_avgnodesol', 'y_avgedgesol', \
-				'y_avgncycle', 'y_avgmaxcycle', \
-				'y_avgcnode', 'y_avgdepth',\
-				'y_noderate', 'y_edgerate']
-color_list = ['firebrick', 'lightcoral', 'maroon', 'salmon']
+
 dict_list = [{} for _ in range(num_features)]
 y_list = [[] for _ in range(num_features)]
 y_human = []
@@ -423,11 +603,9 @@ for i in range(len(all_instances)):
 	ins_file = ins_dir + all_instances[i] + '.json'
 	move_file = move_dir + all_instances[i] + '_moves.json'
 	sol_file = move_dir + all_instances[i] + '_solution.npy'
-	# get_solution(ins_file, sol_file)
-	# dict_list[0][cur_ins] = prop_unsafe(ins_file, move_file)
-	# dict_list[1][cur_ins] = prop_back_move(ins_file, move_file)
-	# dict_list[2][cur_ins], dict_list[3][cur_ins] = avg_node_edge(ins_file, move_file)
 	print(cur_ins)
+	# solution data
+	# get_solution(ins_file, sol_file)
 	dict_list[0][cur_ins] = prop_unsafe_solution(ins_file, sol_file)
 	# print('prop unsafe solution: ', dict_list[0][cur_ins])
 	dict_list[1][cur_ins] = prop_back_move_solution(ins_file, sol_file)
@@ -442,7 +620,19 @@ for i in range(len(all_instances)):
 	dict_list[7][cur_ins] = avg_red_depth_solution(ins_file, sol_file)
 	dict_list[8][cur_ins], dict_list[9][cur_ins] = node_edge_rate(ins_file, optimal_dict[cur_ins])
 	# print('node rate, edge rate:' + str(dict_list[8][cur_ins]) + ' ' + str(dict_list[9][cur_ins]))
-	# dict_list[10][cur_ins] = avg_node_edge(ins_file, move_file)
+	# humand data
+	dict_list[10][cur_ins] = prop_unsafe(ins_file, move_file)
+	# print('prop unsafe solution: ', dict_list[0][cur_ins])
+	dict_list[11][cur_ins] = prop_back_move(ins_file, move_file)
+	# print('prop backmove solution: ', dict_list[1][cur_ins])
+	dict_list[12][cur_ins], dict_list[13][cur_ins] = avg_node_edge(ins_file, move_file)
+	# print('avg node, edge solution: ' + str(dict_list[2][cur_ins]) \
+			# + ', ' + str(dict_list[3][cur_ins]))
+	dict_list[14][cur_ins], dict_list[15][cur_ins] = avg_cycle(ins_file, move_file)
+	# print('avg ncycle, maxcycle solution: ' + str(dict_list[4][cur_ins]) \
+			# + ', ' + str(dict_list[5][cur_ins]))
+	dict_list[16][cur_ins] = avg_node_cycle(ins_file, move_file)
+	dict_list[17][cur_ins] = avg_red_depth(ins_file, move_file)
 
 
 # generate value lists

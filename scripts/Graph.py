@@ -138,8 +138,11 @@ class Graph:
     def longest_path(self, v): # find longest path
     # return longtest path len, and all longest paths
         paths = self.DFS(v)
-        max_len = max(len(p) for p in paths)
-        max_paths = [p for p in paths if len(p) == max_len]
+        if len(paths) == 0:
+            return 0, []
+        else:
+            max_len = max(len(p) for p in paths)
+            max_paths = [p for p in paths if len(p) == max_len]
         return max_len, max_paths
 
     def global_cluster_coef(self): # global clustering coefficient
