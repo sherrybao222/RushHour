@@ -163,7 +163,7 @@ def check_move(car_list, cur_board, car_tag, to_position):
 							continue
 						else:
 							valid = False
-	return valid and car_found
+	return valid and car_found, car_found
 
 
 
