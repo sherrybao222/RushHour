@@ -6,20 +6,20 @@ from sklearn.metrics import mean_squared_error, r2_score
 
 all_instances = ['prb8786', 'prb11647', 'prb21272', 'prb13171', 'prb1707', 'prb23259', 'prb10206', 'prb2834', 'prb28111', 'prb32795', 'prb26567', 'prb14047', 'prb14651', 'prb32695', 'prb29232', 'prb15290', 'prb12604', 'prb20059', 'prb9718', 'prb29414', 'prb22436', 'prb62015', 'prb38526', 'prb3217', 'prb34092', 'prb12715', 'prb54081', 'prb717', 'prb31907', 'prb42959', 'prb79230', 'prb14898', 'prb62222', 'prb68910', 'prb33509', 'prb46224', 'prb47495', 'prb29585', 'prb38725', 'prb33117', 'prb20888', 'prb55384', 'prb6671', 'prb343', 'prb68514', 'prb29600', 'prb23404', 'prb19279', 'prb3203', 'prb65535', 'prb14485', 'prb34551', 'prb72800', 'prb44171', 'prb1267', 'prb29027', 'prb24406', 'prb58853', 'prb24227', 'prb45893', 'prb25861', 'prb15595', 'prb54506', 'prb48146', 'prb78361', 'prb25604', 'prb46639', 'prb46580', 'prb10166', 'prb57223']
 features = ['y_opt',\
-        # 'y_unsafesol', 'y_backmovesol', \
-        # 'y_avgnodesol', 'y_avgedgesol', \
-        # 'y_avgncycle', 'y_avgmaxcycle', \
-        # 'y_avgcnode', 'y_avgdepth',\
+        'y_unsafesol', 'y_backmovesol', \
+        'y_avgnodesol', 'y_avgedgesol', \
+        'y_avgncycle', 'y_avgmaxcycle', \
+        'y_avgcnode', 'y_avgdepth',\
         'y_noderate', 'y_edgerate',
         'y_unsafe_human', 'y_backmove_human', \
         'y_avgnode_human', 'y_avgedge_human', \
         'y_avgncycle_human', 'y_avgmaxcycle_human', \
         'y_avgcnode_human', 'y_avgdepth_human']
 feature_labels = ['opt_len',\
-      # 'p_unsafe_sol', 'p_backmove_sol', \
-      # 'avg_node_sol', 'avg_edge_sol', \
-      # 'avg_ncycle_sol', 'avg_maxcycle',\
-      # 'avg_node_incycle', 'avg_depth',\
+      'p_unsafe_sol', 'p_backmove_sol', \
+      'avg_node_sol', 'avg_edge_sol', \
+      'avg_ncycle_sol', 'avg_maxcycle',\
+      'avg_node_incycle', 'avg_depth',\
       'node_rate', 'edge_rate', \
       'p_unsafe_human', 'p_backmove_human', \
       'avg_node_human', 'avg_edge_human', \
