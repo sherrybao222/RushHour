@@ -270,5 +270,26 @@ stop
 # plt.savefig(scatter_out)
 # plt.close()
 
+effect_avgDepthSol
+effect_avgEdgeSol
+effect_avgMaxCycleSol
+effect_avgNodeSol
+effect_avgcNodeSol
+effect_avgnCycleSol
+effect_backMoveSol
+effect_edgeRate
+effect_nodeRate
+effect_unsafeSol
+intercept
 
+#       effect_avgDepthSol_val,
+#       effect_avgEdgeSol_val,
+#       effect_avgMaxCycleSol_val,
+#       effect_avgNodeSol_val,
+#       effect_avgcNodeSol_val,
+#       effect_avgnCycleSol_val,
+#       effect_backMoveSol_val,
+#       effect_edgeRate_val,
+#       effect_nodeRate_val,
+#       effect_unsafeSol_val,
 

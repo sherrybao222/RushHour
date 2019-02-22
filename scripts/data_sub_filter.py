@@ -1,5 +1,6 @@
 # save new path data by filtering out invalid subjects
 # invalid subject: 1. surrender within 7 moves for every trial; 2. incomplete at the end
+# save only successful trials
 import json
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
