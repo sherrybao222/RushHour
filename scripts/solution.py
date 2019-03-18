@@ -13,6 +13,11 @@ Easy UML:
 
 from collections import namedtuple, deque
 from copy import deepcopy
+import sys
+
+# shift a list
+def shift(l, n):
+    return l[n:] + l[:n]
 
 Position = namedtuple('Position', 'y x') 
 
@@ -35,23 +40,33 @@ class Puzzle(object):
 
         self.states.append(PuzzleState(input))
         self.stateset.add(str(self.states[0]))
+        # print("states[0] ", str(self.states[0]))
+        # sys.exit()
 
-    def solve(self):
+    def solve(self, n):
         '''Solve the puzzle, saving the winning state into self.winner (if 
         applicable).'''
+        i = 0
+        maxn = 0
         while self.states:
             state = self.states.popleft()
             if state.pieces['R'].get_new_pos(1) == state.goal:
                 # required as we just get R to the edge, not the exit
                 state.moves[-1].scalar += 1
                 self.winner = state
-                return
+                # print("return maxn ", maxn)
+                return maxn
             child_states = state.get_child_states()
+            if i == 0:
+                # print("child_state ", str(child_states[n]))
+                maxn = len(child_states)
+                child_states = shift(child_states, n)
             for cs in child_states:
                 id = str(cs)
                 if id not in self.stateset:
                     self.stateset.add(id)
                     self.states.append(cs)
+            i += 1
 
     def display(self):
         '''Print the solution/winner.'''
@@ -192,10 +207,13 @@ class PuzzlePiece(object):
         return "{} {} {} {}".format(    
             self.label, self.pos, self.size, self.is_horiz)
 
-def main(puzzle):
+def main(puzzle, n):
     p = Puzzle(puzzle)
-    p.solve()
-    return p.display()
+    maxn = p.solve(n)
+    return p.display(), maxn
+
+
+
 
 # if __name__ == "__main__":
 #     puzzle = '''211..Y
