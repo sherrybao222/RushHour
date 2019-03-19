@@ -526,32 +526,32 @@ def av_local_cluster_coef(finished_list):
 # 		+ '\nmean local cluster coef = ' + str(lcluster))
 
 
-infile = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/prb10166.json'
-outfile = '/Users/chloe/Documents/RushHour/prb6671_solution.npy'
+# infile = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/prb10166.json'
+# outfile = '/Users/chloe/Documents/RushHour/prb6671_solution.npy'
 
-my_car_list, my_red = json_to_car_list(infile)
-my_board, my_red = construct_board(my_car_list)
-board_str = board_to_str(my_board)
-unique_solutions = []
-unique_solutions_set = set()
-print(board_str)
-sol_list, maxn = solution.main(board_str, 0)
-print("solution len: ", len(sol_list)) # number of steps in solution
-print(sol_list)
-sol_list_str = ', '.join(str(sol_list))
-unique_solutions_set.add(sol_list_str)
-unique_solutions.append(sol_list)
-print("maxn ", maxn)
-for i in range(1, maxn):
-	sol_list, _ = solution.main(board_str, i)
-	print("solution len: ", len(sol_list)) # number of steps in solution
-	print(sol_list)
-	sol_list_str = ', '.join(str(sol_list))
-	if sol_list_str not in unique_solutions_set:
-		unique_solutions_set.add(sol_list_str)
-		unique_solutions.append(sol_list)
+# my_car_list, my_red = json_to_car_list(infile)
+# my_board, my_red = construct_board(my_car_list)
+# board_str = board_to_str(my_board)
+# unique_solutions = []
+# unique_solutions_set = set()
+# print(board_str)
+# sol_list, maxn = solution.main(board_str, 0)
+# print("solution len: ", len(sol_list)) # number of steps in solution
+# print(sol_list)
+# sol_list_str = ', '.join(str(sol_list))
+# unique_solutions_set.add(sol_list_str)
+# unique_solutions.append(sol_list)
+# print("maxn ", maxn)
+# for i in range(1, maxn):
+# 	sol_list, _ = solution.main(board_str, i)
+# 	print("solution len: ", len(sol_list)) # number of steps in solution
+# 	print(sol_list)
+# 	sol_list_str = ', '.join(str(sol_list))
+# 	if sol_list_str not in unique_solutions_set:
+# 		unique_solutions_set.add(sol_list_str)
+# 		unique_solutions.append(sol_list)
 
 
-print("all unique solutions ", unique_solutions)
-# np.save(outfile, unique_solutions)
+# print("all unique solutions ", unique_solutions)
+# # np.save(outfile, unique_solutions)
 
