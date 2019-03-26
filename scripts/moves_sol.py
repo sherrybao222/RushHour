@@ -1,14 +1,16 @@
 # generate optimal solutions for each move
 # need to run with python365
-# does not include optimal solutions at the beginning of each trial
+# each row records the optimla decisions to be made, 
+# compare the optimal decisions with the move in the same row for correctness
 import MAG
 import solution
 import sys, csv
 import pandas as pd
 import numpy as np
+import time
 
 moves_file = '/Users/chloe/Documents/RushHour/exp_data/moves_valid.csv'
-out_sol_file = '/Users/chloe/Documents/RushHour/exp_data/moves_sol.npy'
+out_sol_file = '/Users/chloe/Documents/RushHour/exp_data/moves_sol72.npy'
 instance_folder = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/'
 header =  ['worker', 'assignment', 'instance', \
 			'optlen', 'move_number', 'move', \
@@ -17,7 +19,7 @@ header =  ['worker', 'assignment', 'instance', \
 move_data = pd.read_csv(moves_file)
 # print('shape ', move_data.shape)
 # print(move_data.loc[0, :])
-
+# logfile = open('/Users/chloe/Documents/RushHour/log.txt', 'w')
 
 out_data = [] # for all moves and trials
 my_car_list = None
@@ -26,7 +28,9 @@ car_id = None
 car_to_pos = None
 
 counter = 0
-for i in range(len(move_data)):
+start_time = time.time()
+# for i in range(len(move_data)):
+for i in range(0, 72):
 	row = move_data.loc[i, :]
 	cur_subject = row['worker'] + ':' + row['assignment']
 	cur_instance = row['instance']
@@ -68,6 +72,8 @@ for i in range(len(move_data)):
 		# append solutions
 		out_data.append(unique_solutions)
 		# print("len out data ", len(out_data))
+		# logfile.write(str(len(out_data)))
+		# print('len out_data ', len(out_data))
 		# print("iteration count ", i)
 		car_id = move[0]
 		car_to_pos = int(move[2:])
@@ -83,9 +89,9 @@ for i in range(len(move_data)):
 	board_str = MAG.board_to_str(my_board)
 	unique_solutions = []
 	unique_solutions_set = set()
-	# print(board_str)
+	print(board_str)
 	sol_list, maxn = solution.main(board_str, 0)
-	# print("solution len: ", len(sol_list)) # number of steps in solution
+	print("solution len: ", len(sol_list)) # number of steps in solution
 	# print(sol_list)
 	sol_list_str = ', '.join(str(sol_list))
 	unique_solutions_set.add(sol_list_str)
@@ -99,12 +105,12 @@ for i in range(len(move_data)):
 		if sol_list_str not in unique_solutions_set:
 			unique_solutions_set.add(sol_list_str)
 			unique_solutions.append(sol_list)
-	# print("all unique solutions ", unique_solutions)
+	print("all unique solutions ", unique_solutions)
 	# append solutions
 	out_data.append(unique_solutions)
-	# print("len out data ", len(out_data))
-	# print("iteration count ", i)
-	# print("\n\n")
+	print("len out data ", len(out_data))
+	print("iteration count ", i)
+	print("\n\n")
 	
 	# for next move
 	car_id = move[0]
@@ -114,6 +120,11 @@ for i in range(len(move_data)):
 		# sys.exit()
 
 	counter += 1
+	print('counter', counter)
+	if counter % 10 == 0:
+		end_time = time.time()
+		print("time spent ", end_time - start_time)
+		start_time = time.time()
 
 	# end of file
 	if counter == len(move_data):
@@ -149,4 +160,4 @@ for i in range(len(move_data)):
 		# print("iteration count ", i)
 
 np.save(out_sol_file, out_data)
-
+# logfile.close()
