@@ -81,7 +81,7 @@ for i in range(0, 72):
 	
 	# new board
 	my_board, my_red = MAG.construct_board(my_car_list)
-	# move
+	# make move
 	# print("current move: ", car_id, car_to_pos)
 	my_car_list, my_red = MAG.move(my_car_list, car_id, car_to_pos)
 	my_board, my_red = MAG.construct_board(my_car_list)

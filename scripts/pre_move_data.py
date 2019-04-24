@@ -1,4 +1,5 @@
 # all functions for preprocessing moves data for each subject trial (valid)
+# run with py27
 import json
 import numpy as np
 import csv
@@ -30,7 +31,7 @@ def read_psiturk_data(filename):
             # read move data fields
             v += [s.replace('[','').replace(']','') for s in re.findall('\[.*?\]',l)]
             recs.append(PsiturkRec(*v))
-        print 'valid subject found'
+        # print 'valid subject found'
         print sum(sub_flag)
     return recs
 
@@ -91,7 +92,7 @@ def prep_trialdata(orig_filename, dest_filename):
 
 
 # main execution calls
-original_file = '/Users/chloe/Documents/RushHour/exp_data/trialdata.csv'
+original_file = '/Users/chloe/Documents/RushHour/exp_data/trialdata_valid_unique_finished_remove_undefined.csv'
 dest_file = '/Users/chloe/Documents/RushHour/exp_data/moves_valid.csv'
 valid_sub = np.load('/Users/chloe/Documents/RushHour/exp_data/valid_sub.npy')
 prep_trialdata(original_file, dest_file)

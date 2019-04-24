@@ -442,6 +442,8 @@ def e_by_pn(finished_list): # #edges / (#nodes - #leaf_nodes)
 	for i in finished_list:
 		if len(i.edge_to) == 0 and i not in leaf_list:
 			leaf_list.append(i)
+	if (n_nodes - len(leaf_list)) == 0:
+		return -1
 	return format(float(n_edges)/(n_nodes - len(leaf_list)), '.2f')
 
 def e2_by_n(finished_list): # #edge^2 / #nodes
@@ -454,7 +456,12 @@ def global_cluster_coef(finished_list):
 
 def av_local_cluster_coef(finished_list):
 	g = list_to_graph(finished_list)
-	return g.av_local_cluster_coef()
+	result = ''
+	try:
+		result = g.av_local_cluster_coef()
+	except:
+		result = -1
+	return result
 
 
 

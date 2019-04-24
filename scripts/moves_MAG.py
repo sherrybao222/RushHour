@@ -1,4 +1,4 @@
-# generate MAG features for each optimal move
+# generate MAG features for each move (average of all optimal solutions)
 # need to run with py365
 import MAG
 import solution
