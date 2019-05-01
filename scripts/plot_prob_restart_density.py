@@ -146,20 +146,25 @@ z = st.norm.ppf(1-0.05/2)
 # Consecutive Error Cross: prob restart and histogram
 fig, ax = plt.subplots(1, 2, figsize=(17, 6))
 ax[0].hist(hash_consec_error_cross, bins=np.arange(len(count_consec_error_cross))-0.5,\
-			density=False, align='mid', label='Non-restart (left axis)', \
+			density=True, align='mid', label='Non-restart', \
 			color='gray', edgecolor='black', alpha=0.7, width=1)
-ax[0].axvline(np.median(hash_consec_error_cross), color='gray', linestyle='dashed', linewidth=1)
+ax[0].axvline(np.median(hash_consec_error_cross), \
+			color='gray', linestyle='dashed', linewidth=2.5)
 ax12 = ax[0].twinx()
 ax12.hist(hash_consec_error_cross_restart, bins=np.arange(len(count_consec_error_cross))-0.5,\
-			density=False, align='mid', label='Restart (right axis)', \
+			density=True, align='mid', label='Restart', \
 			color='orangered', edgecolor='orangered', alpha=0.3, width=1)
 ax12.axvline(np.median(hash_consec_error_cross_restart), \
-		color='orangered', linestyle='dashed', linewidth=1)
-ax[0].legend(loc=2, bbox_to_anchor=(0.55,0.9))
-ax12.legend(loc=2, bbox_to_anchor=(0.55,0.83))
-ax[0].tick_params(axis='both', which='major', labelsize=10)
-ax12.tick_params(axis='both', which='major', labelsize=10)
-ax[0].set_ylabel('Count', fontsize=14)
+		color='orangered', linestyle='dashed', linewidth=2.5)
+ax[0].legend(loc=2, bbox_to_anchor=(0.55,0.9), prop={'size': 16})
+ax12.legend(loc=2, bbox_to_anchor=(0.55,0.81), prop={'size': 16})
+ax[0].locator_params(nbins=5, axis='y')
+ax[0].tick_params(axis='both', which='major', labelsize=16)
+ax12.locator_params(nbins=5, axis='y')
+ax12.tick_params(axis='both', which='major', labelsize=16, colors='orangered')
+ax[0].set_ylabel('Count', fontsize=18)
+print('total consec_error_cross sample size: ', len(hash_consec_error_cross))
+print('total consec_error_cross_restart sample size: ', len(hash_consec_error_cross_restart))
 
 cmap = mp.cm.get_cmap('OrRd')
 normalize = mp.colors.Normalize(vmin=min(count_consec_error_cross), vmax=max(count_consec_error_cross))
@@ -332,19 +337,25 @@ print('Mean Restart: ', np.mean(hash_consec_error_further_restart))
 # Consecutive Error: prob restart and histogram
 fig, ax = plt.subplots(1, 2, figsize=(17, 6))
 ax[0].hist(hash_consec_error, bins=np.arange(len(count_consec_error))-0.5,\
-			density=False, align='mid', label='Non-restart (left axis)', \
+			density=True, align='mid', label='Non-restart', \
 			color='gray', edgecolor='black', alpha=0.7, width=1)
-ax[0].axvline(np.median(hash_consec_error), color='gray', linestyle='dashed', linewidth=1)
+ax[0].axvline(np.median(hash_consec_error), \
+			color='gray', linestyle='dashed', linewidth=2.5)
 ax12 = ax[0].twinx()
 ax12.hist(hash_consec_error_restart, bins=np.arange(len(count_consec_error))-0.5,\
-			density=False, align='mid', label='Restart (right axis)', \
+			density=True, align='mid', label='Restart', \
 			color='orangered', edgecolor='orangered', alpha=0.3, width=1)
-ax12.axvline(np.median(hash_consec_error_restart), color='orangered', linestyle='dashed', linewidth=1)
-ax[0].legend(loc=2, bbox_to_anchor=(0.55,0.9))
-ax12.legend(loc=2, bbox_to_anchor=(0.55,0.83))
-ax[0].tick_params(axis='both', which='major', labelsize=10)
-ax12.tick_params(axis='both', which='major', labelsize=10)
-ax[0].set_ylabel('Count', fontsize=14)
+ax12.axvline(np.median(hash_consec_error_restart), \
+		color='orangered', linestyle='dashed', linewidth=2.5)
+ax[0].legend(loc=2, bbox_to_anchor=(0.55,0.9), prop={'size': 16})
+ax12.legend(loc=2, bbox_to_anchor=(0.55,0.81), prop={'size': 16})
+ax[0].locator_params(nbins=5, axis='y')
+ax[0].tick_params(axis='both', which='major', labelsize=16)
+ax12.locator_params(nbins=5, axis='y')
+ax12.tick_params(axis='both', which='major', labelsize=16, colors='orangered')
+ax[0].set_ylabel('Count', fontsize=18)
+print('total consec_error sample size: ', len(hash_consec_error))
+print('total consec_error_restart sample size: ', len(hash_consec_error_restart))
 
 cmap = mp.cm.get_cmap('OrRd')
 normalize = mp.colors.Normalize(vmin=min(count_consec_error), vmax=max(count_consec_error))
@@ -459,20 +470,27 @@ print('Mean Restart: ', np.mean(hash_consec_mobred_restart))
 
 # Mobility: prob restart and histogram
 fig, ax = plt.subplots(1, 2, figsize=(17, 6))
-ax[0].hist(hash_mob, bins=np.arange(len(count_mob))+0.5,\
-			density=False, align='mid', label='Non-restart (left axis)', \
+ax[0].hist(hash_mob, bins=np.arange(len(count_mob))-0.5,\
+			density=True, align='mid', label='Non-restart', \
 			color='gray', edgecolor='black', alpha=0.7, width=1)
-ax[0].axvline(np.median(hash_mob), color='gray', linestyle='dashed', linewidth=1)
+ax[0].axvline(np.median(hash_mob), \
+			color='gray', linestyle='dashed', linewidth=2.5)
 ax12 = ax[0].twinx()
-ax12.hist(hash_mob_restart, bins=np.arange(len(count_mob))+0.5,\
-			density=False, align='mid', label='Restart (right axis)', \
+ax12.hist(hash_mob_restart, bins=np.arange(len(count_mob))-0.5,\
+			density=True, align='mid', label='Restart', \
 			color='orangered', edgecolor='orangered', alpha=0.3, width=1)
-ax12.axvline(np.median(hash_mob_restart), color='orangered', linestyle='dashed', linewidth=1)
-ax[0].legend(loc=2, bbox_to_anchor=(0.55,0.9))
-ax12.legend(loc=2, bbox_to_anchor=(0.55,0.83))
-ax[0].tick_params(axis='both', which='major', labelsize=10)
-ax12.tick_params(axis='both', which='major', labelsize=10)
-ax[0].set_ylabel('Count', fontsize=14)
+ax12.axvline(np.median(hash_mob_restart), \
+		color='orangered', linestyle='dashed', linewidth=2.5)
+ax[0].legend(loc=2, bbox_to_anchor=(0.55,0.9), prop={'size': 16})
+ax12.legend(loc=2, bbox_to_anchor=(0.55,0.81), prop={'size': 16})
+ax[0].locator_params(nbins=5, axis='y')
+ax[0].tick_params(axis='both', which='major', labelsize=16)
+ax12.locator_params(nbins=5, axis='y')
+ax12.tick_params(axis='both', which='major', labelsize=16, colors='orangered')
+ax[0].set_ylabel('Count', fontsize=18)
+print('total mob sample size: ', len(hash_mob))
+print('total mob_restart sample size: ', len(hash_mob_restart))
+
 
 cmap = mp.cm.get_cmap('OrRd')
 normalize = mp.colors.Normalize(vmin=min(count_mob), vmax=max(count_mob))
@@ -521,21 +539,26 @@ print('Mean Restart: ', np.mean(hash_mob_restart))
 
 # diffoptlen: prob restart and histogram
 fig, ax = plt.subplots(1, 2, figsize=(17, 6))
-
 ax[0].hist(hash_diffoptlen, bins=np.arange(start=min_diffoptlen,stop=max_diffoptlen+1)-0.5,\
-			density=False, align='mid', label='Non-restart (left axis)', \
+			density=True, align='mid', label='Non-restart', \
 			color='gray', edgecolor='black', alpha=0.7, width=1)
-ax[0].axvline(np.median(hash_diffoptlen), color='gray', linestyle='dashed', linewidth=1)
+ax[0].axvline(np.median(hash_diffoptlen), \
+			color='gray', linestyle='dashed', linewidth=2.5)
 ax12 = ax[0].twinx()
 ax12.hist(hash_diffoptlen_restart, bins=np.arange(start=min_diffoptlen,stop=max_diffoptlen+1)-0.5,\
-			density=False, align='mid', label='Restart (right axis)', \
+			density=True, align='mid', label='Restart', \
 			color='orangered', edgecolor='orangered', alpha=0.3, width=1)
-ax12.axvline(np.median(hash_diffoptlen_restart), color='orangered', linestyle='dashed', linewidth=1)
-ax[0].legend(loc=2, bbox_to_anchor=(0.55,0.9))
-ax12.legend(loc=2, bbox_to_anchor=(0.55,0.83))
-ax[0].tick_params(axis='both', which='major', labelsize=10)
-ax12.tick_params(axis='both', which='major', labelsize=10)
-ax[0].set_ylabel('Count', fontsize=14)
+ax12.axvline(np.median(hash_diffoptlen_restart), \
+		color='orangered', linestyle='dashed', linewidth=2.5)
+ax[0].legend(loc=2, bbox_to_anchor=(0.55,0.9), prop={'size': 16})
+ax12.legend(loc=2, bbox_to_anchor=(0.55,0.81), prop={'size': 16})
+ax[0].locator_params(nbins=5, axis='y')
+ax[0].tick_params(axis='both', which='major', labelsize=16)
+ax12.locator_params(nbins=5, axis='y')
+ax12.tick_params(axis='both', which='major', labelsize=16, colors='orangered')
+ax[0].set_ylabel('Count', fontsize=18)
+print('total diffoptlen sample size: ', len(hash_diffoptlen))
+print('total diffoptlen_restart sample size: ', len(hash_diffoptlen_restart))
 
 cmap = mp.cm.get_cmap('OrRd')
 normalize = mp.colors.Normalize(vmin=min(count_diffoptlen), vmax=max(count_diffoptlen))
