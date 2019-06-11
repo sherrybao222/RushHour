@@ -21,6 +21,7 @@ move_data = pd.read_csv(moves_file)
 restart_out = []
 surrender_out = []
 error_out = []
+mild_error_out = []
 further_out = []
 
 
@@ -39,6 +40,7 @@ for i in range(len(move_data)):
 	# first line
 	if i == 0: 
 		error_out.append(0)
+		mild_error_out.append(0)
 		further_out.append(0)
 		row = move_data.loc[i, :]
 		prev_subject = row['subject']
@@ -47,7 +49,6 @@ for i in range(len(move_data)):
 		prev_event = row['event']
 		prev_optlen = row['optlen']
 		instance_optlen = prev_optlen
-		# print('\nfinish row ', i)
 		continue
 	row = move_data.loc[i, :]
 	cur_subject = row['subject']
@@ -66,10 +67,16 @@ for i in range(len(move_data)):
 	# error detection
 	if cur_event == 'start':
 		error_out.append(0)
+		mild_error_out.append(0)
 	elif cur_subject == prev_subject and cur_instance == prev_instance and cur_optlen == prev_optlen - 1:
+		error_out.append(0)
+		mild_error_out.append(0)
+	elif cur_subject == prev_subject and cur_instance == prev_instance and cur_optlen == prev_optlen:
+		mild_error_out.append(1)
 		error_out.append(0)
 	else:
 		error_out.append(1)
+		mild_error_out.append(0)
 	# win
 	if cur_event == 'start' and cur_instance != prev_instance and prev_optlen == 1:
 		print('win found row ', i)
@@ -119,14 +126,15 @@ for i in range(len(move_data)):
 print('restart out ', len(restart_out))
 print('surrender out ', len(surrender_out))
 print('error out ', len(error_out))
+print('mild error out ', len(mild_error_out))
 print('further out ', len(further_out))
 
 # save result
 with open(out_file, 'w') as f:
 	writer = csv.writer(f)
-	writer.writerow(('restart', 'surrender', 'error', 'further'))
+	writer.writerow(('restart', 'surrender', 'error', 'mild_error', 'further'))
 	for j in range(len(restart_out)):
-		writer.writerow([restart_out[j], surrender_out[j], error_out[j], further_out[j]])
+		writer.writerow([restart_out[j], surrender_out[j], error_out[j], mild_error_out[j], further_out[j]])
 
 
 

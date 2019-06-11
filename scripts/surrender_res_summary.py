@@ -129,6 +129,7 @@ plt.savefig(out_dir)
 # scatter plot 2
 fig = plt.figure()
 ax = fig.add_subplot(111)
+surr_all = [int(x)+int(y) for x,y in zip(surrender_first, surrender_more)]
 surr_all_mean = [float(x)+float(y) for x,y in zip(surr1_mean, surr2_mean)]
 surrender_all1 = [float(x)+float(y) for x,y in zip(surrender11, surrender21)]
 surrender_all2 = [float(x)+float(y) for x,y in zip(surrender12, surrender22)]
@@ -156,6 +157,7 @@ for data,color,group,count in zip(data,colors,groups,counts):
 
 ax.yaxis.set_major_locator(MaxNLocator(11))
 # plt.yticks([0,2,4,6,8], ['0.0','0.2','0.4','0.6','0.8'], fontsize=14)
+ax.set_ylim(top=1.0)
 plt.xticks([0,1,2,3],['7','11','14','16'], fontsize=14)
 ax.tick_params(axis='both', which='major', labelsize=14)
 ax.set_xlabel('')
@@ -169,22 +171,18 @@ freq1 = [np.sum(success_first[:18]), \
 		np.sum(success_first[18:36]), \
 		np.sum(success_first[36:53]), \
 		np.sum(success_first[53:])]
-print('Success without restart: ')
-print(freq1)
-print(stats.chisquare(freq1))
 
 freq2 = [np.sum(success_more[:18]), \
 		np.sum(success_more[18:36]), \
 		np.sum(success_more[36:53]), \
 		np.sum(success_more[53:])]
-print('Success with restart: ')
-print(freq2)
-print(stats.chisquare(freq2))
 
-freq3 = [np.sum(surrender_first[:18]+surrender_more[:18]), \
-		np.sum(surrender_first[18:36]+surrender_more[18:36]), \
-		np.sum(surrender_first[36:53]+surrender_more[36:53]), \
-		np.sum(surrender_first[53:]+surrender_more[53:])]
-print('Surrender: ')
-print(freq3)
-print(stats.chisquare(freq3))
+freq3 = [np.sum(surr_all[:18]), \
+		np.sum(surr_all[18:36]), \
+		np.sum(surr_all[36:53]), \
+		np.sum(surr_all[53:])]
+
+print('Surrender: ', freq3)
+all_freq = [freq1, freq2, freq3]
+print('All freq: ', all_freq)
+print(stats.chi2_contingency(all_freq))

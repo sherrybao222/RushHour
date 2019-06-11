@@ -17,7 +17,8 @@ instance_folder = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/'
 #################################### MAIN PROGRAM ###############################
 
 move_data = pd.read_csv(moves_file)
-reduced_mob_out = []
+reduced_mob_out = [] # only mobility descreased
+tie_mob = [] # tie mobility (equal mobility as last move)
 
 
 prev_subject = ''
@@ -31,6 +32,7 @@ for i in range(len(move_data)):
 	# first line
 	if i == 0: 
 		reduced_mob_out.append(0)
+		tie_mob.append(0)
 		row = move_data.loc[i, :]
 		prev_subject = row['subject']
 		prev_instance = row['instance']
@@ -45,9 +47,15 @@ for i in range(len(move_data)):
 	# error detection
 	if cur_event == 'start':
 		reduced_mob_out.append(0)
-	elif cur_subject == prev_subject and cur_instance == prev_instance and cur_mobility >= prev_mobility:
+		tie_mob.append(0)
+	elif cur_subject == prev_subject and cur_instance == prev_instance and cur_mobility > prev_mobility:
+		reduced_mob_out.append(0) # increased mob
+		tie_mob.append(0)
+	elif cur_subject == prev_subject and cur_instance == prev_instance and cur_mobility == prev_mobility:
+		tie_mob.append(1) # tied 
 		reduced_mob_out.append(0)
-	else:
+	else: # reduced mob
+		tie_mob.append(0)
 		reduced_mob_out.append(1)
 	prev_subject = cur_subject
 	prev_instance = cur_instance
@@ -55,13 +63,14 @@ for i in range(len(move_data)):
 	prev_mobility = cur_mobility
 
 print('mobility out ', len(reduced_mob_out))
+print('tie mob ', len(tie_mob))
 
 # save result
 with open(out_file, 'w') as f:
 	writer = csv.writer(f)
-	writer.writerow(('m'))
+	writer.writerow(('m', 't'))
 	for j in range(len(reduced_mob_out)):
-		writer.writerow([reduced_mob_out[j]])
+		writer.writerow([reduced_mob_out[j], tie_mob[j]])
 
 
 

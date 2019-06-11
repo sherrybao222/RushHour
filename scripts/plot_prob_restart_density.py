@@ -17,15 +17,22 @@ import matplotlib.ticker as ticker
 import seaborn as sns
 import scipy.stats as st
 
+all_instances = ['prb8786', 'prb11647', 'prb21272', 'prb13171', 'prb1707', 'prb23259', 'prb10206', 'prb2834', 'prb28111', 'prb32795', 'prb26567', 'prb14047', 'prb14651', 'prb32695', 'prb29232', 'prb15290', 'prb12604', 'prb20059', 'prb9718', 'prb29414', 'prb22436', 'prb62015', 'prb38526', 'prb3217', 'prb34092', 'prb12715', 'prb54081', 'prb717', 'prb31907', 'prb42959', 'prb79230', 'prb14898', 'prb62222', 'prb68910', 'prb33509', 'prb46224', 'prb47495', 'prb29585', 'prb38725', 'prb33117', 'prb20888', 'prb55384', 'prb6671', 'prb343', 'prb68514', 'prb29600', 'prb23404', 'prb19279', 'prb3203', 'prb65535', 'prb14485', 'prb34551', 'prb72800', 'prb44171', 'prb1267', 'prb29027', 'prb24406', 'prb58853', 'prb24227', 'prb45893', 'prb25861', 'prb15595', 'prb54506', 'prb48146', 'prb78361', 'prb25604', 'prb46639', 'prb46580', 'prb10166', 'prb57223']
+ins_optlen = [7] * len(all_instances)
+ins_optlen[18:36]=[11]*len(ins_optlen[18:36])
+ins_optlen[36:53]=[14]*len(ins_optlen[36:53])
+ins_optlen[53:]=[16]*len(ins_optlen[53:])
+optlen_consider = 14
+
 moves_file = '/Users/chloe/Desktop/trialdata_valid_true_dist7_processed.csv'
 
-out_file21 = '/Users/chloe/Desktop/difoptlen_to_restart.png'
-out_file22 = '/Users/chloe/Desktop/mobility_to_restart.png'
-out_file23 = '/Users/chloe/Desktop/consecmobred_to_restart.png'
-out_file24 = '/Users/chloe/Desktop/consecerror_to_restart.png'
-out_file25 = '/Users/chloe/Desktop/consecerrorfurther_to_restart.png'
-out_file26 = '/Users/chloe/Desktop/consecerrorcloser_to_restart.png'
-out_file27 = '/Users/chloe/Desktop/consecerrorcross_to_restart.png'
+out_file21 = '/Users/chloe/Desktop/difoptlen_to_restart14.png'
+out_file22 = '/Users/chloe/Desktop/mobility_to_restart14.png'
+out_file23 = '/Users/chloe/Desktop/consecmobred_to_restart14.png'
+out_file24 = '/Users/chloe/Desktop/consecerror_to_restart14.png'
+out_file25 = '/Users/chloe/Desktop/consecerrorfurther_to_restart14.png'
+out_file26 = '/Users/chloe/Desktop/consecerrorcloser_to_restart14.png'
+out_file27 = '/Users/chloe/Desktop/consecerrorcross_to_restart14.png'
 
 move_data = pd.read_csv(moves_file)
 restart_diffoptlen = []
@@ -99,6 +106,9 @@ for i in range(len(move_data)):
 		count_mob = [0] * (max_mob + 1)
 		restart_consec_mobred = [0] * (max_consec_mobred + 1)
 		count_consec_mobred = [0] * (max_consec_mobred + 1)
+	cur_ins = row['instance']
+	if ins_optlen[all_instances.index(cur_ins)] != optlen_consider: # only consider level-16 puzzles
+		continue 
 	diffoptlen = row['diffoptlen']
 	restart = row['restart']
 	consec_error = row['consec_error']
