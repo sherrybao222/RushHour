@@ -1,6 +1,7 @@
 # PLOTTING: characterize trialdata each move
 # probability matrix of error as a function of difflen(suboptimality score) and mobility
 # saturation (alpha) coded by sample size in each entry
+# plot mobility x diffoptlen trajectories of sample trials
 # need to run with python27
 import sys, csv, math
 import pandas as pd

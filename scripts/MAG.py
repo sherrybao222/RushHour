@@ -11,6 +11,8 @@ class Car:
 	orientation = ''
 	edge_to = []
 	visited = False
+	level = []
+	indegree = 0
 	def __init__(self, s, l, t, o, p):
 		self.start = s
 		self.length = l
@@ -186,7 +188,7 @@ def board_to_str(board):
 		out_str += '\n'
 	return out_str
 
-def board_freedom(board): # number of available moves
+def board_freedom(board): # number of available moves, mobility
 	freedom = 0
 	visited_car = []
 	for i in range(board.height): # vertical
@@ -216,6 +218,149 @@ def board_freedom(board): # number of available moves
 					freedom += 1
 					cur_position += 1
 	return freedom
+
+
+def red_mobility(board, red): # mobility of red car, right and left
+	right = 0
+	left = 0
+	cur_position = red.end[0] + 1 # right
+	while(cur_position < board.width and board.board_dict[(cur_position, red.start[1])] == None):
+		right += 1
+		cur_position += 1
+	cur_position = red.start[0] - 1 # left
+	while(cur_position >= 0 and board.board_dict[(cur_position, red.start[1])] == None):
+		left += 1
+		cur_position -= 1
+	return right, left
+
+def get_car_mobility(board, this_car):
+	if this_car is None:
+		return 0
+	side1 = 0
+	side2 = 0
+	if this_car.orientation == 'horizontal':
+		cur_position = this_car.start[0] - 1 # search left
+		while(cur_position >= 0 and board.board_dict[(cur_position, this_car.start[1])] == None):
+			side1 += 1
+			cur_position -= 1
+		cur_position = this_car.end[0] + 1 # search right
+		while(cur_position < board.width and board.board_dict[(cur_position, this_car.start[1])] == None):
+			side2 += 1
+			cur_position += 1
+	if this_car.orientation == 'vertical':
+		cur_position = this_car.start[1] - 1 # search up
+		while(cur_position >= 0 and board.board_dict[(this_car.start[0], cur_position)] == None):
+			side1 += 1
+			cur_position -= 1
+		cur_position = this_car.end[1] + 1 # search down
+		while(cur_position < board.height and board.board_dict[(this_car.start[0], cur_position)] == None):
+			side2 += 1
+			cur_position += 1
+	return side1+side2
+
+def num_blocking(board, this_car): # number of cars blocking this_car
+	if this_car is None:
+		return 0
+	side1 = 0
+	side2 = 0
+	visited = []
+	if this_car.orientation == 'horizontal':
+		cur_position = this_car.start[0] - 1 # search left
+		while(cur_position >= 0):
+			if board.board_dict[(cur_position, this_car.start[1])] not in visited:
+				side1 += 1
+				visited.append(board.board_dict[(cur_position, this_car.start[1])])
+			cur_position -= 1
+		cur_position = this_car.end[0] + 1 # search right
+		while(cur_position < board.width):
+			if board.board_dict[(cur_position, this_car.start[1])] != None and board.board_dict[(cur_position, this_car.start[1])] not in visited:
+				side2 += 1
+				visited.append(board.board_dict[(cur_position, this_car.start[1])])
+			cur_position += 1
+	if this_car.orientation == 'vertical':
+		cur_position = this_car.start[1] - 1 # search up
+		while(cur_position >= 0):
+			if board.board_dict[(this_car.start[0], cur_position)] != None and board.board_dict[(this_car.start[0], cur_position)] not in visited:
+				visited.append(board.board_dict[(this_car.start[0], cur_position)])
+				side1 += 1
+			cur_position -= 1
+		cur_position = this_car.end[1] + 1 # search down
+		while(cur_position < board.height):
+			if board.board_dict[(this_car.start[0], cur_position)] != None and board.board_dict[(this_car.start[0], cur_position)] not in visited:
+				visited.append(board.board_dict[(this_car.start[0], cur_position)])
+				side2 += 1
+			cur_position += 1
+	return side1, side2
+
+def clean_level(car_list): # clean levels and indegree of each car
+	new_car_list = []
+	for car in car_list:
+		car.level = []
+		car.indegree = 0
+		new_car_list.append(car)
+	return new_car_list
+
+def assign_level2(car_list, red): # dropped: assign level to each car
+	for cur_car in car_list: # count indegree
+		for child in cur_car.edge_to:
+			child.indegree += 1;
+	queue = []
+	queue.append(red)
+	for cur_car in car_list:
+		if cur_car.indegree == 0 and cur_car.tag != 'r':
+			cur_car.level.append(0)
+			queue.append(cur_car)
+	count = 0 # count of visited car
+	top_order = []
+	while queue:
+		cur_car = queue.pop(0)
+		top_order.append(cur_car)
+		for child in cur_car.edge_to:
+			child.indegree -= 1
+			if child.indegree == 0:
+				child.level.append(cur_car.level[-1]+1)
+				queue.append(child)
+		count += 1
+	# check cycle
+	if count != len(car_list):
+		print('cycle detected')
+	return top_order
+
+
+def assign_level(car_list, red): # assign level to each car
+	queue = []
+	visited = []
+	red.level.append(0)
+	queue.append(red)
+	visited.append(red)
+	while queue: # bfs
+		cur_car = queue.pop(0)
+		for child in cur_car.edge_to:
+			child.level.append(cur_car.level[-1] + 1)
+			if child not in visited:
+				queue.append(child)
+				visited.append(child)
+	return visited
+
+	
+def get_cars_from_level(car_list, l): # get cars from level
+	list_toreturn = []
+	for cur_car in car_list:
+		if l in cur_car.level:
+			list_toreturn.append(cur_car)
+	return list_toreturn
+
+def get_cars_from_level2(car_list, l): # get cars from level, highest
+	list_toreturn = []
+	for cur_car in car_list:
+		if l == min(cur_car.level):
+			list_toreturn.append(cur_car)
+	return list_toreturn
+
+
+
+
+
 
 def board_move(car_list, car_tag, to_position): 
 	# make a move and construct new board
