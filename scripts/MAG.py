@@ -295,36 +295,13 @@ def num_blocking(board, this_car): # number of cars blocking this_car
 def clean_level(car_list): # clean levels and indegree of each car
 	new_car_list = []
 	for car in car_list:
+		# if len(car.level) != 0 and min(car.level) > 6:
+		# 	print(min(car.level))
 		car.level = []
 		car.indegree = 0
 		new_car_list.append(car)
 	return new_car_list
 
-def assign_level2(car_list, red): # dropped: assign level to each car
-	for cur_car in car_list: # count indegree
-		for child in cur_car.edge_to:
-			child.indegree += 1;
-	queue = []
-	queue.append(red)
-	for cur_car in car_list:
-		if cur_car.indegree == 0 and cur_car.tag != 'r':
-			cur_car.level.append(0)
-			queue.append(cur_car)
-	count = 0 # count of visited car
-	top_order = []
-	while queue:
-		cur_car = queue.pop(0)
-		top_order.append(cur_car)
-		for child in cur_car.edge_to:
-			child.indegree -= 1
-			if child.indegree == 0:
-				child.level.append(cur_car.level[-1]+1)
-				queue.append(child)
-		count += 1
-	# check cycle
-	if count != len(car_list):
-		print('cycle detected')
-	return top_order
 
 
 def assign_level(car_list, red): # assign level to each car

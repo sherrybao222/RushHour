@@ -2,6 +2,7 @@
 # average mobility in each level
 # py27
 '''
+This value function is now abandoned
 value = w0R * Mobility(red, right) + w0L * Mobility (red, left) 
 	+ w1 * avg_{MAG-level 1 cars} Mobility(car) 
 	+ w2 * avg_{MAG-level 2 cars} Mobility(car) 
