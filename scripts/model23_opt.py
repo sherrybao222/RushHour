@@ -24,100 +24,111 @@ all_instances = ['prb8786', 'prb11647', 'prb21272', 'prb13171', 'prb1707', 'prb2
 ins_dir = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/'
 move_dir = '/Users/chloe/Documents/RushHour/exp_data/'
 fig_out = '/Users/chloe/Desktop/model-avg-num-cars-level-'
+colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:purple',\
+			'tab:brown', 'tab:pink', 'tab:olive', 'tab:cyan']
 # value function initial parameters and weights
 num_parameters = 8
 noise = 0
 value = 0
-level_selected = 7
+# length_selected = 7
 #offset_magnitide = 0.22
 ylim = 0
+xlim = 1
 
-# each parameter
-for w_idx in range(num_parameters):
-	
-	[w0R, w1, w2, w3, w4, w5, w6, w7] = [0,0,0,0,0,0,0,0]
-	weights = [w0R, w1, w2, w3, w4, w5, w6, w7]
-	weights[w_idx] = 1
-	print(weights)
-
-	num_puzzles = 0
-	values_puz = np.zeros(level_selected-1)
-
-	# each puzzle
-	for i in range(len(all_instances)): 
+for length_selected in [7, 11, 14, 16]: # each puzzle length
+	# each parameter
+	for w_idx in range(num_parameters):
 		
-		#random_offset = np.random.uniform(low=-0.10, high=0.10)
-		
-		# read solution file
-		cur_ins = all_instances[i]
-		ins_file = ins_dir + cur_ins + '.json'
-		sol_file = move_dir + cur_ins + '_solution.npy'	
-		sol_list = np.load(sol_file)
-		
-		# only process selected level only
-		if len(sol_list)+1 != level_selected: 
-			continue
-		num_puzzles += 1
-		
-		# construct initial MAG
-		my_car_list, my_red = MAG.json_to_car_list(ins_file)
-		my_board, my_red = MAG.construct_board(my_car_list)
-		new_car_list = MAG.construct_mag(my_board, my_red)
-		n_node, n_edge = MAG.get_mag_attr(new_car_list)
+		[w0R, w1, w2, w3, w4, w5, w6, w7] = [0,0,0,0,0,0,0,0]
+		weights = [w0R, w1, w2, w3, w4, w5, w6, w7]
+		weights[w_idx] = 1
+		print(weights)
 
-		debug = 0
-		value_seq = []
+		num_puzzles = 0
+		values_puz = np.zeros(length_selected-1)
+		cache = []
 
-		# each move in solution, omit last step
-		for move in sol_list: 
-		
-			debug += 1
-			value = 0
-
-			# number of cars at the top level (red only)
-			value += w0R * 1 
-
-			# each level
-			for j in range(num_parameters - 1): 
-				level = j+1
-				new_car_list = MAG.clean_level(new_car_list)
-				new_car_list = MAG.assign_level(new_car_list, my_red)
-				cars_from_level = MAG.get_cars_from_level2(new_car_list, level)
-				# print('cars from level ', level)
-				value += weights[level] * (len(cars_from_level))
-
-			# print(value)
-			value_seq.append(value)
-
-			# make a move
-			car_to_move = move[0]
-			if car_to_move == 'R':
-				car_to_move = 'r'
-			move_by = int(move[2:])
-			my_car_list, my_red = MAG.move_by(my_car_list, \
-											car_to_move, move_by)
+		# each puzzle
+		for i in range(len(all_instances)): 
+			
+			#random_offset = np.random.uniform(low=-0.10, high=0.10)
+			
+			# read solution file
+			cur_ins = all_instances[i]
+			ins_file = ins_dir + cur_ins + '.json'
+			sol_file = move_dir + cur_ins + '_solution.npy'	
+			sol_list = np.load(sol_file)
+			
+			# only process selected level only
+			if len(sol_list)+1 != length_selected: 
+				continue
+			num_puzzles += 1
+			
+			# construct initial MAG
+			my_car_list, my_red = MAG.json_to_car_list(ins_file)
 			my_board, my_red = MAG.construct_board(my_car_list)
 			new_car_list = MAG.construct_mag(my_board, my_red)
+			n_node, n_edge = MAG.get_mag_attr(new_car_list)
 
-		values_puz += np.array(value_seq, dtype=np.float32)
+			debug = 0
+			value_seq = []
+
+			# each move in solution, omit last step
+			for move in sol_list: 
+			
+				debug += 1
+				value = 0
+
+				# number of cars at the top level (red only)
+				value += w0R * 1 
+
+				# each level
+				for j in range(num_parameters - 1): 
+					level = j+1
+					new_car_list = MAG.clean_level(new_car_list)
+					new_car_list = MAG.assign_level(new_car_list, my_red)
+					cars_from_level = MAG.get_cars_from_level2(new_car_list, level)
+					# print('cars from level ', level)
+					value += weights[level] * (len(cars_from_level))
+
+				# print(value)
+				value_seq.append(value)
+
+				# make a move
+				car_to_move = move[0]
+				if car_to_move == 'R':
+					car_to_move = 'r'
+				move_by = int(move[2:])
+				my_car_list, my_red = MAG.move_by(my_car_list, \
+												car_to_move, move_by)
+				my_board, my_red = MAG.construct_board(my_car_list)
+				new_car_list = MAG.construct_mag(my_board, my_red)
+
+			values_puz += np.array(value_seq, dtype=np.float32)
+			cache.append(np.array(value_seq, dtype=np.float32))
 
 
-	values_puz = values_puz / num_puzzles
-	if max(values_puz) > ylim:
-		ylim = max(values_puz)
-	# plot this parameter
-	plt.plot(np.arange(len(values_puz)), np.array(values_puz, dtype=np.float32), \
-			'-o', markersize=2,
-			color=(random.uniform(0, 1), random.uniform(0, 1), random.uniform(0, 1)))
-	for x, y in zip(np.arange(len(values_puz)), np.array(values_puz, dtype=np.float32)):
-		plt.text(x, y, str(w_idx), color="black", fontsize=6)
+		values_puz = values_puz / num_puzzles
+		std = np.std(cache, axis=0)
+		# print(std)
+		if max(values_puz) > ylim:
+			ylim = max(values_puz)
+		# plot this parameter
+		plt.plot(np.arange(len(values_puz)), np.array(values_puz, dtype=np.float32), \
+				'-o', markersize=2,
+				color=colors[w_idx], label=str(w_idx))
+		# plt.errorbar(np.arange(len(values_puz)), np.array(values_puz, dtype=np.float32),\
+				# std, linestyle='None', color=colors[w_idx], alpha=0.5)
+		#for x, y in zip(np.arange(len(values_puz)), np.array(values_puz, dtype=np.float32)):
+		#	plt.text(x, y, str(w_idx), color="black", fontsize=6)
 
-# all parameters in the same plot
-plt.ylim(top=ylim+0.1)
-# plt.yticks(np.arange(0, ylim, dtype=np.int32))
-plt.xlabel('Move number along optimal solution')
-plt.title('Avg Num_cars at each level along optimal path, across level-' + str(level_selected) + ' puzzles')	
-plt.savefig(fig_out+str(level_selected)+'.png')
-plt.close()
+	# all parameters in the same plot
+	plt.ylim(top=ylim+0.1)
+	plt.xticks(np.arange(length_selected-1), np.arange(1, length_selected))
+	plt.legend()
+	plt.xlabel('Move number along optimal solution')
+	plt.title('Avg Num_cars at each level along optimal path, across length-' + str(length_selected) + ' puzzles')	
+	plt.savefig(fig_out+str(length_selected)+'.png')
+	plt.close()
 
 
