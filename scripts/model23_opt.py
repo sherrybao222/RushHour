@@ -18,14 +18,16 @@ import MAG
 import numpy as np
 import sys, random
 import matplotlib.pyplot as plt
+import matplotlib
 
 # sorted according to optimal length
 all_instances = ['prb8786', 'prb11647', 'prb21272', 'prb13171', 'prb1707', 'prb23259', 'prb10206', 'prb2834', 'prb28111', 'prb32795', 'prb26567', 'prb14047', 'prb14651', 'prb32695', 'prb29232', 'prb15290', 'prb12604', 'prb20059', 'prb9718', 'prb29414', 'prb22436', 'prb62015', 'prb38526', 'prb3217', 'prb34092', 'prb12715', 'prb54081', 'prb717', 'prb31907', 'prb42959', 'prb79230', 'prb14898', 'prb62222', 'prb68910', 'prb33509', 'prb46224', 'prb47495', 'prb29585', 'prb38725', 'prb33117', 'prb20888', 'prb55384', 'prb6671', 'prb343', 'prb68514', 'prb29600', 'prb23404', 'prb19279', 'prb3203', 'prb65535', 'prb14485', 'prb34551', 'prb72800', 'prb44171', 'prb1267', 'prb29027', 'prb24406', 'prb58853', 'prb24227', 'prb45893', 'prb25861', 'prb15595', 'prb54506', 'prb48146', 'prb78361', 'prb25604', 'prb46639', 'prb46580', 'prb10166', 'prb57223']
 ins_dir = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/'
 move_dir = '/Users/chloe/Documents/RushHour/exp_data/'
 fig_out = '/Users/chloe/Desktop/model-avg-num-cars-level-'
-colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:purple',\
-			'tab:brown', 'tab:pink', 'tab:olive', 'tab:cyan']
+# colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:purple',\
+			# 'tab:brown', 'tab:pink', 'tab:olive', 'tab:cyan']
+color_gradients = [0.125, 1.0, 0.875, 0.75, 0.625, 0.5, 0.375, 0.25]
 # value function initial parameters and weights
 num_parameters = 8
 noise = 0
@@ -34,6 +36,7 @@ value = 0
 #offset_magnitide = 0.22
 ylim = 0
 xlim = 1
+cmap = matplotlib.cm.get_cmap('Blues')
 
 for length_selected in [7, 11, 14, 16]: # each puzzle length
 	# each parameter
@@ -114,9 +117,10 @@ for length_selected in [7, 11, 14, 16]: # each puzzle length
 		if max(values_puz) > ylim:
 			ylim = max(values_puz)
 		# plot this parameter
+		rgba = cmap(color_gradients[w_idx])
 		plt.plot(np.arange(len(values_puz)), np.array(values_puz, dtype=np.float32), \
 				'-o', markersize=2,
-				color=colors[w_idx], label=str(w_idx))
+				color=rgba, label=str(w_idx))
 		# plt.errorbar(np.arange(len(values_puz)), np.array(values_puz, dtype=np.float32),\
 				# std, linestyle='None', color=colors[w_idx], alpha=0.5)
 		#for x, y in zip(np.arange(len(values_puz)), np.array(values_puz, dtype=np.float32)):
@@ -127,6 +131,7 @@ for length_selected in [7, 11, 14, 16]: # each puzzle length
 	plt.xticks(np.arange(length_selected-1), np.arange(1, length_selected))
 	plt.legend()
 	plt.xlabel('Move number along optimal solution')
+	plt.grid(linestyle='--', alpha=0.3)
 	plt.title('Avg Num_cars at each level along optimal path, across length-' + str(length_selected) + ' puzzles')	
 	plt.savefig(fig_out+str(length_selected)+'.png')
 	plt.close()

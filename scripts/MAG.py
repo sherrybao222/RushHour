@@ -49,20 +49,6 @@ def json_to_car_list(filename):
 				red = cur_car
 	return car_list, red
 
-# def move(car_list, car_tag, to_position): 
-# # make a move and return the new car list
-# 	red = ''
-# 	for i in range(len(car_list)):
-# 		cur_car = car_list[i]
-# 		if cur_car.tag == car_tag:
-# 			new_car = Car(s = [int(to_position)%6, int(to_position/6)],\
-# 				l = int(cur_car.length), t = car_tag, \
-# 				o = cur_car.orientation, p = cur_car.puzzle_tag)
-# 			car_list[i] = new_car
-# 			cur_car = car_list[i]
-# 		if cur_car.tag == 'r':
-# 			red = cur_car
-# 	return car_list, red
 
 
 def move(car_list, car_tag, to_position): 
@@ -73,6 +59,25 @@ def move(car_list, car_tag, to_position):
 		cur_car = car_list[i]
 		if cur_car.tag == car_tag:
 			new_car = Car(s = [int(to_position)%6, int(to_position/6)],\
+				l = int(cur_car.length), t = car_tag, \
+				o = cur_car.orientation, p = cur_car.puzzle_tag)
+		else:
+			new_car = Car(s = [int(cur_car.start[0]), int(cur_car.start[1])], \
+							l = int(cur_car.length), t = cur_car.tag,\
+							o = cur_car.orientation, p = cur_car.puzzle_tag)
+		new_list.append(new_car)
+		if new_list[i].tag == 'r':
+			red = new_list[i]
+	return new_list, red
+
+def move2(car_list, car_tag, to_position1, to_position2): 
+# make a move and return the new car list
+	new_list = []
+	red = ''
+	for i in range(len(car_list)):
+		cur_car = car_list[i]
+		if cur_car.tag == car_tag:
+			new_car = Car(s = [to_position1, to_position2],\
 				l = int(cur_car.length), t = car_tag, \
 				o = cur_car.orientation, p = cur_car.puzzle_tag)
 		else:
@@ -219,6 +224,42 @@ def board_freedom(board): # number of available moves, mobility
 					cur_position += 1
 	return freedom
 
+
+def all_legal_moves(car_list, red, board):
+	moves = []
+	for i in range(len(car_list)):
+		cur_car = car_list[i]
+		if cur_car.orientation == 'horizontal':
+			cur_position1 = cur_car.start[0] - 1 # search left
+			cur_position2 = cur_car.start[1]
+			while(cur_position1 >= 0 and board.board_dict[(cur_position1, cur_position2)] == None):
+				moves.append((cur_car, [cur_position1, cur_position2]))
+				cur_position1 -= 1
+			cur_position1 = cur_car.end[0] + 1 # search right
+			while(cur_position1 < board.width and board.board_dict[(cur_position1, cur_position2)] == None):
+				moves.append((cur_car, [cur_position1, cur_position2]))
+				cur_position1 += 1
+		if cur_car.orientation == 'vertical':
+			cur_position1 = cur_car.start[0]
+			cur_position2 = cur_car.start[1] - 1 # search up
+			while(cur_position2 >= 0 and board.board_dict[(cur_position1, cur_position2)] == None):
+				moves.append((cur_car, [cur_position1, cur_position2]))
+				cur_position2 -= 1
+			cur_position2 = cur_car.end[1] + 1 # searc down
+			while(cur_position2 < board.height and board.board_dict[(cur_position1, cur_position2)] == None):
+				moves.append((cur_car, [cur_position1, cur_position2]))
+				cur_position2 += 1
+	return moves
+			
+
+def check_win(board, red): # return true if current board state can win
+	cur_position = red.end[0] + 1 # search right of red car
+	while(cur_position < board.width):
+		if board.board_dict[(cur_position, red.start[1])] is not None:
+			return False
+		cur_position += 1
+	return True
+	
 
 def red_mobility(board, red): # mobility of red car, right and left
 	right = 0
@@ -584,7 +625,6 @@ def av_local_cluster_coef(finished_list):
 	except:
 		result = -1
 	return result
-
 
 
 
