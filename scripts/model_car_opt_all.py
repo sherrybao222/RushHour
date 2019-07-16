@@ -76,8 +76,11 @@ for length_selected in [7, 11, 14, 16]: # each puzzle length
 			debug = 0
 			value_seq = []
 
+			# print('length of solution list: '+ str(len(sol_list)))
 			# each move in solution, omit last step
 			for move in sol_list: 
+
+				# print(MAG.board_to_str(my_board))
 			
 				debug += 1
 				value = 0
@@ -109,7 +112,7 @@ for length_selected in [7, 11, 14, 16]: # each puzzle length
 
 			values_puz += np.array(value_seq, dtype=np.float32)
 			cache.append(np.array(value_seq, dtype=np.float32))
-
+			# sys.exit()
 
 		values_puz = values_puz / num_puzzles
 		std = np.std(cache, axis=0)
@@ -132,8 +135,8 @@ for length_selected in [7, 11, 14, 16]: # each puzzle length
 	plt.legend()
 	plt.xlabel('Move number along optimal solution')
 	plt.grid(linestyle='--', alpha=0.3)
-	plt.title('Avg Num_cars at each level along optimal path, across length-' + str(length_selected) + ' puzzles')	
-	plt.savefig(fig_out+str(length_selected)+'.png')
+	plt.title('Avg Num_cars at each level along optimal path, across length-' + str(length_selected-1) + ' puzzles')	
+	plt.savefig(fig_out+str(length_selected-1)+'.png')
 	plt.close()
 
 

@@ -3,6 +3,7 @@ from json import dump,load
 import Graph
 from networkx import DiGraph, simple_cycles
 import solution
+import copy
 
 class Car:
 	start, end, length = [0,0], [0,0], [0,0] #hor,ver
@@ -70,6 +71,7 @@ def move(car_list, car_tag, to_position):
 			red = new_list[i]
 	return new_list, red
 
+
 def move2(car_list, car_tag, to_position1, to_position2): 
 # make a move and return the new car list
 	new_list = []
@@ -77,7 +79,7 @@ def move2(car_list, car_tag, to_position1, to_position2):
 	for i in range(len(car_list)):
 		cur_car = car_list[i]
 		if cur_car.tag == car_tag:
-			new_car = Car(s = [to_position1, to_position2],\
+			new_car = Car(s = [int(to_position1), int(to_position2)],\
 				l = int(cur_car.length), t = car_tag, \
 				o = cur_car.orientation, p = cur_car.puzzle_tag)
 		else:
@@ -88,6 +90,7 @@ def move2(car_list, car_tag, to_position1, to_position2):
 		if new_list[i].tag == 'r':
 			red = new_list[i]
 	return new_list, red
+
 
 def move_by(car_list, car_tag, move_by): 
 # make a move and return the new car list
@@ -233,21 +236,21 @@ def all_legal_moves(car_list, red, board):
 			cur_position1 = cur_car.start[0] - 1 # search left
 			cur_position2 = cur_car.start[1]
 			while(cur_position1 >= 0 and board.board_dict[(cur_position1, cur_position2)] == None):
-				moves.append((cur_car, [cur_position1, cur_position2]))
+				moves.append((cur_car.tag, [cur_position1, cur_position2]))
 				cur_position1 -= 1
 			cur_position1 = cur_car.end[0] + 1 # search right
 			while(cur_position1 < board.width and board.board_dict[(cur_position1, cur_position2)] == None):
-				moves.append((cur_car, [cur_position1, cur_position2]))
+				moves.append((cur_car.tag, [cur_position1-cur_car.length+1, cur_position2]))
 				cur_position1 += 1
 		if cur_car.orientation == 'vertical':
 			cur_position1 = cur_car.start[0]
 			cur_position2 = cur_car.start[1] - 1 # search up
 			while(cur_position2 >= 0 and board.board_dict[(cur_position1, cur_position2)] == None):
-				moves.append((cur_car, [cur_position1, cur_position2]))
+				moves.append((cur_car.tag, [cur_position1, cur_position2]))
 				cur_position2 -= 1
 			cur_position2 = cur_car.end[1] + 1 # searc down
 			while(cur_position2 < board.height and board.board_dict[(cur_position1, cur_position2)] == None):
-				moves.append((cur_car, [cur_position1, cur_position2]))
+				moves.append((cur_car.tag, [cur_position1, cur_position2-cur_car.length+1]))
 				cur_position2 += 1
 	return moves
 			
@@ -374,8 +377,6 @@ def get_cars_from_level2(car_list, l): # get cars from level, highest
 		if l == min(cur_car.level):
 			list_toreturn.append(cur_car)
 	return list_toreturn
-
-
 
 
 

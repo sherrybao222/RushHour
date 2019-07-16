@@ -58,7 +58,6 @@ for w_idx in range(num_parameters):
 		my_car_list, my_red = MAG.json_to_car_list(ins_file)
 		my_board, my_red = MAG.construct_board(my_car_list)
 		new_car_list = MAG.construct_mag(my_board, my_red)
-		n_node, n_edge = MAG.get_mag_attr(new_car_list)
 
 		debug = 0
 		value_seq = []
