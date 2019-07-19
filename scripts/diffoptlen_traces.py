@@ -55,17 +55,20 @@ for puzzle in puzzles:
 
 	for trial in all_trials:
 		ax.plot(np.arange(len(trial)), \
-				np.array(trial, dtype=np.float32), \
-				'-')
+				np.array(trial+initial-1, dtype=np.float32), \
+				'-', linewidth=5)
 		if len(trial) > x_max:
 			x_max = len(trial)
-	# plt.xticks(np.arange(x_max), np.arange(1, x_max+1))
+	fig = plt.gcf()
+	fig.set_size_inches(x_max/4, 10.5)
 	ax.yaxis.set_major_locator(MaxNLocator(integer=True))
 	plt.axvline(x=int(initial)-1, color='gray', linestyle='--')
 	plt.grid(linestyle='--', alpha=0.3)
-	plt.xlabel('Move Number')
-	plt.ylabel('Suboptimality Score')
-	plt.title(puzzle+', optimal length = '+str(initial-1))
+	plt.xticks(fontsize=40)
+	plt.yticks(fontsize=40)
+	plt.xlabel('Move Number', fontsize=40)
+	plt.ylabel('Distance to Goal', fontsize=40)
+	plt.title('Example Length-'+str(initial-1)+' Puzzle', fontsize=40)
 	plt.savefig(fig_dir+puzzle+'.png')
 	plt.close()
 

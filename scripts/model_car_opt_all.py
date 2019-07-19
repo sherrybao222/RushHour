@@ -19,6 +19,7 @@ import numpy as np
 import sys, random
 import matplotlib.pyplot as plt
 import matplotlib
+from matplotlib.pyplot import figure
 
 # sorted according to optimal length
 all_instances = ['prb8786', 'prb11647', 'prb21272', 'prb13171', 'prb1707', 'prb23259', 'prb10206', 'prb2834', 'prb28111', 'prb32795', 'prb26567', 'prb14047', 'prb14651', 'prb32695', 'prb29232', 'prb15290', 'prb12604', 'prb20059', 'prb9718', 'prb29414', 'prb22436', 'prb62015', 'prb38526', 'prb3217', 'prb34092', 'prb12715', 'prb54081', 'prb717', 'prb31907', 'prb42959', 'prb79230', 'prb14898', 'prb62222', 'prb68910', 'prb33509', 'prb46224', 'prb47495', 'prb29585', 'prb38725', 'prb33117', 'prb20888', 'prb55384', 'prb6671', 'prb343', 'prb68514', 'prb29600', 'prb23404', 'prb19279', 'prb3203', 'prb65535', 'prb14485', 'prb34551', 'prb72800', 'prb44171', 'prb1267', 'prb29027', 'prb24406', 'prb58853', 'prb24227', 'prb45893', 'prb25861', 'prb15595', 'prb54506', 'prb48146', 'prb78361', 'prb25604', 'prb46639', 'prb46580', 'prb10166', 'prb57223']
@@ -122,7 +123,7 @@ for length_selected in [7, 11, 14, 16]: # each puzzle length
 		# plot this parameter
 		rgba = cmap(color_gradients[w_idx])
 		plt.plot(np.arange(len(values_puz)), np.array(values_puz, dtype=np.float32), \
-				'-o', markersize=2,
+				'-o', markersize=5, linewidth=5,\
 				color=rgba, label=str(w_idx))
 		# plt.errorbar(np.arange(len(values_puz)), np.array(values_puz, dtype=np.float32),\
 				# std, linestyle='None', color=colors[w_idx], alpha=0.5)
@@ -130,12 +131,22 @@ for length_selected in [7, 11, 14, 16]: # each puzzle length
 		#	plt.text(x, y, str(w_idx), color="black", fontsize=6)
 
 	# all parameters in the same plot
-	plt.ylim(top=ylim+0.1)
+	fig = plt.gcf()
+	fig.set_size_inches((length_selected-1)*1.8, 15)
+	# plt.ylim(top=ylim+0.1)
+	plt.ylim(top=3.0)
 	plt.xticks(np.arange(length_selected-1), np.arange(1, length_selected))
-	plt.legend()
-	plt.xlabel('Move number along optimal solution')
+	plt.legend(prop={'size': 40})
+	plt.xticks(fontsize=60)
+	plt.yticks(fontsize=60)
+	plt.xlabel('Move Number', fontsize=50)
 	plt.grid(linestyle='--', alpha=0.3)
-	plt.title('Avg Num_cars at each level along optimal path, across length-' + str(length_selected-1) + ' puzzles')	
+	# plt.title('Avg Num_cars at each level, length-' \
+	# 		+ str(length_selected-1),\
+	# 		fontsize=30)
+	plt.title('Length-' \
+			+ str(length_selected-1)+' Puzzles',\
+			fontsize=50)	
 	plt.savefig(fig_out+str(length_selected-1)+'.png')
 	plt.close()
 

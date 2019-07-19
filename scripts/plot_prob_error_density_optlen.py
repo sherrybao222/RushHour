@@ -1,5 +1,5 @@
 # PLOTTING: characterize trialdata each move
-# probability of error as a function of MAG size (#nodes)
+# probability of error as a function of MAG size (#optlens)
 # density histograms of MAG size
 # py27
 import sys, csv, math
@@ -19,19 +19,19 @@ ins_optlen[53:]=[16]*len(ins_optlen[53:])
 optlen_consider = 7
 
 moves_file = '/Users/chloe/Desktop/trialdata_valid_true_dist7_processed.csv'
-out_file = '/Users/chloe/Desktop/nodes_to_error_6.png'
+out_file = '/Users/chloe/Desktop/optlen_to_error_6.png'
 
 
 move_data = pd.read_csv(moves_file)
 
-error_node = []
+error_optlen = []
 
-count_node = []
+count_optlen = []
 
-hash_node = []
-hash_node_error = []
+hash_optlen = []
+hash_optlen_error = []
 
-max_node = ''
+max_optlen = ''
 
 
 #################################### PROCESS DATA ###############################
@@ -40,39 +40,39 @@ for i in range(len(move_data)):
 	row = move_data.loc[i, :]
 	# first line
 	if i == 0: 
-		max_node = int(row['max_node'])
-		error_node = [0]* (max_node + 1)
-		count_node = [0] * (max_node + 1)
+		max_optlen = int(row['max_optlen'])
+		error_optlen = [0]* (max_optlen + 1)
+		count_optlen = [0] * (max_optlen + 1)
 	cur_ins = row['instance']
 	if ins_optlen[all_instances.index(cur_ins)] != optlen_consider: 
 	# only consider designated level
 		continue 
 	error = row['error_tomake']
-	node = row['node_human_static']
-	count_node[node] += 1
+	optlen = row['optlen']
+	count_optlen[optlen] += 1
 	if error == 1:
-		error_node[node] += 1
-		hash_node_error.append(int(node))
+		error_optlen[optlen] += 1
+		hash_optlen_error.append(int(optlen))
 	else:
-		hash_node.append(int(node))
+		hash_optlen.append(int(optlen))
 
 ####################################### PLOTTING ##################################
 # error bar preparation (95%CI)
 z = st.norm.ppf(1-0.05/2)
 
 
-# node: prob error and histogram
-fig, ax = plt.subplots(2,1, figsize=(16, 26))
-ax[0].hist(hash_node, bins=np.arange(len(count_node))-0.5,\
+# optlen: prob error and histogram
+fig, ax = plt.subplots(2,1, figsize=(19, 26))
+ax[0].hist(hash_optlen, bins=np.arange(len(count_optlen))-0.5,\
 			density=True, align='mid', label='Non-Error', \
 			color='gray', edgecolor='black', alpha=0.7, width=1)
-ax[0].axvline(np.median(hash_node), \
+ax[0].axvline(np.median(hash_optlen), \
 			color='gray', linestyle='dashed', linewidth=2.5)
 ax12 = ax[0].twinx()
-ax12.hist(hash_node_error, bins=np.arange(len(count_node))-0.5,\
+ax12.hist(hash_optlen_error, bins=np.arange(len(count_optlen))-0.5,\
 			density=True, align='mid', label='Error', \
 			color='orangered', edgecolor='orangered', alpha=0.3, width=1)
-ax12.axvline(np.median(hash_node_error), \
+ax12.axvline(np.median(hash_optlen_error), \
 		color='orangered', linestyle='dashed', linewidth=2.5)
 ax[0].legend(loc='upper center', bbox_to_anchor=(0.55,0.9), prop={'size': 30})
 ax12.legend(loc='upper center', bbox_to_anchor=(0.55,0.81), prop={'size': 30})
@@ -81,33 +81,33 @@ ax[0].tick_params(axis='both', which='major', labelsize=50)
 ax12.locator_params(nbins=5, axis='y')
 ax12.tick_params(axis='both', which='major', labelsize=50, colors='orangered')
 ax[0].set_ylabel('Proportion', fontsize=40)
-ax[0].set_xlabel('Graph Size', fontsize=40)
-ax[0].set_title('Histogram of Graph Size Given Error/Correct', \
+ax[0].set_xlabel('Distance to Goal', fontsize=40)
+ax[0].set_title('Histogram of Distance to Goal Given Error/Correct', \
 				fontsize=40, weight='bold')
-print('total node sample size: ', len(hash_node))
-print('total node_error sample size: ', len(hash_node_error))
+print('total optlen sample size: ', len(hash_optlen))
+print('total optlen_error sample size: ', len(hash_optlen_error))
 
 
 cmap = mp.cm.get_cmap('OrRd')
-normalize = mp.colors.Normalize(vmin=min(count_node), vmax=max(count_node))
-colors = [cmap(normalize(value)) for value in count_node]
-count_node = np.array(count_node, dtype=np.float32)
-error_node = np.array(error_node, dtype=np.float32)
-CIup = (error_node+z**2/2.0)/(count_node+z**2)+ (z/(count_node+z**2))*np.sqrt(error_node*(count_node-error_node)/count_node+z**2/4.0)
-CIlow = (error_node+z**2/2.0)/(count_node+z**2) - (z/(count_node+z**2))*np.sqrt(error_node*(count_node-error_node)/count_node+z**2/4.0)		
-ax[1].bar(x=np.arange(len(count_node)), \
-		height=error_node/count_node, \
+normalize = mp.colors.Normalize(vmin=min(count_optlen), vmax=max(count_optlen))
+colors = [cmap(normalize(value)) for value in count_optlen]
+count_optlen = np.array(count_optlen, dtype=np.float32)
+error_optlen = np.array(error_optlen, dtype=np.float32)
+CIup = (error_optlen+z**2/2.0)/(count_optlen+z**2)+ (z/(count_optlen+z**2))*np.sqrt(error_optlen*(count_optlen-error_optlen)/count_optlen+z**2/4.0)
+CIlow = (error_optlen+z**2/2.0)/(count_optlen+z**2) - (z/(count_optlen+z**2))*np.sqrt(error_optlen*(count_optlen-error_optlen)/count_optlen+z**2/4.0)		
+ax[1].bar(x=np.arange(len(count_optlen)), \
+		height=error_optlen/count_optlen, \
 		width=1, alpha=0.65, color=colors, \
 		label='Probability Error', align='center') 
 ax[1].xaxis.set_major_formatter(ticker.ScalarFormatter())
-for pos, y, err, color in zip(np.arange(len(count_node)), error_node/count_node, np.array(zip(CIlow,CIup)), colors):
+for pos, y, err, color in zip(np.arange(len(count_optlen)), error_optlen/count_optlen, np.array(zip(CIlow,CIup)), colors):
     err=np.expand_dims(err,axis=1)
     ax[1].errorbar(pos, y, err, capsize=14, color=color, linewidth=8)
-ax[1].set_ylim(top=np.nanmax(error_node/count_node)+0.55)
+ax[1].set_ylim(top=np.nanmax(error_optlen/count_optlen)+0.75)
 ax[1].tick_params(axis='both', which='major', labelsize=50)
 ax[1].set_ylabel('Probability Error', fontsize=40)
-ax[1].set_xlabel('Graph Size', fontsize=40)
-ax[1].set_title('Probability of Error Given Graph Size', \
+ax[1].set_xlabel('Distance to Goal', fontsize=40)
+ax[1].set_title('Probability of Error Given Distance to Goal', \
 				fontsize=40, weight='bold')
 
 # fig.text(0.5, 0.029, \
@@ -119,17 +119,17 @@ plt.savefig(out_file)
 plt.close()
 
 # hypothesis testing
-print('\nerror: node')
+print('\nerror: optlen')
 print('Mann-Whitney U Test: ', \
-		st.mannwhitneyu(hash_node, hash_node_error,\
+		st.mannwhitneyu(hash_optlen, hash_optlen_error,\
 						use_continuity=False))
 print('T-test Independent: ', \
-		st.ttest_ind(hash_node, hash_node_error,\
+		st.ttest_ind(hash_optlen, hash_optlen_error,\
 						equal_var=False, nan_policy='omit'))
-print('Median Non-error: ', np.median(hash_node))
-print('Median error: ', np.median(hash_node_error))
-print('Mean Non-error: ', np.mean(hash_node))
-print('Mean error: ', np.mean(hash_node_error))
+print('Median Non-error: ', np.median(hash_optlen))
+print('Median error: ', np.median(hash_optlen_error))
+print('Mean Non-error: ', np.mean(hash_optlen))
+print('Mean error: ', np.mean(hash_optlen_error))
 
 
 
