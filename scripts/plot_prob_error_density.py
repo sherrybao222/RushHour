@@ -62,28 +62,33 @@ z = st.norm.ppf(1-0.05/2)
 
 
 # node: prob error and histogram
-fig, ax = plt.subplots(2,1, figsize=(16, 26))
+fig, ax = plt.subplots(2,1, figsize=(30, 40))
 ax[0].hist(hash_node, bins=np.arange(len(count_node))-0.5,\
 			density=True, align='mid', label='Non-Error', \
 			color='gray', edgecolor='black', alpha=0.7, width=1)
 ax[0].axvline(np.median(hash_node), \
 			color='gray', linestyle='dashed', linewidth=2.5)
-ax12 = ax[0].twinx()
-ax12.hist(hash_node_error, bins=np.arange(len(count_node))-0.5,\
+# ax12 = ax[0].twinx()
+# ax12.hist(hash_node_error, bins=np.arange(len(count_node))-0.5,\
+# 			density=True, align='mid', label='Error', \
+# 			color='orangered', edgecolor='orangered', alpha=0.3, width=1)
+# ax12.axvline(np.median(hash_node_error), \
+# 		color='orangered', linestyle='dashed', linewidth=2.5)
+ax[0].hist(hash_node_error, bins=np.arange(len(count_node))-0.5,\
 			density=True, align='mid', label='Error', \
 			color='orangered', edgecolor='orangered', alpha=0.3, width=1)
-ax12.axvline(np.median(hash_node_error), \
+ax[0].axvline(np.median(hash_node_error), \
 		color='orangered', linestyle='dashed', linewidth=2.5)
-ax[0].legend(loc='upper center', bbox_to_anchor=(0.55,0.9), prop={'size': 30})
-ax12.legend(loc='upper center', bbox_to_anchor=(0.55,0.81), prop={'size': 30})
+ax[0].legend(loc='upper center', bbox_to_anchor=(0.55,0.9), prop={'size': 60})
+# ax12.legend(loc='upper center', bbox_to_anchor=(0.55,0.81), prop={'size': 50})
 ax[0].locator_params(nbins=5, axis='y')
-ax[0].tick_params(axis='both', which='major', labelsize=50)
-ax12.locator_params(nbins=5, axis='y')
-ax12.tick_params(axis='both', which='major', labelsize=50, colors='orangered')
-ax[0].set_ylabel('Proportion', fontsize=40)
-ax[0].set_xlabel('Graph Size', fontsize=40)
+ax[0].tick_params(axis='both', which='major', labelsize=80)
+# ax12.locator_params(nbins=5, axis='y')
+# ax12.tick_params(axis='both', which='major', labelsize=60, colors='orangered')
+ax[0].set_ylabel('Proportion of Positions', fontsize=80)
+ax[0].set_xlabel('Graph Size', fontsize=80)
 ax[0].set_title('Histogram of Graph Size Given Error/Correct', \
-				fontsize=40, weight='bold')
+				fontsize=30, weight='bold')
 print('total node sample size: ', len(hash_node))
 print('total node_error sample size: ', len(hash_node_error))
 
@@ -104,11 +109,11 @@ for pos, y, err, color in zip(np.arange(len(count_node)), error_node/count_node,
     err=np.expand_dims(err,axis=1)
     ax[1].errorbar(pos, y, err, capsize=14, color=color, linewidth=8)
 ax[1].set_ylim(top=np.nanmax(error_node/count_node)+0.55)
-ax[1].tick_params(axis='both', which='major', labelsize=50)
-ax[1].set_ylabel('Probability Error', fontsize=40)
-ax[1].set_xlabel('Graph Size', fontsize=40)
+ax[1].tick_params(axis='both', which='major', labelsize=80)
+ax[1].set_ylabel('Probability Error', fontsize=80)
+ax[1].set_xlabel('Graph Size', fontsize=80)
 ax[1].set_title('Probability of Error Given Graph Size', \
-				fontsize=40, weight='bold')
+				fontsize=20, weight='bold')
 
 # fig.text(0.5, 0.029, \
 # 	'Graph Size', \

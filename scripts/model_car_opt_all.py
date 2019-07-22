@@ -136,7 +136,7 @@ for length_selected in [7, 11, 14, 16]: # each puzzle length
 	# plt.ylim(top=ylim+0.1)
 	plt.ylim(top=3.0)
 	plt.xticks(np.arange(length_selected-1), np.arange(1, length_selected))
-	plt.legend(prop={'size': 40})
+	# plt.legend(prop={'size': 40})
 	plt.xticks(fontsize=60)
 	plt.yticks(fontsize=60)
 	plt.xlabel('Move Number', fontsize=50)
