@@ -1,54 +1,91 @@
 # BFS model
-# py27
+
 import MAG
 import random, sys, copy
 import numpy as np
 
 
 class Node:
-	car_list = None
-	red = None
-	board = None
-	value = 0
-	children = []
-	parent = None
-
 	def __init__(self, cl):
-		self.car_list = cl
-		self.board, self.red = MAG.construct_board(self.car_list)
-		self.value = Value1(self.car_list, self.red)
+		self.__car_list = cl
+		self.__children = []
 
 	def add_child(self, n):
-		# c.parent = self
-		self.children.append(n)
+		n.set_parent(self)
+		self.__children.append(n)
 
 	def set_parent(self, p):
-		self.parent = p
+		self.__parent = p
 
+	def set_value(self, v):
+		self.__value = v
+
+	def get_carlist(self):
+		return self.__car_list
+
+	def get_red(self):
+		for car in self.__car_list:
+			if car.tag == 'r':
+				return car
+
+	def get_board(self):
+		tmp_b, _ = MAG.construct_board(self.__car_list)
+		return tmp_b
+
+	def get_value(self):
+		self.__value = Value1(self.__car_list, self.get_red())
+		return self.__value
+
+	def get_child(self, ind):
+		return self.__children[ind]
+
+	def get_children(self):
+		return self.__children
+
+	def get_parent(self):
+		return self.__parent
+	
 	def remove_child(self, c):
-		for i in range(len(self.children)):
-			if self.children[i] == c:
+		for i in range(len(self.__children)):
+			if self.__children[i] == c:
 				c.parent = None
-				self.children.pop(i)
-				return		
+				self.__children.pop(i)
+				return	
 
 	def update_carlits(self, cl):
-		self.car_list = cl
-		self.board, self.red = MAG.construct_board(self.car_list)
-		self.value = Value1(self.car_list, self.red)		
+		self.__car_list = cl
+		self.__board, self.__red = MAG.construct_board(self.__car_list)
+		self.__value = Value1(self.__car_list, self.__red)		
 
 	def print_children(self):
-		for i in range(len(self.children)):
+		for i in range(len(self.__children)):
 			print(i)
-			print('print child:\n'+MAG.board_to_str(self.children[i].board))
+			print('print all children:\n'+MAG.board_to_str(self.__children[i].get_board()))
 
-	def print_children2(self):
-		for i in range(0, len(self.children)):
-			print('print child: \n'+self.children[i])
+	def board_to_str(self):
+		tmp_board, tmp_red = MAG.construct_board(self.__car_list)
+		out_str = ''
+		for i in range(tmp_board.height):
+			for j in range(tmp_board.width):
+				cur_car = tmp_board.board_dict[(j, i)]
+				if cur_car == None:
+					out_str += '.'
+					if i == 2 and j == 5:
+						out_str += '>'
+					continue
+				if cur_car.tag == 'r':
+					out_str += 'R'
+				else:
+					out_str += cur_car.tag
+				if i == 2 and j == 5:
+					out_str += '>'
+			out_str += '\n'
+		return out_str
 
 
 
-def Value1(car_list, red):
+
+def Value1(car_list2, red):
 	'''
 	value = w0R * num_cars(red, right)
 		+ w1 * num_cars{MAG-level 1} 
@@ -66,16 +103,16 @@ def Value1(car_list, red):
 	noise = np.random.normal(loc=0, scale=1)
 	value = 0
 	# initialize MAG
-	my_board, my_red = MAG.construct_board(car_list)
-	new_car_list = MAG.construct_mag(my_board, my_red)
+	my_board2, my_red2 = MAG.construct_board(car_list2)
+	new_car_list2 = MAG.construct_mag(my_board2, my_red2)
 	# number of cars at the top level (red only)
 	value += w0R * 1 
 	# each following level
 	for j in range(num_parameters - 1): 
 		level = j+1
-		new_car_list = MAG.clean_level(new_car_list)
-		new_car_list = MAG.assign_level(new_car_list, my_red)
-		cars_from_level = MAG.get_cars_from_level2(new_car_list, level)
+		new_car_list2 = MAG.clean_level(new_car_list2)
+		new_car_list2 = MAG.assign_level(new_car_list2, my_red2)
+		cars_from_level = MAG.get_cars_from_level2(new_car_list2, level)
 		value += weights[level] * (len(cars_from_level))
 	return value+noise
 
@@ -96,40 +133,31 @@ def Stop(probability=0.3):
 
 def Determined(root_node): 
 # return true if win
-	return MAG.check_win(root_node.board, root_node.red)
+	return MAG.check_win(root_node.get_board(), root_node.get_red())
 
 
 def RandomMove(node):
 # make a random move and return the resulted node
-	all_moves = MAG.all_legal_moves(node.car_list, node.red, node.board)
+	all_moves = MAG.all_legal_moves(node.get_carlist(), node.get_red(), node.get_board())
 	(car, pos) = random.choice(all_moves)
-	new_list, new_red = MAG.move2(node.car_list, car.tag, pos[0], pos[1])
+	new_list, new_red = MAG.move2(node.get_carlist(), car, pos[0], pos[1])
 	new_node = Node(new_list)
 	return new_node
 
 
 def InitializeChildren(root_node):
 # initialize the list of children (using all possible moves)
-	tmp = copy.deepcopy(root_node.car_list)
-	print('root before initialization:\n'+MAG.board_to_str(root_node.board))
-	all_moves = MAG.all_legal_moves(root_node.car_list, root_node.red, root_node.board)
-	for (tag, pos) in all_moves:
-		new_list, _ = MAG.move2(tmp, tag, pos[0], pos[1])
-		# copy_new_list = copy.deepcopy(new_list)
-		# child = Node(copy_new_list)
-		# child.set_parent(root_node)
-		# root_node.add_child(child)
-		# child.parent = root_node
-		root_node.children.append(Node(copy.deepcopy(new_list)))
-		# root_node.children.append(tag)
-		print('child: \n'+MAG.board_to_str(Node(new_list).board))
-		# print('child: \n'+MAG.board_to_str(child.board))
-	# root_node.add_child(Node(tmp))
-	# root_node.remove_child(Node(tmp))
+	tmp = copy.deepcopy(root_node)
+	all_moves = MAG.all_legal_moves(tmp.get_carlist(), tmp.get_red(), tmp.get_board())
+
+	for i, (tag, pos) in enumerate(all_moves):
+		# print('possible move number '+str(i))
+		new_list, _ = MAG.move2(tmp.get_carlist(), tag, pos[0], pos[1])
+		dummy_child = Node(new_list)
+		root_node.add_child(dummy_child)
+		
 	root_node.print_children()
-	# root_node.print_children2()
-	print('root after initialization\n'+MAG.board_to_str(root_node.board))
-	
+
 
 def SelectNode(root_node):
 # return the child with max value
@@ -140,35 +168,35 @@ def ExpandNode(node, threshold):
 # create all possible nodes under input node, cut the ones below threshold
 	InitializeChildren(node)
 	Vmax = MaxChildValue(node)
-	for child in node.children:
-		if abs(child.value - Vmax) > threshold:
+	for child in node.get_children():
+		if abs(child.get_value() - Vmax) > threshold:
 			node.remove_child(child)
 
 
 def Backpropagate(this_node, root_node):
-	print('backpropagate\n'+MAG.board_to_str(this_node.board))
-	this_node.value = MaxChildValue(this_node)
+	print('backpropagate current node\n'+this_node.board_to_str())
+	this_node.set_value(MaxChildValue(this_node))
 	if this_node != root_node:
-		Backpropagate(this_node.parent, root_node)
+		Backpropagate(this_node.get_parent(), root_node)
 
 
 def MaxChildValue(node): 
 # return the max value from node's children
 	Vmax = -float('inf')
-	for child in node.children:
-		if Vmax < child.value:
-			Vmax = child.value
+	for child in node.get_children():
+		if Vmax < child.get_value():
+			Vmax = child.get_value()
 	return Vmax
 
 def ArgmaxChild(root_node): 
 # return the child with max value
 	maxChild = None
-	for child in root_node.children:
-		print('child\n'+MAG.board_to_str(child.board))
+	for child in root_node.get_children():
 		if maxChild == None:
 			maxChild = child
-		elif maxChild.value < child.value:
+		elif maxChild.get_value() < child.get_value():
 			maxChild = child
+	print('max child selected\n'+maxChild.board_to_str())
 	return maxChild
 
 '''
@@ -189,19 +217,20 @@ def MakeMove(state, delta=0, gamma=0.1, theta=0):
 	else:
 		DropFeatures(delta)
 		root = state # state is already a node
+		print('root node before initialization\n'+root.board_to_str())
 		InitializeChildren(root)
-		sys.exit()
+		print('root node after initialization\n'+root.board_to_str())
 		debug = 0
 		while not Stop(gamma) and not Determined(root):
-			print('--------root--------\n'+MAG.board_to_str(root.board))
 			n = SelectNode(root)
 			debug += 1
-			print(debug)
-			print('selected node\n'+MAG.board_to_str(n.board))
+			print('while iteration number, ' + str(debug))
+			print('selected move\n'+n.board_to_str())
 			ExpandNode(n, theta)
-			print('root:\n'+MAG.board_to_str(root.board))
+			print('root after this while iteration:\n'+root.board_to_str())
 			Backpropagate(n, root)
-			# print('root:\n'+MAG.board_to_str(root.board))
+			if debug == 1:
+				sys.exit()
 	return ArgmaxChild(root)
 
 
@@ -217,14 +246,14 @@ def Main():
 	# construct initial state/node
 	my_car_list, my_red = MAG.json_to_car_list(ins_file)
 	my_board, my_red = MAG.construct_board(my_car_list)
-	print('Initial board:')
+	# print('Initial board:')
 	print(MAG.board_to_str(my_board))
 	state_node = Node(my_car_list)
 	
 	# make a move
 	new_node = MakeMove(state_node)
-	print('Move made:')
-	print(MAG.board_to_str(new_node.car_list))
+	print('First move made:')
+	print(new_node.board_to_str())
 
 
 

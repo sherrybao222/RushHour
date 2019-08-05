@@ -54,7 +54,7 @@ def json_to_car_list(filename):
 
 def move(car_list, car_tag, to_position): 
 # make a move and return the new car list
-	new_list = []
+	new_list2 = []
 	red = ''
 	for i in range(len(car_list)):
 		cur_car = car_list[i]
@@ -66,15 +66,15 @@ def move(car_list, car_tag, to_position):
 			new_car = Car(s = [int(cur_car.start[0]), int(cur_car.start[1])], \
 							l = int(cur_car.length), t = cur_car.tag,\
 							o = cur_car.orientation, p = cur_car.puzzle_tag)
-		new_list.append(new_car)
-		if new_list[i].tag == 'r':
-			red = new_list[i]
-	return new_list, red
+		new_list2.append(new_car)
+		if new_list2[i].tag == 'r':
+			red = new_list2[i]
+	return new_list2, red
 
 
 def move2(car_list, car_tag, to_position1, to_position2): 
 # make a move and return the new car list
-	new_list = []
+	new_list2 = []
 	red = ''
 	for i in range(len(car_list)):
 		cur_car = car_list[i]
@@ -86,15 +86,15 @@ def move2(car_list, car_tag, to_position1, to_position2):
 			new_car = Car(s = [int(cur_car.start[0]), int(cur_car.start[1])], \
 							l = int(cur_car.length), t = cur_car.tag,\
 							o = cur_car.orientation, p = cur_car.puzzle_tag)
-		new_list.append(new_car)
-		if new_list[i].tag == 'r':
-			red = new_list[i]
-	return new_list, red
+		new_list2.append(new_car)
+		if new_list2[i].tag == 'r':
+			red = new_list2[i]
+	return new_list2, red
 
 
 def move_by(car_list, car_tag, move_by): 
 # make a move and return the new car list
-	new_list = []
+	new_list2 = []
 	red = ''
 	for i in range(len(car_list)):
 		cur_car = car_list[i]
@@ -111,10 +111,10 @@ def move_by(car_list, car_tag, move_by):
 			new_car = Car(s = [int(cur_car.start[0]), int(cur_car.start[1])], \
 							l = int(cur_car.length), t = cur_car.tag,\
 							o = cur_car.orientation, p = cur_car.puzzle_tag)
-		new_list.append(new_car)
-		if new_list[i].tag == 'r':
-			red = new_list[i]
-	return new_list, red
+		new_list2.append(new_car)
+		if new_list2[i].tag == 'r':
+			red = new_list2[i]
+	return new_list2, red
 
 
 def construct_board(car_list):
@@ -135,6 +135,7 @@ def construct_board(car_list):
 				occupied_space.append((cur_start[0], cur_start[1] + i))
 		for j in range(0, len(occupied_space)):
 			board.board_dict[occupied_space[j]] = car
+	# print('print from construct_board:\n'+board_to_str(board))
 	return board, red
 
 
@@ -261,6 +262,7 @@ def check_win(board, red): # return true if current board state can win
 		if board.board_dict[(cur_position, red.start[1])] is not None:
 			return False
 		cur_position += 1
+	print('Win!')
 	return True
 	
 
