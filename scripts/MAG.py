@@ -262,7 +262,7 @@ def check_win(board, red): # return true if current board state can win
 		if board.board_dict[(cur_position, red.start[1])] is not None:
 			return False
 		cur_position += 1
-	print('Win!')
+	# print('Win!')
 	return True
 	
 

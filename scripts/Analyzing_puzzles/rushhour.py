@@ -11,6 +11,23 @@ from os import listdir
 from os.path import join, isfile
 from json import dump,load
 
+all_len = 0
+for i in range(len(terms_by_ins)):
+    cur_len = len(terms_by_ins['Jam-'+str(i+1)])
+    print(cur_len)
+    all_len += cur_len
+
+print('avg '+str(all_len/30.0))
+print(len(terms_by_ins['Jam-1']))
+print(len(terms_by_ins['Jam-5']))
+print(len(terms_by_ins['Jam-10']))
+print(len(terms_by_ins['Jam-15']))
+print(len(terms_by_ins['Jam-20']))
+print(len(terms_by_ins['Jam-25']))
+print(len(terms_by_ins['Jam-30']))
+print(terms_by_ins['Jam-30'][0])
+
+
 def rhstring(instance):
     """
     This is not a unique string, it is used only for instances of the same problem (e.g., different solutions paths)

@@ -133,13 +133,13 @@ def calc_real_dist(filename,index=-1):
 
 
 def calc_real_dist_worker(jsons,recs,w):
-        print  w
+        # print  w
         recs_w = [r for r in recs if r.worker == w]
-        print('recs_w ', recs_w)
+        # print('recs_w ', recs_w)
         for ins in uniq_order([r.instance for r in recs_w if r.instance is not None]):
-            print('ins ', ins)
+            # print('ins ', ins)
             paths,rs_paths=recs_to_paths(recs_w,ins)
-            print('paths ', paths)
+            # print('paths ', paths)
             for path,rs_path in zip(paths,rs_paths):
                 search_limit=int(jsons[ins])+2
                 for i in range(len(path)):
@@ -147,15 +147,15 @@ def calc_real_dist_worker(jsons,recs,w):
                     rec = rs_path[i]
                     a=make_Astar_all(heur=min_manhattan_distance_calc,search_limit=search_limit)
                     the_paths,stat=a(state)
-                    print('len the_paths ', len(the_paths))
+                    # print('len the_paths ', len(the_paths))
                     # print the_paths
                     real_dist=len(the_paths[0])
                     if real_dist!=0:
                         search_limit=real_dist+2 # one for the step and one for error 
                     line='{0}|{1}|{2}|{3}|{4}|{5}|{6}\n'.format(rec,real_dist,stat['expanded'],stat['generated'],stat['open_size'],stat['close_size'],rhstring(state))
                     # print line
-                    outf='/Users/chloe/Documents/RushHour/exp_data/results/trialdata_valid_true_dist_test.csv'
-                    pathsf = '/Users/chloe/Documents/RushHour/exp_data/results/trialdata_valid_sols_test.txt'
+                    outf='/Users/chloe/Desktop/trialdata_valid_true_dist_test.csv'
+                    pathsf = '/Users/chloe/Desktop/trialdata_valid_sols_test.txt'
                     write_flag=('w','a')[os.path.exists(outf)]
                     write_flag2=('w','a')[os.path.exists(pathsf)]
                     with open(outf, write_flag) as f:

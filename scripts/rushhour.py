@@ -11,6 +11,8 @@ from os import listdir
 from os.path import join, isfile
 from json import dump,load
 
+# print(terms_by_ins)
+
 def rhstring(instance):
     """
     This is not a unique string, it is used only for instances of the same problem (e.g., different solutions paths)
@@ -242,6 +244,7 @@ def find_terminal_states(instance):
             ((h,v)[goal_o=='v'])[goal_car]=goal_loc[0] #currently supports one locations
             if check_instance(h,v):
                 terminals.append(RHInstance(h,v))
+    print('Number of terminal states '+str(len(terminals)))
     return terminals
 
 def piece_possible_moves(instance,piece):
