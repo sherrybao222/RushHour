@@ -706,6 +706,23 @@ def make_instance(lines):
         i+=1
     return RHInstance(h,v,name)
 
+
+
+def make_instance2(car_list):
+    ''' MAG car_list to instance '''
+    h,v = {},{}
+    name = ''
+    for car in car_list:
+        if car.orientation == 'horizontal':
+            h.[car.tag] = (car.start[0], car.start[1], car.length)
+        elif car.orientation == 'vertical':
+            v.[car.tag] = (car.start[0], car.start[1], car.length)
+    return RHInstance(h,v,name)
+
+
+
+
+
 def read_instances(filename='../princeton_AI/code/jams.txt'):
     """
     read instances according to the format in https://www.cs.princeton.edu/courses/archive/fall11/cos402/assignments/programs/rushhour/

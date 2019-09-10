@@ -6,7 +6,7 @@ import solution
 import copy
 
 class Car:
-	start, end, length = [0,0], [0,0], [0,0] #hor,ver
+	start, end, length = [0,0], [0,0], 0 #hor,ver
 	tag = ''
 	puzzle_tag = ''
 	orientation = ''
@@ -26,6 +26,10 @@ class Car:
 			self.end = [self.start[0], self.start[1] + self.length - 1]
 		self.edge_to = []
 		self.visited = False
+	def get_start(self):
+		return self.start
+	def get_length(self):
+		return self.length
 
 class Board:
 	height, width = 6, 6
@@ -53,7 +57,8 @@ def json_to_car_list(filename):
 
 
 def move(car_list, car_tag, to_position): 
-# make a move and return the new car list
+# make a move and return the new car list, single position label
+	# print('len old car list ', len(car_list))
 	new_list2 = []
 	red = ''
 	for i in range(len(car_list)):
@@ -69,11 +74,12 @@ def move(car_list, car_tag, to_position):
 		new_list2.append(new_car)
 		if new_list2[i].tag == 'r':
 			red = new_list2[i]
+	# print('len new car list ', len(new_list2))
 	return new_list2, red
 
 
 def move2(car_list, car_tag, to_position1, to_position2): 
-# make a move and return the new car list
+# make a move and return the new car list, x and y
 	new_list2 = []
 	red = ''
 	for i in range(len(car_list)):
@@ -488,7 +494,10 @@ def construct_mag(board, red):
 		for j in range(0, board.width):
 			cur_car = board.board_dict[(i, j)]
 			if cur_car is not None:
-				cur_car.visited = False
+				if cur_car.visited == True:
+					cur_car.visited = False
+				else:
+					finished_list.append(cur_car)
 	return finished_list
 	
 

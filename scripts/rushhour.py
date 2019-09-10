@@ -10,8 +10,24 @@ from terminal_states import terms_by_ins
 from os import listdir
 from os.path import join, isfile
 from json import dump,load
+# import MAG
 
-# print(terms_by_ins)
+all_len = 0
+for i in range(len(terms_by_ins)):
+    cur_len = len(terms_by_ins['Jam-'+str(i+1)])
+    print(cur_len)
+    all_len += cur_len
+
+# print('avg '+str(all_len/30.0))
+# print(len(terms_by_ins['Jam-1']))
+# print(len(terms_by_ins['Jam-5']))
+# print(len(terms_by_ins['Jam-10']))
+# print(len(terms_by_ins['Jam-15']))
+# print(len(terms_by_ins['Jam-20']))
+# print(len(terms_by_ins['Jam-25']))
+# print(len(terms_by_ins['Jam-30']))
+# print(terms_by_ins['Jam-30'][0])
+
 
 def rhstring(instance):
     """
@@ -210,6 +226,8 @@ def min_manhattan_distance(instance,terms=None):
 
 def manhattan_distance(instance1, instance_pair):
     md=0
+    if instance1.h['r'] == (4,2,2):
+        return 0
     for cars1,cars2 in zip([instance1.h, instance1.v],instance_pair):
         for piece,loc1 in cars1.iteritems():
             loc2 = cars2[piece]
@@ -244,7 +262,7 @@ def find_terminal_states(instance):
             ((h,v)[goal_o=='v'])[goal_car]=goal_loc[0] #currently supports one locations
             if check_instance(h,v):
                 terminals.append(RHInstance(h,v))
-    print('Number of terminal states '+str(len(terminals)))
+    print('terminals in find_terminal_states ', terminals)
     return terminals
 
 def piece_possible_moves(instance,piece):
@@ -298,12 +316,12 @@ def ground_instance(instance):
 
 def draw(instance):
     b= ground_instance(instance)
-    print(' _'+"".join([str(_) for _ in range(instance.length)]) + '_')
+    print ' _'+"".join([str(_) for _ in range(instance.length)]) + '_'
     i=0
     for l in b:
-        print(str(i)+'|'+"".join(l)+'|')
+        print str(i)+'|'+"".join(l)+'|'
         i+=1
-    print(' -'+"".join([str(_) for _ in range(instance.length)]) + '-')
+    print ' -'+"".join([str(_) for _ in range(instance.length)]) + '-'
 
 def find_oriantation(instance,n):
     if n in instance.v:
@@ -476,11 +494,11 @@ def mag2dot(mag,view=False):
         for n1,c in mag[n].iteritems():
             dot.edge(n,n1,label=str(c))
         while 1:
-            dotfile='/Users/chloe/Documents/RushHour/figures/tmp{}.gv'.format(ind)
+            dotfile='tmp{}.gv'.format(ind)
             if not path.isfile(dotfile):
                 break
             ind+=1
-    print(dotfile)
+    print dotfile
     dot.render(dotfile, view=view)
 
 def is_possible_via_plan(instance,n,blocked_by,move,in_plan):
@@ -499,12 +517,12 @@ def is_possible_via_plan(instance,n,blocked_by,move,in_plan):
     return True
 
 def plan_location(instance,visits,n,nodes,in_plan):
-    print('Searching location for node:{}. In_plan:{} nodes:{} visits:{}'.format(n,in_plan,nodes,visits))
+    print 'Searching location for node:{}. In_plan:{} nodes:{} visits:{}'.format(n,in_plan,nodes,visits)
     potentials = sorted([(move,(coverage,blocked_by)) for move,(coverage,blocked_by) in nodes[n].iteritems()],key=lambda x: x[1][0], reverse=True)
     for move,(coverage,blocked_by) in potentials:
         if is_possible_via_plan(instance,n,blocked_by,move,in_plan):
             if visits[n]>= 1.0/coverage:
-                print('node {} returning move: {} visits:{} ratio:{}'.format(n,move,visits[n],1.0/coverage))
+                print 'node {} returning move: {} visits:{} ratio:{}'.format(n,move,visits[n],1.0/coverage)
                 return move
     return None
 
@@ -516,22 +534,22 @@ def select_search_succs(mag,visits,nodes,n):
     if len(covering)==0: return mag[n]
     ret=list(choice(covering))
     shuffle(ret)
-    print('possible succs for node {} are {} - choice is {}'.format(n,covering,ret))
+    print 'possible succs for node {} are {} - choice is {}'.format(n,covering,ret)
     return ret
 
 def search(instance,mag,nodes,n,visits,in_plan,path_so_far,keep_safe=False):
-    print('calling search on {}'.format(n))
+    print 'calling search on {}'.format(n)
     if n in in_plan:
-        print('{} already on plan'.format(n))
+        print '{} already on plan'.format(n)
         return []
     if visits[n] > len([1 for X in mag.itervalues() for k in X if k==n]) +1:
         return []
     visits[n]+=1
     next_location=plan_location(instance,visits,n,nodes,in_plan) #optimize via in_plan=None
-    print('searching for possible location for node {} - {}'.format(n,next_location))
+    print 'searching for possible location for node {} - {}'.format(n,next_location)
     if next_location is not None:
         in_plan[n]=next_location
-        print('returning {} to {}'.format(n,next_location))
+        print 'returning {} to {}'.format(n,next_location)
         return [(n,next_location)]
     if len(mag[n])==0 and len([1 for move, (coverage, succs) in nodes[n].iteritems() if coverage<1])>0:
         return search(instance,mag,nodes,n,visits,in_plan,path_so_far)
@@ -539,15 +557,15 @@ def search(instance,mag,nodes,n,visits,in_plan,path_so_far,keep_safe=False):
     for s in select_search_succs(mag,visits,nodes,n): #selection might be wrong (if it's an OR)
         plan = search(instance,mag,nodes,s,visits,in_plan,path_so_far) + plan
     if n in in_plan:
-        print('{} already on plan. Returning {}'.format(n,plan))
+        print '{} already on plan. Returning {}'.format(n,plan)
         return plan
     next_location=plan_location(instance,visits,n,nodes,in_plan)
-    print('after succs: searching for possible location for node {} - {}'.format(n,next_location))
+    print 'after succs: searching for possible location for node {} - {}'.format(n,next_location)
     if next_location is not None:
         in_plan[n]=next_location
-        print('adding to plan: {} to {}'.format(n,next_location))
+        print 'adding to plan: {} to {}'.format(n,next_location)
         plan = [(n,next_location)]+plan
-    print('Returning {}'.format(plan))
+    print 'Returning {}'.format(plan)
     return plan
 
 
@@ -562,12 +580,12 @@ def verify_plan(instance, tmp_plan,returned_plan):
     insc=deepcopy(instance)
     m = None
     for m in reversed(tmp_plan):
-        print('verifing move '+str(m))
+        print 'verifing move '+str(m)
         if not verify_move_for_plan(insc,m,returned_plan):
             break
         do_move_from_fixed(insc,m)
         partial_plan.append(m)
-        print('Partial plan:'+str(partial_plan))
+        print 'Partial plan:'+str(partial_plan)
         draw(insc)
     return m,insc,partial_plan
 
@@ -600,69 +618,69 @@ def mag_in_edges(mag):
 
 
 def learn_from_mag(current_mag,last_mag,instance):
-    print('current_mag:{}'.format(current_mag))
-    print('last_mag:{}'.format(last_mag))
+    print 'current_mag:{}'.format(current_mag)
+    print 'last_mag:{}'.format(last_mag)
     new_mag=deepcopy(current_mag)
     current_pairs= set([(from_node,to_node,l) for from_node in current_mag if from_node != 'dummy' for (to_node,locs) in current_mag[from_node].iteritems() for l in locs ])
     to_nodes=set([tn[1] for tn in current_pairs ])
     last_pairs = set([(from_node,to_node,l) for from_node in last_mag if from_node != 'dummy' for (to_node,locs) in last_mag[from_node].iteritems() for l in locs ])
-    print('current_pairs:{}'.format(current_pairs))
-    print('last_pairs:{}'.format(last_pairs))
+    print 'current_pairs:{}'.format(current_pairs)
+    print 'last_pairs:{}'.format(last_pairs)
     possible_learns = last_pairs - current_pairs
     for f,n,l in possible_learns:
         if n in to_nodes:
-            print('learning \'dummy\':({},{})'.format(n,l))
+            print 'learning \'dummy\':({},{})'.format(n,l)
             nconsts = new_mag['dummy.'+f].get(n,[])
             nconsts.append(l)
             new_mag['dummy.'+f][n]=nconsts
     return new_mag,calc_nodes(new_mag,instance)
 
 def plan_with_tasks(instance):
-    print('Starting to plan+tasks for instance:{}'.format(instance.name))
+    print 'Starting to plan+tasks for instance:{}'.format(instance.name)
     tasks = find_tasks(instance)
-    print('Subtasks for instance:{}'.format(tasks))
+    print 'Subtasks for instance:{}'.format(tasks)
     returned_plan=[]
     solving_instance=deepcopy(instance)
     for t,t_locs in tasks:
         solving_instance.goal_car=t
         solving_instance.goal_loc=t_locs
-        print('Subtasks- moving {} to {}'.format(t,t_locs))
+        print 'Subtasks- moving {} to {}'.format(t,t_locs)
         while 1:
             if solving_instance.is_goal():
                 break
             mag,nodes=constuct_mag(solving_instance)
-            print('starting to plan for node {} from:'.format(t))
+            print 'starting to plan for node {} from:'.format(t)
             draw(solving_instance)
-            print('MAG:{}'.format(mag))
-            print('NODES:{}'.format(nodes))
+            print 'MAG:{}'.format(mag)
+            print 'NODES:{}'.format(nodes)
             mag2dot(mag,view=False)
             tmp_plan=mag2plan(solving_instance,mag,nodes,returned_plan)
-            print(' pending plan:{}'.format(tmp_plan))
+            print ' pending plan:{}'.format(tmp_plan)
             violating_move,solving_instance,partial_plan=verify_plan(solving_instance,tmp_plan,returned_plan)
             returned_plan.extend(partial_plan)
     return returned_plan
 
 
 def plan(instance):
-    print('Starting to plan for instance:{}'.format(instance.name))
+    print 'Starting to plan for instance:{}'.format(instance.name)
     solving_instance=deepcopy(instance)
     returned_plan=[]
     last_mag={}
-    while(True):
+    while 1:
         current_mag,nodes=constuct_mag(solving_instance)
         mag,nodes = learn_from_mag(current_mag,last_mag,solving_instance)
         last_mag= current_mag
-        print('starting to plan from:')
+        print 'starting to plan from:'
         draw(solving_instance)
-        print('MAG:{}'.format(mag))
-        print('NODES:{}'.format(nodes))
+        print 'MAG:{}'.format(mag)
+        print 'NODES:{}'.format(nodes)
         mag2dot(mag,view=False)
         tmp_plan=mag2plan(solving_instance,mag,nodes,returned_plan)
-        print(' pending plan:{}'.format(tmp_plan))
+        print ' pending plan:{}'.format(tmp_plan)
         violating_move,solving_instance,partial_plan=verify_plan(solving_instance,tmp_plan,returned_plan)
         returned_plan.extend(partial_plan)
         if solving_instance.is_goal():
-            print('**solved instance!**')
+            print '**solved instance!**'
             return returned_plan
 
 
@@ -717,39 +735,19 @@ def json_to_ins(filename):
     return ins
 
 
-def read_instances_json(json_dir='../psiturk-rushhour/static/json'):
+def read_instances_json(json_dir='/Users/chloe/Documents/RushHour/exp_data/json'):
     instance_set=[]
     jsons=[join(json_dir, f) for f in listdir(json_dir) if f.endswith('.json') and isfile(join(json_dir, f))]
     for f in jsons:
         instance_set.append(json_to_ins(f))
+    # print('instance_set in read_instances_json ', instance_set)
     return instance_set
 
 
 def instance_dict():
     return dict((x.name, x) for x in read_instances_json())
 
+opt_solution_instances_mag={ 0:9, 1:10, 2:15, 3:10, 4:10, 5:11, 6:14, 7:14, 8:13, 9:21, 10:27, 11:19, 12:24, 13:18, 14:24, 15:28, 16:28, 17:27, 18:23, 19:13, 20:22, 21:29, 22:30, 23:29, 24:41, 25:32, 26:34, 27:33, 28:34, 29:38, 30:39, 31:39, 32:49, 33:45, 34:48, 35:46, 36:49, 37:50, 38:58, 39:58}
 
 
-def draw_save(instance, filepath):
-    with open(filepath, 'w') as f:
-        b = ground_instance(instance)
-        f.write(' _'+"".join([str(_) for _ in range(instance.length)]) + '_' + '\n')
-        i = 0
-        for l in b:
-            f.write(str(i)+'|'+"".join(l)+'|')
-            f.write('\n')
-            i+=1
-        f.write(' -'+"".join([str(_) for _ in range(instance.length)]) + '-')    
-        f.close()
-
-# opt_solution_instances_mag={ 0:9, 1:10, 2:15, 3:10, 4:10, 5:11, 6:14, 7:14, 8:13, 9:21, 10:27, 11:19, 12:24, 13:18, 14:24, 15:28, 16:28, 17:27, 18:23, 19:13, 20:22, 21:29, 22:30, 23:29, 24:41, 25:32, 26:34, 27:33, 28:34, 29:38, 30:39, 31:39, 32:49, 33:45, 34:48, 35:46, 36:49, 37:50, 38:58, 39:58}
-# opt_solution_instances= {'Jam-29': 31, 'Jam-28': 30, 'Jam-21': 21, 'Jam-20': 10, 'Jam-23': 29, 'Jam-22': 26, 'Jam-25': 27, 'Jam-24': 25, 'Jam-27': 28, 'Jam-26': 28, 'Jam-2': 8, 'Jam-3': 14, 'Jam-1': 8, 'Jam-6': 9, 'Jam-7': 13, 'Jam-4': 9, 'Jam-5': 9, 'Jam-8': 12, 'Jam-9': 12, 'Jam-40': 51, 'Jam-14': 17, 'Jam-15': 23, 'Jam-16': 21, 'Jam-17': 24, 'Jam-10': 17, 'Jam-11': 25, 'Jam-12': 17, 'Jam-13': 16, 'Jam-18': 25, 'Jam-19': 22, 'Jam-38': 48, 'Jam-39': 50, 'Jam-32': 37, 'Jam-33': 40, 'Jam-30': 32, 'Jam-31': 37, 'Jam-36': 44, 'Jam-37': 47, 'Jam-34': 43, 'Jam-35': 43}
-# print 'hi'
-#draw({"cars": [{"player": false, "position": 4, "length": 3, "id": "1", "orientation": "vertical"}, {"player": false, "position": 19, "length": 3, "id": "2", "orientation": "vertical"}, {"player": false, "position": 14, "length": 2, "id": "5", "orientation": "vertical"}, {"player": false, "position": 18, "length": 3, "id": "7", "orientation": "vertical"}, {"player": false, "position": 5, "length": 2, "id": "6", "orientation": "vertical"}, {"player": false, "position": 33, "length": 2, "id": "0", "orientation": "horizontal"}, {"player": false, "position": 22, "length": 2, "id": "3", "orientation": "horizontal"}, {"player": true, "position": 12, "length": 2, "id": "r", "orientation": "horizontal"}, {"player": false, "position": 8, "length": 2, "id": "4", "orientation": "horizontal"}, {"player": false, "position": 1, "length": 3, "id": "9", "orientation": "horizontal"}, {"player": false, "position": 27, "length": 2, "id": "8", "orientation": "horizontal"}], "id": "prb5"})
-
-# myinstance = json_to_ins('/Users/chloe/Documents/RushHour/data/data_adopted/prb38526.json')
-# draw(myinstance)
-# mymag, mynodes = constuct_mag(myinstance)
-# mag2dot(mymag, view=True)
-
-
+opt_solution_instances= {'Jam-29': 31, 'Jam-28': 30, 'Jam-21': 21, 'Jam-20': 10, 'Jam-23': 29, 'Jam-22': 26, 'Jam-25': 27, 'Jam-24': 25, 'Jam-27': 28, 'Jam-26': 28, 'Jam-2': 8, 'Jam-3': 14, 'Jam-1': 8, 'Jam-6': 9, 'Jam-7': 13, 'Jam-4': 9, 'Jam-5': 9, 'Jam-8': 12, 'Jam-9': 12, 'Jam-40': 51, 'Jam-14': 17, 'Jam-15': 23, 'Jam-16': 21, 'Jam-17': 24, 'Jam-10': 17, 'Jam-11': 25, 'Jam-12': 17, 'Jam-13': 16, 'Jam-18': 25, 'Jam-19': 22, 'Jam-38': 48, 'Jam-39': 50, 'Jam-32': 37, 'Jam-33': 40, 'Jam-30': 32, 'Jam-31': 37, 'Jam-36': 44, 'Jam-37': 47, 'Jam-34': 43, 'Jam-35': 43}
