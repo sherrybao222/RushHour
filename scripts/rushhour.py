@@ -262,7 +262,7 @@ def find_terminal_states(instance):
             ((h,v)[goal_o=='v'])[goal_car]=goal_loc[0] #currently supports one locations
             if check_instance(h,v):
                 terminals.append(RHInstance(h,v))
-    print('terminals in find_terminal_states ', terminals)
+    # print('terminals in find_terminal_states ', terminals)
     return terminals
 
 def piece_possible_moves(instance,piece):

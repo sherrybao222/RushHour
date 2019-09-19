@@ -131,7 +131,6 @@ class Node:
 
 
 
-
 def Value1(car_list2, red):
 	'''
 	value = w0 * num_cars{MAG-level 0}
@@ -167,6 +166,7 @@ def Value1(car_list2, red):
 	return value+noise, value_level
 
 
+
 def Manhattan_Value(car_list2, red):
 	''' value function is manhattan distance,
 		start by converting car_list to instance,
@@ -181,12 +181,9 @@ def Manhattan_Value(car_list2, red):
 			v[car.tag] = (car.start[0], car.start[1], car.length)
 	cur_ins = rushhour.RHInstance(h,v,name)
 	value = rushhour.min_manhattan_distance_calc(cur_ins)
-	print('following board: manhattan distance '+str(value))
-	print('board:\n'+Node(car_list2).board_to_str())
+	# print('following board: manhattan distance '+str(value))
+	# print('board:\n'+Node(car_list2).board_to_str())
 	return -value
-
-
-
 
 
 
@@ -194,14 +191,17 @@ def DropFeatures(delta):
 	pass
 
 
+
 def Lapse(probability=0.1): 
 	''' return true with a probability '''
 	return random.random() < probability
 
 
-def Stop(probability=0.1): 
+
+def Stop(probability=0.05): 
 	''' return true with a probability '''
 	return random.random() < probability
+
 
 
 def Determined(root_node): 
@@ -209,10 +209,12 @@ def Determined(root_node):
 	return MAG.check_win(root_node.get_board(), root_node.get_red())
 
 
+
 def RandomMove(node):
 	''' make a random move and return the resulted node '''
 	return random.choice(node.get_children())
 	
+
 
 def InitializeChildren(root_node):
 	''' initialize the list of children (using all possible moves) '''
@@ -226,6 +228,7 @@ def InitializeChildren(root_node):
 			root_node.add_child(dummy_child)
 
 
+
 def SelectNode(root_node):
 	''' return the child with max value '''
 	n = root_node
@@ -235,6 +238,7 @@ def SelectNode(root_node):
 		traversed.append(n)
 	return n, traversed
  
+
 
 def ExpandNode(node, threshold):
 	''' create all possible nodes under input node, 
@@ -248,11 +252,13 @@ def ExpandNode(node, threshold):
 	return ArgmaxChild(node)
 
 
+
 def Backpropagate(this_node, root_node):
 	''' update value back until root node '''
 	this_node.set_value(MaxChildValue(this_node))
 	if this_node != root_node:
 		Backpropagate(this_node.get_parent(), root_node)
+
 
 
 def MaxChildValue(node): 
@@ -262,6 +268,7 @@ def MaxChildValue(node):
 		if Vmax < child.get_value():
 			Vmax = child.get_value()
 	return Vmax
+
 
 
 def ArgmaxChild(root_node): 
@@ -275,7 +282,8 @@ def ArgmaxChild(root_node):
 	return maxChild
 
 
-def MakeMove(state, delta=0, gamma=0.1, theta=float('inf')):
+
+def MakeMove(state, delta=0, gamma=0.05, theta=float('inf')):
 	''' returns an optimal move to make next, given current state '''
 	root = state # state is already a node
 	InitializeChildren(root)
@@ -284,20 +292,25 @@ def MakeMove(state, delta=0, gamma=0.1, theta=float('inf')):
 		return RandomMove(root), [], []
 	else:
 		DropFeatures(delta)
-		# debug = 0
 		considered_node = [] # nodes already traversed along the branch in this ieration
 		considered_node2 = [] # new node expanded along the branch in this iteration
 		while not Stop(probability=gamma) and not Determined(root):
 			n, traversed = SelectNode(root)
 			considered_node.append(traversed)
-			# debug += 1
 			n2 = ExpandNode(n, theta)
 			considered_node2.append(n2)
-			Backpropagate(n, root)
+			if not plot_tree_flag: 
+				# if plot decision tree, do not show backproped value
+				# so that a comparison of values among children can be observed directly
+				Backpropagate(n, root)
+			if n2.get_value() == 0: # terminate the algorithm if found a terminal node
+				print('terminal node found, terminate algorithm.')
+				break
 	return ArgmaxChild(root), considered_node, considered_node2
 
 
-def estimate_prob(root_node, exp_str='', iteration=1000):
+
+def estimate_prob(root_node, expected_board='', iteration=100):
 	''' Estimate the probability of next possible moves given the root node '''
 	InitializeChildren(root_node)
 	frequency = [0] * len(root_node.get_children())
@@ -311,12 +324,16 @@ def estimate_prob(root_node, exp_str='', iteration=1000):
 
 	sol_idx = None
 	sol_value_level = None
+	print('initial board:\n'+str(root_node.board_to_str()))
 	for i in range(len(root_node.get_children())):
-		if root_node.get_child(i).board_to_str() == exp_str:
+		if root_node.get_child(i).board_to_str() == expected_board:
 			sol_idx = i
 			sol_value_level = root_node.get_child(i).get_value_bylevel()
+		print('possible move:\n'+str(root_node.get_child(i).board_to_str()))
+		print('probability:'+str(frequency[i])+'\n')
 
 	return root_node.get_children(), frequency, sol_idx, sol_value_level, chance
+
 
 
 def solution_prob(instance):
@@ -402,8 +419,7 @@ def plot_trial(this_w0=0, this_w1=0, this_w2=0, this_w3=-1, this_w4=0, this_w5=0
 	img_count = 0 # image count
 
 
-
-	# every move in the trial
+	# every human move in the trial
 	for i in range(trial_start-1, trial_end-2):
 		
 		# plot text
@@ -411,24 +427,15 @@ def plot_trial(this_w0=0, this_w1=0, this_w2=0, this_w3=-1, this_w4=0, this_w5=0
 		# initialize tree plot if required
 		if plot_tree_flag:
 			dot = Digraph(comment='Test Tree', format='jpg', strict=True)
-			dot.attr(size='8,8', fixedsize='true')
-			# dot.attr('node', shape='circle', fixedsize='true', width='0.9')
-			dot.node(str(id(initial_node)), str(initial_node.get_value()))
-			plot_blank(instance, img_count, text='Move Number '+str(move_num), color='orange', imgtype='tree')
-		# increment image number
+			dot.attr(size='10,10', fixedsize='true')
+			dot.node(str(id(cur_node)), str(cur_node.get_value()))
 		img_count += 1
 		# plot blank space
 		plot_blank(instance, img_count, text='Initial Board', color='orange')
-		if plot_tree_flag:
-			plot_blank(instance, img_count, text='Initial Board', color='orange', imgtype='tree')
 		img_count += 1
 		# plot initial board
 		plot_state(cur_node, instance, img_count)
-		if plot_tree_flag:
-			dot.render('/Users/chloe/Desktop/RHfig/'+instance+'_'+str(img_count)+'_tree', 
-						view=False)
 		img_count += 1
-		# sys.exit()
 
 
 		# load data from datafile
@@ -440,7 +447,7 @@ def plot_trial(this_w0=0, this_w1=0, this_w2=0, this_w3=-1, this_w4=0, this_w5=0
 
 		# run model to make one decision (which contains many iterations)
 		selectedmove, considered, considered2 = MakeMove(cur_node)
-		print('Initial board:\n'+initial_node.board_to_str())
+		print('Initial board:\n'+cur_node.board_to_str())
 		print('move made:\n'+selectedmove.board_to_str())
 		total_iteration = len(considered2)
 		cur_iteration_num = 1 # initialize iteration count
@@ -450,23 +457,14 @@ def plot_trial(this_w0=0, this_w1=0, this_w2=0, this_w3=-1, this_w4=0, this_w5=0
 		if considered == []:
 			# plot text
 			plot_blank(instance, img_count, text='Random Move', color='green')
-			if plot_tree_flag:
-				plot_blank(instance, img_count, text='Random Move', color='green', imgtype='tree')
 			img_count += 1
 		for pos, pos2 in zip(considered, considered2): # if any iteration is considered
 			# plot text
 			plot_blank(instance, img_count, text='Iteration '+str(cur_iteration_num)+'/'+str(total_iteration), color='blue')
-			if plot_tree_flag:
-				plot_blank(instance, img_count, 
-						text='Iteration '+str(cur_iteration_num)+'/'+str(total_iteration), 
-						color='blue', imgtype='tree')
 			cur_iteration_num += 1
 			img_count += 1
 			# plot board
 			plot_state(cur_node, instance, img_count) # initial state
-			if plot_tree_flag:
-				dot.render('/Users/chloe/Desktop/RHfig/'+instance+'_'+str(img_count)+'_tree', 
-						view=False)
 			img_count += 1
 			# plot the node traversed along the selected branch in this iteration
 			tree_cur = cur_node
@@ -476,8 +474,6 @@ def plot_trial(this_w0=0, this_w1=0, this_w2=0, this_w3=-1, this_w4=0, this_w5=0
 					for child in tree_cur.get_children():
 						dot.node(str(id(child)), str(child.get_value()))
 						dot.edge(str(id(tree_cur)), str(id(child)))
-					dot.render('/Users/chloe/Desktop/RHfig/'+instance+'_'+str(img_count)+'_tree', 
-						view=False)
 					tree_cur = pos_cur
 				img_count += 1
 			# plot the new node expanded along this branch in this iteration
@@ -490,22 +486,14 @@ def plot_trial(this_w0=0, this_w1=0, this_w2=0, this_w3=-1, this_w4=0, this_w5=0
 				for child in tree_cur.get_children():
 					dot.node(str(id(child)), str(child.get_value()))
 					dot.edge(str(id(tree_cur)), str(id(child)))
-				dot.render('/Users/chloe/Desktop/RHfig/'+instance+'_'+str(img_count)+'_tree', 
-						view=False)
 			img_count += 1
 			
 
 		# plot selected move 
 		plot_blank(instance, img_count, text='Selected Move', color='green')
-		if plot_tree_flag:
-			plot_blank(instance, img_count, text='Selected Move', color='green', imgtype='tree')
 		img_count += 1
 
 		plot_state(cur_node, instance, img_count)
-		if plot_tree_flag:
-			dot.edge(str(id(initial_node)), str(id(cur_node)), color='red')
-			dot.render('/Users/chloe/Desktop/RHfig/'+instance+'_'+str(img_count)+'_tree', 
-						view=False)
 		img_count += 1
 
 		plot_state(selectedmove, instance, img_count)
@@ -518,43 +506,163 @@ def plot_trial(this_w0=0, this_w1=0, this_w2=0, this_w3=-1, this_w4=0, this_w5=0
 
 		# plot actual move made by human 
 		plot_blank(instance, img_count, text='Human Move', color='red')
-		if plot_tree_flag:
-			plot_blank(instance, img_count, text='Human Move', color='red', imgtype='tree')
 		img_count += 1
-
 		plot_state(cur_node, instance, img_count)
-		if plot_tree_flag:
-			dot.edge(str(id(initial_node)), str(id(cur_node)), color='red')
-			cur_node2 = cur_node
-			dot.render('/Users/chloe/Desktop/RHfig/'+instance+'_'+str(img_count)+'_tree', 
-						view=False)
 		img_count += 1
 
 		cur_carlist, _ = MAG.move(cur_carlist, piece, move_to)
 		cur_board, _ = MAG.construct_board(cur_carlist)
 		cur_node = Node(cur_carlist)
 		plot_state(cur_node, instance, img_count)
-		if plot_tree_flag:
-			dot.edge(str(id(cur_node2)), str(id(cur_node)), color='red')
-			dot.render('/Users/chloe/Desktop/RHfig/'+instance+'_'+str(img_count)+'_tree', 
-						view=False)
 		img_count += 1
 
 
 		# make movie and save
 		move_num += 1
 		make_movie(move_num-1, format='avi')
-		if plot_tree_flag:
-			make_movie(move_num-1, format='avi', imgtype='tree')
 		
-		sys.exit()
 		
 		# clean all jpg files after movie done
 		test = os.listdir(dir_name)
 		for item in test:
-		    if item.endswith(".jpg") or item.endswith('tree'):
+		    if item.endswith("board.jpg") or item.endswith('tree'):
 		        os.remove(os.path.join(dir_name, item))
 		
+
+		# sys.exit()
+		
+
+
+
+def hist_prob(this_w0=0, this_w1=0, this_w2=0, this_w3=-1, this_w4=0, this_w5=0, this_w6=0, this_w7=0, this_mu=0, this_sigma=1):
+	''' visualize histogram of the probability of human move'''
+	global w0, w1, w2, w3, w4, w5, w6, w7, mu, sigma, weights
+	w0 = this_w0
+	w1 = this_w1
+	w2 = this_w2
+	w3 = this_w3
+	w4 = this_w4
+	w5 = this_w5
+	w6 = this_w6
+	w7 = this_w7
+	mu = this_mu
+	sigma = this_sigma
+	weights = [w0, w1, w2, w3, w4, w5, w6, w7]
+	trial_start = 2 # starting row number in the raw data
+	trial_end = 20 # ending row number in the raw data
+	global plot_tree_flag # whether to visialize the tree at the same time
+	plot_tree_flag = True
+	sub_data = pd.read_csv('/Users/chloe/Desktop/trialdata_valid_true_dist7_processed.csv')
+	dir_name = '/Users/chloe/Desktop/RHfig/' # dir for new images
+	os.chdir(dir_name)
+
+	# construct initial node
+	first_line = sub_data.loc[trial_start-2,:]
+	instance = first_line['instance']
+	ins_dir = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/'
+	ins_file = ins_dir + instance + '.json'
+	initial_car_list, initial_red = MAG.json_to_car_list(ins_file)
+	initial_board, initial_red = MAG.construct_board(initial_car_list)
+	initial_node = Node(initial_car_list)
+	print('Initial board:\n'+initial_node.board_to_str())
+	
+	# initialize parameters
+	cur_node = initial_node
+	cur_carlist = initial_car_list
+	move_num = 1 # move number in this human trial
+
+
+	# every human move in the trial
+	for i in range(trial_start-1, trial_end-2):
+		# load data from datafile
+		print('Move number '+str(move_num))
+		row = sub_data.loc[i, :]
+		piece = row['piece']
+		move_to = row['move']
+		
+		# estimate probability
+		_, frequency, sol_idx, _, _ = estimate_prob(cur_node, expected_board=Node(MAG.move(cur_carlist, piece, move_to)[0]).board_to_str())
+		
+		# plot histogram
+		barlist = plt.bar(np.arange(len(frequency)), frequency)
+		barlist[sol_idx].set_color('r')
+		plt.ylim(top=1.0, bottom=0)
+		plt.title('Instance '+instance+', move number '+str(move_num))
+		plt.savefig(dir_name+instance+'_hist_move_'+str(move_num)+'.jpg')
+		plt.close()
+
+		# make human move
+		cur_carlist, _ = MAG.move(cur_carlist, piece, move_to)
+		cur_board, _ = MAG.construct_board(cur_carlist)
+		cur_node = Node(cur_carlist)
+
+		move_num += 1
+
+		
+
+
+def plot_trial_human(trial_start=2, trial_end=20):
+	''' show movie of a human trial
+		trial_start: starting row number in the raw data
+		trial_end: ending row number in the raw data
+	'''
+	sub_data = pd.read_csv('/Users/chloe/Desktop/trialdata_valid_true_dist7_processed.csv')
+	dir_name = '/Users/chloe/Desktop/RHfig/' # dir for new images
+	os.chdir(dir_name)
+
+	# construct initial node
+	first_line = sub_data.loc[trial_start-2,:]
+	instance = first_line['instance']
+	ins_dir = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/'
+	ins_file = ins_dir + instance + '.json'
+	initial_car_list, initial_red = MAG.json_to_car_list(ins_file)
+	initial_board, initial_red = MAG.construct_board(initial_car_list)
+	initial_node = Node(initial_car_list)
+	print('Initial board:\n'+initial_node.board_to_str())
+	
+	# initialize parameters
+	cur_node = initial_node
+	cur_carlist = initial_car_list
+	global move_num # move number in this human trial
+	move_num = 1
+	img_count = 0 # image count
+
+	# plot blank space
+	plot_blank(instance, img_count, text='Human Trial, '+instance, color='orange', imgtype='human')
+	img_count += 1
+	# plot initial board
+	plot_state(cur_node, instance, img_count, imgtype='human')
+	img_count += 1
+
+	# every human move in the trial
+	for i in range(trial_start-1, trial_end-1):
+	
+		# load data from datafile
+		print('Move number '+str(move_num))
+		row = sub_data.loc[i, :]
+		piece = row['piece']
+		move_to = row['move']
+
+		# make move
+		cur_carlist, _ = MAG.move(cur_carlist, piece, move_to)
+		cur_board, _ = MAG.construct_board(cur_carlist)
+		cur_node = Node(cur_carlist)
+		move_num += 1
+		
+		# plot current human move 
+		plot_state(cur_node, instance, img_count, imgtype='human')
+		img_count += 1
+
+	# make movie and save
+	make_movie(1, format='avi', imgtype='human')
+	
+	
+	# clean all jpg files after movie done
+	test = os.listdir(dir_name)
+	for item in test:
+	    if item.endswith("human.jpg"):
+	        os.remove(os.path.join(dir_name, item))
+	
 
 
 
@@ -608,33 +716,10 @@ def plot_state(cur_node, instance, idx, out_file='/Users/chloe/Desktop/RHfig/', 
 			else:
 				num = ''
 			text = ax.text(j, i, num, ha="center", va="center", color="black", fontsize=14)
+	if imgtype == 'human':
+		plt.title('Move '+str(move_num-1))
 	plt.savefig(out_file+instance+'_'+str(idx)+'_'+imgtype+'.jpg')
 	plt.close()
-
-
-
-def plot_state_hold(cur_node, instance, idx, out_file='/Users/chloe/Desktop/RHfig/', imgtype='board'):
-	''' visualize the current state '''
-	matrix = str_to_matrix(cur_node.board_to_str())
-	matrix = np.ma.masked_where(matrix==-1, matrix)
-	cmap = plt.cm.Set1
-	cmap.set_bad(color='white')
-	fig, ax = plt.subplots()
-	im = ax.imshow(matrix, cmap=cmap)
-	for i in range(len(matrix)):
-		for j in range(len(matrix[i])):
-			num = matrix[i, j]
-			if num == 0:
-				num = 'R'
-			elif num > 0:
-				num -= 1
-			else:
-				num = ''
-			text = ax.text(j, i, num, ha="center", va="center", color="black", fontsize=14)
-	plt.savefig(out_file+instance+'_'+str(idx)+'_'+imgtype+'.jpg')
-	# plt.show()
-	# plt.close()
-	return fig, ax
 
 
 
@@ -690,10 +775,7 @@ def make_movie(move_num, path='/Users/chloe/Desktop/RHfig/', format='gif', imgty
 
 
 
-plot_trial()
-
-
-# MakeMove()
+plot_trial_human()
 
 
 
