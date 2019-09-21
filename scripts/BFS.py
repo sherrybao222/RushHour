@@ -26,21 +26,28 @@ class Node:
 		self.__children = []
 		self.__value = None
 		self.__value_bylevel = None
-		self.__tag = None
-		self.__pos1 = None
-		self.__pos2 = None
+		self.__tag = None # parent car to be moved
+		self.__pos1from = None # parent position
+		self.__pos2from = None # parent position 
+		self.__pos1to = None # self position as a child
+		self.__pos2to = None # self position as a child
 
 	def add_child(self, n):
 		n.set_parent(self)
 		self.__children.append(n)
 
-	def add_move(self, tag, pos1, pos2):
-		self.__tag = tag
-		self.__pos1 = pos1
-		self.__pos2 = pos2
-		for car in self.__car_list:
-			if car.tag == self.__tag:
-				self.__pos1old, self.__pos2old = car.start[0], car.start[1]
+	def move_from_parent(self, tag, pos1from, pos2from, pos1to, pos2to):
+		''' if current node is a child, record how it is transformed from its parent 
+		'''
+		self.__tag = tag # car moved from parent
+		self.__pos1from = pos1from # parent car position
+		self.__pos2from	= pos2from # parent car position
+		self.__pos1to = pos1to # current/child position
+		self.__pos2to = pos2to # current/child position
+
+	def get_move_from_parent(self):
+		return self.__tag, self.__pos1from, self.__pos2from, self.__pos1to, self.__pos2to
+		
 
 	def get_move(self):
 		return self.__tag, self.__pos1, self.__pos2, self.__pos1old, self.__pos2old
@@ -223,8 +230,11 @@ def InitializeChildren(root_node):
 		all_moves = MAG.all_legal_moves(tmp.get_carlist(), tmp.get_red(), tmp.get_board())
 		for i, (tag, pos) in enumerate(all_moves):
 			new_list, _ = MAG.move2(tmp.get_carlist(), tag, pos[0], pos[1])
+			for car in tmp.get_carlist():
+				if car.tag == tag:
+					pos1from, pos2from = car.start[0], car.start[1]
 			dummy_child = Node(new_list)
-			dummy_child.add_move(tag, pos[0], pos[1])
+			dummy_child.move_from_parent(tag, pos1from, pos2from, pos[0], pos[1])
 			root_node.add_child(dummy_child)
 
 
@@ -548,10 +558,10 @@ def hist_prob(this_w0=0, this_w1=0, this_w2=0, this_w3=-1, this_w4=0, this_w5=0,
 	mu = this_mu
 	sigma = this_sigma
 	weights = [w0, w1, w2, w3, w4, w5, w6, w7]
+	global plot_tree_flag # whether to visialize the tree at the same time
+	plot_tree_flag = False
 	trial_start = 2 # starting row number in the raw data
 	trial_end = 20 # ending row number in the raw data
-	global plot_tree_flag # whether to visialize the tree at the same time
-	plot_tree_flag = True
 	sub_data = pd.read_csv('/Users/chloe/Desktop/trialdata_valid_true_dist7_processed.csv')
 	dir_name = '/Users/chloe/Desktop/RHfig/' # dir for new images
 	os.chdir(dir_name)
@@ -601,7 +611,9 @@ def hist_prob(this_w0=0, this_w1=0, this_w2=0, this_w3=-1, this_w4=0, this_w5=0,
 		
 
 
-def plot_trial_human(trial_start=2, trial_end=20):
+
+
+def plot_trial_human(trial_start=21, trial_end=53):
 	''' show movie of a human trial
 		trial_start: starting row number in the raw data
 		trial_end: ending row number in the raw data
@@ -609,6 +621,8 @@ def plot_trial_human(trial_start=2, trial_end=20):
 	sub_data = pd.read_csv('/Users/chloe/Desktop/trialdata_valid_true_dist7_processed.csv')
 	dir_name = '/Users/chloe/Desktop/RHfig/' # dir for new images
 	os.chdir(dir_name)
+	global plot_tree_flag # whether to visialize the tree at the same time
+	plot_tree_flag = False
 
 	# construct initial node
 	first_line = sub_data.loc[trial_start-2,:]
@@ -669,11 +683,71 @@ def plot_trial_human(trial_start=2, trial_end=20):
 
 
 
-def heat_map(this_w0=0, this_w1=-1, this_w2=0, this_w3=0, this_w4=0, this_w5=0, this_w6=0, this_w7=0, this_mu=0, this_sigma=1):
+def heat_map(this_w0=0, this_w1=0, this_w2=0, this_w3=-1, this_w4=0, this_w5=0, this_w6=0, this_w7=0, this_mu=0, this_sigma=1):
 	''' show the model's consideration of immediate next moves 
 		by heatmap and arrows,
-		based on subject's current position from a trial'''
-	pass
+		based on subject's current position from a trial '''
+	global w0, w1, w2, w3, w4, w5, w6, w7, mu, sigma, weights
+	w0 = this_w0
+	w1 = this_w1
+	w2 = this_w2
+	w3 = this_w3
+	w4 = this_w4
+	w5 = this_w5
+	w6 = this_w6
+	w7 = this_w7
+	mu = this_mu
+	sigma = this_sigma
+	weights = [w0, w1, w2, w3, w4, w5, w6, w7]
+	global plot_tree_flag # whether to visialize the tree at the same time
+	plot_tree_flag = False
+	trial_start = 2 # starting row number in the raw data
+	trial_end = 20 # ending row number in the raw data
+	sub_data = pd.read_csv('/Users/chloe/Desktop/trialdata_valid_true_dist7_processed.csv')
+	dir_name = '/Users/chloe/Desktop/RHfig/' # dir for new images
+	os.chdir(dir_name)
+
+	# construct initial node
+	first_line = sub_data.loc[trial_start-2,:]
+	instance = first_line['instance']
+	ins_dir = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/'
+	ins_file = ins_dir + instance + '.json'
+	initial_car_list, initial_red = MAG.json_to_car_list(ins_file)
+	initial_board, initial_red = MAG.construct_board(initial_car_list)
+	initial_node = Node(initial_car_list)
+	print('Initial board:\n'+initial_node.board_to_str())
+	
+	# initialize parameters
+	cur_node = initial_node
+	cur_carlist = initial_car_list
+	global move_num # move number in this human trial
+	move_num = 1
+	img_count = 0
+
+
+	# every human move in the trial
+	for i in range(trial_start-1, trial_end-2):
+		# load data from datafile
+		print('Move number '+str(move_num))
+		row = sub_data.loc[i, :]
+		piece = row['piece']
+		move_to = row['move']
+		
+		# estimate probability
+		children_list, frequency, sol_idx, _, _ = estimate_prob(cur_node, expected_board=Node(MAG.move(cur_carlist, piece, move_to)[0]).board_to_str(), iteration=50)
+		
+		# plot heatmap
+		plot_heatmap(cur_node, instance, img_count, children_list, frequency, sol_idx, imgtype='heatmap')
+		img_count += 1
+
+		# make human move
+		cur_carlist, _ = MAG.move(cur_carlist, piece, move_to)
+		cur_board, _ = MAG.construct_board(cur_carlist)
+		cur_node = Node(cur_carlist)
+
+		move_num += 1
+
+
 
 
 
@@ -718,6 +792,43 @@ def plot_state(cur_node, instance, idx, out_file='/Users/chloe/Desktop/RHfig/', 
 			text = ax.text(j, i, num, ha="center", va="center", color="black", fontsize=14)
 	if imgtype == 'human':
 		plt.title('Move '+str(move_num-1))
+	plt.savefig(out_file+instance+'_'+str(idx)+'_'+imgtype+'.jpg')
+	plt.close()
+
+
+import scipy.stats as stats
+def plot_heatmap(cur_node, instance, idx, children_list, frequency, sol_idx, out_file='/Users/chloe/Desktop/RHfig/', imgtype='board'):
+	''' visualize the arrows of heatmap  '''
+	matrix = str_to_matrix(cur_node.board_to_str())
+	matrix = np.ma.masked_where(matrix==-1, matrix)
+	cmap = plt.cm.Set1
+	cmap.set_bad(color='white')
+	fig, ax = plt.subplots()
+	im = ax.imshow(matrix, cmap=cmap)
+	for i in range(len(matrix)):
+		for j in range(len(matrix[i])):
+			num = matrix[i, j]
+			if num == 0:
+				num = 'R'
+			elif num > 0:
+				num -= 1
+			else:
+				num = ''
+			text = ax.text(j, i, num, ha="center", va="center", color="black", fontsize=14)
+	count = 0
+	for child in children_list:
+		tag, pos1from, pos2from, pos1to, pos2to = child.get_move_from_parent()
+		if count == sol_idx:
+			plt.arrow(x=pos1from, y=pos2from, dx=(pos1to-pos1from), dy=(pos2to-pos2from), 
+					head_width=0.15, head_length=0.1, alpha=0.8, color='red',
+					lw= 6 * stats.zscore(frequency)[count])
+		else:
+			plt.arrow(x=pos1from, y=pos2from, dx=(pos1to-pos1from), dy=(pos2to-pos2from), 
+					head_width=0.15, head_length=0.1, alpha=0.5, color='black',
+					lw= 6 * stats.zscore(frequency)[count])
+		count += 1
+	if imgtype == 'heatmap':
+		plt.title('Heatmap Move '+str(move_num-1))
 	plt.savefig(out_file+instance+'_'+str(idx)+'_'+imgtype+'.jpg')
 	plt.close()
 
@@ -775,7 +886,7 @@ def make_movie(move_num, path='/Users/chloe/Desktop/RHfig/', format='gif', imgty
 
 
 
-plot_trial_human()
+heat_map()
 
 
 
