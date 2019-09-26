@@ -73,7 +73,7 @@ class Node:
 	def get_value(self):
 		if self.__value == None:
 			# self.__value, self.__value_bylevel = Value1(self.__car_list, self.get_red())
-			self.__value= Manhattan_Value(self.__car_list, self.get_red())
+			self.__value = Value1(self.__car_list, self.get_red())
 		return self.__value
 
 	def get_value_bylevel(self):
@@ -108,7 +108,7 @@ class Node:
 		self.__car_list = cl
 		self.__board, self.__red = MAG.construct_board(self.__car_list)
 		# self.__value, self.__value_bylevel = Value1(self.__car_list, self.__red)		
-		self.__value, self.__value_bylevel = Manhattan_Value(self.__car_list, self.__red)		
+		self.__value = Value1(self.__car_list, self.__red)		
 
 	def print_children(self):
 		print('total number of children: '+str(len(self.__children)))
@@ -151,9 +151,7 @@ def Value1(car_list2, red):
 		+ noise
 	'''
 	num_parameters = 8
-	value_level = []
-	# [w0, w1, w2, w3, w4, w5, w6, w7] = [-1,-1,-1,-1,-1,-1,-1,-1]
-	# weights = [w0, w1, w2, w3, w4, w5, w6, w7]
+	# value_level = []
 	noise = np.random.normal(loc=mu, scale=sigma)
 	value = 0
 	# initialize MAG
@@ -161,7 +159,7 @@ def Value1(car_list2, red):
 	new_car_list2 = MAG.construct_mag(my_board2, my_red2)
 	# number of cars at the top level (red only)
 	value += w0 * 1 
-	value_level.append(1)
+	# value_level.append(1)
 	# each following level
 	for j in range(num_parameters - 1): 
 		level = j+1
@@ -169,8 +167,8 @@ def Value1(car_list2, red):
 		new_car_list2 = MAG.assign_level(new_car_list2, my_red2)
 		cars_from_level = MAG.get_cars_from_level2(new_car_list2, level)
 		value += weights[level] * (len(cars_from_level))
-		value_level.append(len(cars_from_level))
-	return value+noise, value_level
+		# value_level.append(len(cars_from_level))
+	return value+noise
 
 
 
@@ -298,7 +296,7 @@ def MakeMove(state, delta=0, gamma=0.05, theta=float('inf')):
 	root = state # state is already a node
 	InitializeChildren(root)
 	if Lapse():
-		print('Random move made')
+		# print('Random move made')
 		return RandomMove(root), [], []
 	else:
 		DropFeatures(delta)
@@ -314,7 +312,7 @@ def MakeMove(state, delta=0, gamma=0.05, theta=float('inf')):
 				# so that a comparison of values among children can be observed directly
 				Backpropagate(n, root)
 			if n2.get_value() == 0: # terminate the algorithm if found a terminal node
-				print('terminal node found, terminate algorithm.')
+				# print('terminal node found, terminate algorithm.')
 				break
 	return ArgmaxChild(root), considered_node, considered_node2
 
@@ -329,20 +327,46 @@ def estimate_prob(root_node, expected_board='', iteration=100):
 		child_idx = root_node.find_child(new_node)
 		frequency[child_idx] += 1
 	
-	frequency = np.array(frequency, dtype=np.float32)/iteration
+	frequency = np.array(frequency, dtype=np.float32)/iteration # now frequency becomes probability
 	chance = float(1)/float(len(frequency))
 
 	sol_idx = None
 	sol_value_level = None
-	print('initial board:\n'+str(root_node.board_to_str()))
+	# print('initial board:\n'+str(root_node.board_to_str()))
 	for i in range(len(root_node.get_children())):
 		if root_node.get_child(i).board_to_str() == expected_board:
 			sol_idx = i
 			sol_value_level = root_node.get_child(i).get_value_bylevel()
-		print('possible move:\n'+str(root_node.get_child(i).board_to_str()))
-		print('probability:'+str(frequency[i])+'\n')
+		# print('possible move:\n'+str(root_node.get_child(i).board_to_str()))
+		# print('probability:'+str(frequency[i])+'\n')
 
 	return root_node.get_children(), frequency, sol_idx, sol_value_level, chance
+
+
+def ibs(root_node, expected_board=''):
+	''' inverse binomial sampling 
+		return the number of simulations until hit target
+	'''
+	InitializeChildren(root_node)
+	frequency = [0] * len(root_node.get_children())
+	num_simulated = 0
+	hit = False
+	sol_idx = None
+	
+	while not hit:
+		new_node, _, _ = MakeMove(root_node)
+		child_idx = root_node.find_child(new_node)
+		frequency[child_idx] += 1
+		num_simulated += 1
+		if root_node.get_child(child_idx).board_to_str() == expected_board:
+			sol_idx = child_idx
+			hit = True
+	
+	frequency = np.array(frequency, dtype=np.float32)
+	# chance = float(1)/float(len(frequency))
+
+	return num_simulated, root_node.get_children(), frequency, sol_idx
+
 
 
 
@@ -420,7 +444,7 @@ def plot_trial(this_w0=0, this_w1=0, this_w2=0, this_w3=-1, this_w4=0, this_w5=0
 	initial_car_list, initial_red = MAG.json_to_car_list(ins_file)
 	initial_board, initial_red = MAG.construct_board(initial_car_list)
 	initial_node = Node(initial_car_list)
-	print('Initial board:\n'+initial_node.board_to_str())
+	# print('Initial board:\n'+initial_node.board_to_str())
 	
 	# initialize parameters
 	cur_node = initial_node
@@ -457,8 +481,8 @@ def plot_trial(this_w0=0, this_w1=0, this_w2=0, this_w3=-1, this_w4=0, this_w5=0
 
 		# run model to make one decision (which contains many iterations)
 		selectedmove, considered, considered2 = MakeMove(cur_node)
-		print('Initial board:\n'+cur_node.board_to_str())
-		print('move made:\n'+selectedmove.board_to_str())
+		# print('Initial board:\n'+cur_node.board_to_str())
+		# print('move made:\n'+selectedmove.board_to_str())
 		total_iteration = len(considered2)
 		cur_iteration_num = 1 # initialize iteration count
 
@@ -821,11 +845,11 @@ def plot_heatmap(cur_node, instance, idx, children_list, frequency, sol_idx, out
 		if count == sol_idx:
 			plt.arrow(x=pos1from, y=pos2from, dx=(pos1to-pos1from), dy=(pos2to-pos2from), 
 					head_width=0.15, head_length=0.1, alpha=0.8, color='red',
-					lw= 6 * stats.zscore(frequency)[count])
+					lw= 20 * frequency[count])
 		else:
 			plt.arrow(x=pos1from, y=pos2from, dx=(pos1to-pos1from), dy=(pos2to-pos2from), 
 					head_width=0.15, head_length=0.1, alpha=0.5, color='black',
-					lw= 6 * stats.zscore(frequency)[count])
+					lw= 20 * frequency[count])
 		count += 1
 	if imgtype == 'heatmap':
 		plt.title('Heatmap Move '+str(move_num-1))
@@ -885,8 +909,96 @@ def make_movie(move_num, path='/Users/chloe/Desktop/RHfig/', format='gif', imgty
 
 
 
+# import libraries
+import seaborn as sns
+from scipy.optimize import minimize
+import scipy.stats as stats
+import pymc3 as pm3
+import statsmodels.api as sm
+from statsmodels.base.model import GenericLikelihoodModel
 
-heat_map()
+global w0, w1, w2, w3, w4, w5, w6, w7, mu, sigma, weights
+w0 = 0
+w1 = -5
+w2 = -4
+w3 = -3
+w4 = -1
+w5 = -1
+w6 = -1
+w7 = -1
+mu = 0
+sigma = 1
+weights = [w0, w1, w2, w3, w4, w5, w6, w7]
+global plot_tree_flag # whether to visialize the tree at the same time
+plot_tree_flag = False
+trial_start = 2 # starting row number in the raw data
+trial_end = 20 # ending row number in the raw data
+sub_data = pd.read_csv('/Users/chloe/Desktop/trialdata_valid_true_dist7_processed.csv')
+dir_name = '/Users/chloe/Desktop/RHfig/' # dir for new images
+os.chdir(dir_name)
+
+
+def my_ll(weights=weights):
+	print('simulation')
+
+	ll = 0
+
+	# construct initial node
+	first_line = sub_data.loc[trial_start-2,:]
+	instance = first_line['instance']
+	ins_dir = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/'
+	ins_file = ins_dir + instance + '.json'
+	initial_car_list, initial_red = MAG.json_to_car_list(ins_file)
+	initial_board, initial_red = MAG.construct_board(initial_car_list)
+	initial_node = Node(initial_car_list)
+	# print('Initial board:\n'+initial_node.board_to_str())
+	
+	# initialize parameters
+	cur_node = initial_node
+	cur_carlist = initial_car_list
+	global move_num # move number in this human trial
+	move_num = 1
+
+
+	# every human move in the trial
+	for i in range(trial_start-1, trial_end-2):
+		# load data from datafile
+		# print('Move number '+str(move_num))
+		row = sub_data.loc[i, :]
+		piece = row['piece']
+		move_to = row['move']
+		
+		# children_list, frequency, sol_idx, _, _ = estimate_prob(cur_node, expected_board=Node(MAG.move(cur_carlist, piece, move_to)[0]).board_to_str(), iteration=50)
+		# ll += -np.log(frequency[sol_idx])
+		num_simulated, _, _, _ = ibs(cur_node, expected_board=Node(MAG.move(cur_carlist, piece, move_to)[0]).board_to_str())
+		print(num_simulated)
+		ll += -harmonic_sum(num_simulated)
+
+		# make human move
+		cur_carlist, _ = MAG.move(cur_carlist, piece, move_to)
+		cur_board, _ = MAG.construct_board(cur_carlist)
+		cur_node = Node(cur_carlist)
+
+		move_num += 1
+
+
+def harmonic_sum(n):
+	''' return sum of harmonic series from 1 to k '''
+	i = 1
+	s = 0.0
+	for i in range(1, n+1):
+		s += 1/i
+	return s
+
+
+results = minimize(my_ll, weights, 
+		method='Nelder-Mead', options={'disp': True})	
+
+print(results)
+
+
+
+
 
 
 
