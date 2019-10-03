@@ -311,9 +311,10 @@ def MakeMove(state, delta=0, gamma=0.05, theta=float('inf')):
 				# if plot decision tree, do not show backproped value
 				# so that a comparison of values among children can be observed directly
 				Backpropagate(n, root)
-			if n2.get_value() == 0: # terminate the algorithm if found a terminal node
-				# print('terminal node found, terminate algorithm.')
+			if n2.get_value() == 0: 
+				# terminate the algorithm if found a terminal node
 				break
+	print('move made')
 	return ArgmaxChild(root), considered_node, considered_node2
 
 
@@ -368,48 +369,6 @@ def ibs(root_node, expected_board=''):
 	return num_simulated, root_node.get_children(), frequency, sol_idx
 
 
-
-
-def solution_prob(instance):
-	''' print probability of selecting solution moves 
-		at each position along the optimal solution '''
-	ins_dir = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/'
-	ins_file = ins_dir + instance + '.json'
-	solution = np.load('/Users/chloe/Documents/RushHour/exp_data/' + instance + '_solution.npy')
-	print('instance '+instance)
-	print('optimal solution length '+str(len(solution)))
-	sol_prob = []
-	chance = []
-	sol_vlevel = []
-
-	# construct initial state/node
-	initial_car_list, initial_red = MAG.json_to_car_list(ins_file)
-	initial_board, initial_red = MAG.construct_board(initial_car_list)
-	print('Initial board:\n'+MAG.board_to_str(initial_board))
-	initial_node = Node(initial_car_list)
-
-	cur_node = initial_node
-	cur_carlist = initial_car_list
-	
-	for i in range(len(solution)):
-		sol = solution[i]
-		car_to_move = sol[0]
-		if car_to_move == 'R':
-			car_to_move = 'r'
-		move_by = int(sol[2:])
-		cur_carlist, _ = MAG.move_by(cur_carlist, car_to_move, move_by)
-		if i == len(solution)-1:
-			cur_carlist, _ = MAG.move2(cur_carlist, car_to_move, 4, 2)
-		cur_board, _ = MAG.construct_board(cur_carlist)
-		sol_board_str = MAG.board_to_str(cur_board)
-		# print('solution child\n'+sol_board_str)
-		_, frequency, sol_idx, v_level, ch= estimate_prob(cur_node, sol_str=sol_board_str)
-		cur_node = cur_node.get_child(sol_idx)
-		sol_prob.append(frequency[sol_idx])
-		sol_vlevel.append(v_level)
-		chance.append(ch)
-
-	return sol_prob, sol_vlevel, chance
 	
 	
 
@@ -932,7 +891,7 @@ weights = [w0, w1, w2, w3, w4, w5, w6, w7]
 global plot_tree_flag # whether to visialize the tree at the same time
 plot_tree_flag = False
 trial_start = 2 # starting row number in the raw data
-trial_end = 20 # ending row number in the raw data
+trial_end = 5 # ending row number in the raw data
 sub_data = pd.read_csv('/Users/chloe/Desktop/trialdata_valid_true_dist7_processed.csv')
 dir_name = '/Users/chloe/Desktop/RHfig/' # dir for new images
 os.chdir(dir_name)
@@ -963,16 +922,18 @@ def my_ll(weights=weights):
 	# every human move in the trial
 	for i in range(trial_start-1, trial_end-2):
 		# load data from datafile
-		# print('Move number '+str(move_num))
+		print('Move number '+str(move_num))
 		row = sub_data.loc[i, :]
 		piece = row['piece']
 		move_to = row['move']
 		
-		# children_list, frequency, sol_idx, _, _ = estimate_prob(cur_node, expected_board=Node(MAG.move(cur_carlist, piece, move_to)[0]).board_to_str(), iteration=50)
-		# ll += -np.log(frequency[sol_idx])
-		num_simulated, _, _, _ = ibs(cur_node, expected_board=Node(MAG.move(cur_carlist, piece, move_to)[0]).board_to_str())
-		print(num_simulated)
-		ll += -harmonic_sum(num_simulated)
+		children_list, frequency, sol_idx, _, _ = estimate_prob(cur_node, 
+			expected_board=Node(MAG.move(cur_carlist, piece, move_to)[0]).board_to_str(), 
+			iteration=5)
+		ll += -np.log(frequency[sol_idx])
+		# num_simulated, _, _, _ = ibs(cur_node, expected_board=Node(MAG.move(cur_carlist, piece, move_to)[0]).board_to_str())
+		# print(num_simulated)
+		# ll += -harmonic_sum(num_simulated)
 
 		# make human move
 		cur_carlist, _ = MAG.move(cur_carlist, piece, move_to)
@@ -991,14 +952,13 @@ def harmonic_sum(n):
 	return s
 
 
-results = minimize(my_ll, weights, 
-		method='Nelder-Mead', options={'disp': True})	
-
-print(results)
-
+# results = minimize(my_ll, weights, 
+# 		method='Nelder-Mead', options={'disp': True})	
+# print(results)
 
 
 
+plot_trial()
 
 
 

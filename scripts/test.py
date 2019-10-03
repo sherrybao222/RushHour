@@ -1,57 +1,51 @@
-# BFS model
-
-# import MAG, BFS
-# import random, sys, copy
-# import numpy as np
-# import pymc3 as py
-
-# basic_model = py.Model()
-
-# with basic_model:
-
-# 	w0 = py.Normal('w0', mu=1.0, sigma=1.0)
-# 	w1 = py.Normal('w1', mu=1.0, sigma=1.0)
-# 	w2 = py.Normal('w2', mu=1.0, sigma=1.0)
-# 	w3 = py.Normal('w3', mu=1.0, sigma=1.0)
-# 	w4 = py.Normal('w4', mu=1.0, sigma=1.0)
-# 	w5 = py.Normal('w5', mu=1.0, sigma=1.0)
-# 	w6 = py.Normal('w6', mu=1.0, sigma=1.0)
-# 	w7 = py.Normal('w7', mu=1.0, sigma=1.0)
-# 	noise = py.Normal('noise', mu=1.0, sigma=1.0)
-	
-# 	freq = BFS.Main(w0, w1, w2, w3, w4, w5, w6, w7, noise)
-# 	print(freq)
-
-from __future__ import print_function
-import numpy as np
-from scipy import stats
+# import libraries
+import numpy as np, pandas as pd
+from matplotlib import pyplot as plt
+from scipy.optimize import minimize
 import statsmodels.api as sm
-from statsmodels.base.model import GenericLikelihoodModel
-import BFS
+import scipy.stats as stats
 
-# data = sm.datasets.spector.load_pandas()
-# exog = data.exog # dependent var
-# endog = data.endog # regressors
-vlevel, _, _ = BFS.Main()
-exog = np.expand_dims(np.array(vlevel), axis=0)
-endog = np.ones((1,len(vlevel)))
+# generate data
+N = 3
+x = np.linspace(0,20,N)
+e = np.random.normal(loc = 0.0, scale = 5.0, size = N)
+y = 3*x + e
+df = pd.DataFrame({'y':y, 'x':x})
+df['constant'] = 1
 
 
-# print(sm.datasets.spector.NOTE)
-# print(data.exog.head())
+# # split features and target
+# X = df[['constant', 'x']]
+# # fit model and summarize
+# sm.OLS(y,X).fit().summary()
 
-exog = sm.add_constant(exog, prepend=False)
 
-class MyProbit(GenericLikelihoodModel):
-    def loglike(self, params): 
-    	print(params)
-    	_, likelihood, _ = BFS.Main(params[0], params[1], \
-    									params[3], params[7], params[9], params[11],\
-    									params[13])
-        return np.sum(np.log(likelihood))
+# define likelihood function
+def MLERegression(params):
+	intercept, beta, sd = params[0], params[1], params[2] # inputs are guesses at our parameters
+	yhat = intercept + beta*x # predictions
+# next, we flip the Bayesian question
+# compute PDF of observed values normally distributed around mean (yhat)
+# with a standard deviation of sd
+	negLL = -np.sum( stats.norm.logpdf(y, loc=yhat, scale=sd) )
+# return negative LL
+	return(negLL)
 
-sm_probit_manual = MyProbit(endog, exog).fit()
-print(sm_probit_manual.summary())
 
-print(sm_probit_manual.params)
+guess = np.array([5,5,2])
+results = minimize(MLERegression, guess, method = 'Nelder-Mead', options={'disp': True})
+print(results)
 
+
+# import matlab.engine
+# import scipy.io as sio
+# sio.savemat('df.mat', {'x':df['x'], 'y':df['y'], 'constant':df['constant']})
+# eng = matlab.engine.start_matlab()
+# eng.load('df.mat')
+# eng.load('MLERegression.m')
+# x, fval = eng.bads('MLERegression', '[5.0 5.0 2.0]', 
+# 					'[-10.0 -10.0 -10.0]','[10.0 10.0 10.0]',
+# 					'[-10.0 -10.0 -10.0]','[10.0 10.0 10.0]')
+# print(x)
+# print(fval)
+# eng.quit()

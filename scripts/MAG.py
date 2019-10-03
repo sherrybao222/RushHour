@@ -13,7 +13,6 @@ class Car:
 	edge_to = []
 	visited = False
 	level = []
-	indegree = 0
 	def __init__(self, s, l, t, o, p):
 		self.start = s
 		self.length = l
@@ -344,19 +343,25 @@ def num_blocking(board, this_car): # number of cars blocking this_car
 			cur_position += 1
 	return side1, side2
 
-def clean_level(car_list): # clean levels and indegree of each car
+
+def clean_level(car_list): # clean levels of each car
 	new_car_list = []
 	for car in car_list:
 		# if len(car.level) != 0 and min(car.level) > 6:
 		# 	print(min(car.level))
 		car.level = []
-		car.indegree = 0
 		new_car_list.append(car)
 	return new_car_list
 
 
 
-def assign_level(car_list, red): # assign level to each car
+def assign_level(car_list, red): 
+	''' assign level to each car
+	'''
+	# first, clean levels of each car 
+	for car in car_list:
+		car.level = []
+	# assign level
 	queue = []
 	visited = []
 	red.level.append(0)
@@ -379,11 +384,21 @@ def get_cars_from_level(car_list, l): # get cars from level
 			list_toreturn.append(cur_car)
 	return list_toreturn
 
+
 def get_cars_from_level2(car_list, l): # get cars from level, highest
 	list_toreturn = []
 	for cur_car in car_list:
 		if l == min(cur_car.level):
 			list_toreturn.append(cur_car)
+	return list_toreturn
+
+def get_num_cars_from_levels(car_list, total_levels):
+	''' return the number of cars at each level 
+		total_levels >= any possible min(cur_car.level)
+	'''
+	list_toreturn = [0] * total_levels
+	for cur_car in car_list:
+		list_toreturn[min(cur_car.level)] += 1
 	return list_toreturn
 
 
