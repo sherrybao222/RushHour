@@ -48,7 +48,6 @@ class Node:
 	def get_move_from_parent(self):
 		return self.__tag, self.__pos1from, self.__pos2from, self.__pos1to, self.__pos2to
 		
-
 	def get_move(self):
 		return self.__tag, self.__pos1, self.__pos2, self.__pos1old, self.__pos2old
 
@@ -88,6 +87,12 @@ class Node:
 	def find_child(self, c):
 		for i in range(len(self.__children)):
 			if self.__children[i] == c:
+				return i
+		return None
+
+	def find_child_by_str(self, bstr):
+		for i in range(len(self.__children)):
+			if self.__children[i].board_to_str() == bstr:
 				return i
 		return None
 
@@ -485,10 +490,8 @@ def plot_trial(this_w0=0, this_w1=0, this_w2=0, this_w3=-1, this_w4=0, this_w5=0
 		# plot selected move 
 		plot_blank(instance, img_count, text='Selected Move', color='green')
 		img_count += 1
-
 		plot_state(cur_node, instance, img_count)
 		img_count += 1
-
 		plot_state(selectedmove, instance, img_count)
 		if plot_tree_flag:
 			dot.edge(str(id(cur_node)), str(id(selectedmove)), color='red')
@@ -732,8 +735,6 @@ def heat_map(this_w0=0, this_w1=0, this_w2=0, this_w3=-1, this_w4=0, this_w5=0, 
 
 
 
-
-
 def str_to_matrix(string):
 	''' convert string of board to a int matrix '''
 	matrix = np.zeros((6,6), dtype=int)
@@ -867,7 +868,6 @@ def make_movie(move_num, path='/Users/chloe/Desktop/RHfig/', format='gif', imgty
 		video.release()
 
 
-
 # import libraries
 import seaborn as sns
 from scipy.optimize import minimize
@@ -876,7 +876,7 @@ import pymc3 as pm3
 import statsmodels.api as sm
 from statsmodels.base.model import GenericLikelihoodModel
 
-global w0, w1, w2, w3, w4, w5, w6, w7, mu, sigma, weights
+global w0, w1, w2, w3, w4, w5, w6, w7, mu, sigma, weights, num_parameters
 w0 = 0
 w1 = -5
 w2 = -4
@@ -888,13 +888,34 @@ w7 = -1
 mu = 0
 sigma = 1
 weights = [w0, w1, w2, w3, w4, w5, w6, w7]
-global plot_tree_flag # whether to visialize the tree at the same time
-plot_tree_flag = False
+weights_todo = [w1]
+num_parameters = len(weights)
+sim_num = 1
 trial_start = 2 # starting row number in the raw data
-trial_end = 5 # ending row number in the raw data
+trial_end = 20
+global move_num # move number in this human trial
+global plot_tree_flag # whether to visialize the tree at the same time
+plot_tree_flag = True
+global plot_flag # whether to plot
+plot_flag = True
+
 sub_data = pd.read_csv('/Users/chloe/Desktop/trialdata_valid_true_dist7_processed.csv')
+# construct initial node
+first_line = sub_data.loc[trial_start-2,:]
+instance = first_line['instance']
+ins_dir = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/'
 dir_name = '/Users/chloe/Desktop/RHfig/' # dir for new images
-os.chdir(dir_name)
+ins_file = ins_dir + instance + '.json'
+initial_car_list, _ = MAG.json_to_car_list(ins_file)
+initial_node = Node(initial_car_list)
+print('========================== started =======================')
+
+# initialize parameters
+node_list = [] # list of node from data
+expected_list = [] # list of expected human move node, str
+cur_node = initial_node
+cur_carlist = initial_car_list
+
 
 
 def my_ll(weights=weights):
@@ -957,8 +978,8 @@ def harmonic_sum(n):
 # print(results)
 
 
+plot_model()
 
-plot_trial()
 
 
 
