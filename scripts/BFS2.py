@@ -15,6 +15,8 @@ import cProfile, pstats, StringIO
 from operator import methodcaller
 import multiprocessing as mp
 
+global w0, w1, w2, w3, w4, w5, w6, w7, mu, sigma, weights, num_parameters
+global plot_flag # whether to plot
 
 class Node:
 	def __init__(self, cl):
@@ -23,64 +25,50 @@ class Node:
 		self.__value = None
 		self.__red = None
 		self.__board = None #str
-
 	def add_child(self, n):
 		n.set_parent(self)
 		self.__children.append(n)
-	
 	def set_parent(self, p):
 		self.__parent = p
-
 	def set_value(self, v):
 		self.__value = v
-
 	def get_carlist(self):
 		return self.__car_list
-
 	def get_red(self):
 		if self.__red == None:
 			for car in self.__car_list:
 				if car.tag == 'r':
 					self.__red = car
 		return self.__red
-
 	def get_board(self):
 		tmp_b, _ = MAG.construct_board(self.__car_list)
 		return tmp_b
-
 	def get_value(self):
 		if self.__value == None:
 			self.__value = Value1(self.__car_list, self.get_red())
 		return self.__value
-
 	def get_child(self, ind):
 		return self.__children[ind]
-
 	def get_children(self):
 		return self.__children
-
 	def find_child(self, c):
 		for i in range(len(self.__children)):
 			if self.__children[i] == c:
 				return i
 		return None
-
 	def find_child_by_str(self, bstr):
 		for i in range(len(self.__children)):
 			if self.__children[i].board_to_str() == bstr:
 				return i
 		return None
-
 	def get_parent(self):
 		return self.__parent
-	
 	def remove_child(self, c):
 		for i in range(len(self.__children)):
 			if self.__children[i] == c:
 				c.parent = None
 				self.__children.pop(i)
 				return	
-
 	def board_to_str(self):
 		if self.__board == None:
 			tmp_board, tmp_red = MAG.construct_board(self.__car_list)
@@ -115,6 +103,7 @@ def Value1(car_list2, red):
 		+ w7 * num_cars{MAG-level 7}  
 		+ noise
 	'''
+	weights = [w0, w1, w2, w3, w4, w5, w6, w7]
 	noise = np.random.normal(loc=mu, scale=sigma)
 	# initialize MAG
 	my_board2, my_red2 = MAG.construct_board(car_list2)
@@ -240,21 +229,13 @@ def ibs(root_node, expected_board=''):
 		return the number of simulations until hit target
 	'''
 	InitializeChildren(root_node)
-	# frequency = [0] * len(root_node.get_children())
 	num_simulated = 0
 	hit = False
-	# sol_idx = None
 	while not hit:
 		new_node, _, _ = MakeMove(root_node)
-		# child_idx = root_node.find_child(new_node)
-		# frequency[child_idx] += 1
 		num_simulated += 1
 		if new_node.board_to_str() == expected_board:
-			# sol_idx = child_idx
 			hit = True
-	# frequency = np.array(frequency, dtype=np.float32)
-	# chance = float(1)/float(len(frequency))
-	# return num_simulated, root_node.get_children(), frequency, sol_idx
 	return num_simulated
 
 def harmonic_sum(n):
@@ -265,33 +246,80 @@ def harmonic_sum(n):
 		s += 1.0/i
 	return s
 
+def my_ll_parallel(params): # parallel computing
+	# pr = cProfile.Profile()
+	# pr.enable()
+	print('---------------- parallel simulation ----------------')
+	all_ibs = [pool.apply(ibs, args=(cur, exp_str)) 
+			for cur, exp_str in zip(node_list, expected_list)]
+	print('all_ibs ', all_ibs)
+	all_ll = pool.map(harmonic_sum, [n for n in all_ibs])
+	# pr.disable()
+	# s = StringIO.StringIO()
+	# sortby = 'cumulative'
+	# ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+	# ps.print_stats()
+	# print s.getvalue()
+	return -np.sum(all_ll)
 
 
 
-global w0, w1, w2, w3, w4, w5, w6, w7, mu, sigma, weights, num_parameters
+def my_ll_sequential(params): # non-parallel
+	# pr = cProfile.Profile()
+	# pr.enable()
+	print('---------------- sequential simulation ----------------')
+	# initialize parameters
+	cur_node = initial_node
+	cur_carlist = initial_car_list
+	move_num = 1
+	ll = 0
+	# every human move in the trial
+	for i in range(trial_start-1, trial_end-2):
+		# load data from datafile
+		row = sub_data.loc[i, :]
+		piece = row['piece']
+		move_to = row['move']
+		# create human move
+		cur_carlist, _ = MAG.move(cur_carlist, piece, move_to)
+		# log likelihood calculation
+		num_simulated = ibs(cur_node, 
+				expected_board=Node(cur_carlist).board_to_str())
+		ll += harmonic_sum(num_simulated)
+		print('ibs: '+str(num_simulated))
+		# make human move node
+		cur_node = Node(cur_carlist)
+		move_num += 1
+	# pr.disable()
+	# s = StringIO.StringIO()
+	# sortby = 'cumulative'
+	# ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+	# ps.print_stats()
+	# print s.getvalue()
+	return -ll
+
+
+
+# pr = cProfile.Profile()
+# pr.enable()
+
 w0 = 0
-w1 = -5
-w2 = -4
-w3 = -3
-w4 = -1
+w1 = -8
+w2 = -10
+w3 = -5
+w4 = -3
 w5 = -1
 w6 = -1
 w7 = -1
 mu = 0
 sigma = 1
 weights = [w0, w1, w2, w3, w4, w5, w6, w7]
-weights_todo = [w1]
+weights_tofit = [w1, w2]
 num_parameters = len(weights)
-sim_num = 1
 trial_start = 2 # starting row number in the raw data
 trial_end = 20
-global move_num # move number in this human trial
-global plot_tree_flag # whether to visialize the tree at the same time
-plot_tree_flag = True
-global plot_flag # whether to plot
 plot_flag = True
-
 sub_data = pd.read_csv('/Users/chloe/Desktop/trialdata_valid_true_dist7_processed.csv')
+
 # construct initial node
 first_line = sub_data.loc[trial_start-2,:]
 instance = first_line['instance']
@@ -300,7 +328,7 @@ dir_name = '/Users/chloe/Desktop/RHfig/' # dir for new images
 ins_file = ins_dir + instance + '.json'
 initial_car_list, _ = MAG.json_to_car_list(ins_file)
 initial_node = Node(initial_car_list)
-print('========================== started =======================')
+print('====================== started =====================')
 
 # initialize parameters
 node_list = [] # list of node from data
@@ -314,109 +342,33 @@ for i in range(trial_start-1, trial_end-2):
 	row = sub_data.loc[i, :]
 	piece = row['piece']
 	move_to = row['move']
-
 	# create human move
 	cur_carlist, _ = MAG.move(cur_carlist, piece, move_to)
 	node_list.append(cur_node)
-
 	# make human move node
 	cur_node = Node(cur_carlist)
 	expected_list.append(cur_node.board_to_str())
-
-
-
-
-def my_ll(weights=weights): # parallel computing
-
-	pr = cProfile.Profile()
-	pr.enable()
-	print('--------------------- simulation --------------------')
-
-	all_ibs = [pool.apply(ibs, args=(cur, exp_str)) 
-			for cur, exp_str in zip(copy.deepcopy(node_list), expected_list)]
-	print('all_ibs ', all_ibs)
-	all_ll = pool.map(harmonic_sum, [n for n in all_ibs], chunksize=1)
-	print('all_ll ', all_ll)
-
-	pr.disable()
-	s = StringIO.StringIO()
-	sortby = 'cumulative'
-	ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-	ps.print_stats()
-	print s.getvalue()
-		
-	return -np.sum(all_ll)
-
-
-
-def my_ll_sequential(weights=weights): # non-parallel
-
-	pr = cProfile.Profile()
-	pr.enable()
-	print('--------------------- simulation --------------------')
 	
-	# initialize parameters
-	cur_node = initial_node
-	cur_carlist = initial_car_list
-	move_num = 1
-	ll = 0
 
-	# every human move in the trial
-	for i in range(trial_start-1, trial_end-2):
-		# load data from datafile
-		# print('Move number '+str(move_num))
-		row = sub_data.loc[i, :]
-		piece = row['piece']
-		move_to = row['move']
-		
-		# children_list, frequency, sol_idx, _, _ = estimate_prob(cur_node, 
-		# 	expected_board=Node(MAG.move(cur_carlist, piece, move_to)[0]).board_to_str(), 
-		# 	iteration=5)
-		# ll += -np.log(frequency[sol_idx])
-
-		# MakeMove(cur_node)
-		# break
-
-		# create human move
-		cur_carlist, _ = MAG.move(cur_carlist, piece, move_to)
-
-		# log likelihood calculation
-		num_simulated = ibs(cur_node, 
-				expected_board=Node(cur_carlist).board_to_str())
-		ll += harmonic_sum(num_simulated)
-		# print('ll: '+str(ll))
-		print('ibs: '+str(num_simulated))
-
-		# make human move node
-		cur_node = Node(cur_carlist)
-		move_num += 1
-
-	pr.disable()
-	s = StringIO.StringIO()
-	sortby = 'cumulative'
-	ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-	ps.print_stats()
-	print s.getvalue()
-
-	return -ll
-
-
-
-pr = cProfile.Profile()
-pr.enable()
-	
+# parallel processing	
 pool = mp.Pool(processes=len(node_list))
-results = minimize(my_ll_sequential, weights, 
+
+
+# fit
+results = minimize(my_ll_parallel, weights_tofit, 
 		method='Nelder-Mead', options={'disp': True})	
 print(results)
 pool.close()
 
-pr.disable()
-s = StringIO.StringIO()
-sortby = 'cumulative'
-ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-ps.print_stats()
-print s.getvalue()
+
+
+
+# pr.disable()
+# s = StringIO.StringIO()
+# sortby = 'cumulative'
+# ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+# ps.print_stats()
+# print s.getvalue()
 
 
 

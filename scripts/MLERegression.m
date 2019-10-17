@@ -1,5 +1,3 @@
-function negLL = MLERegression(param0, param1, param2)
-yhat = param0 + param1*df.x;
-pd = makedist('Normal','mu',yhat,'sigma',param2);
-negLL = -sum(log(pdf(pd, df.y));
+function negLL = MLERegression(params)
+    negLL = python('test.py', params[0], params[1], params[2])
 end

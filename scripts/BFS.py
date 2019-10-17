@@ -1,5 +1,7 @@
-# BFS model
-
+'''
+The very first version of BFS model, slow.
+py27
+'''
 import MAG, rushhour
 import random, sys, copy, os
 import numpy as np

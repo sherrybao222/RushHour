@@ -27,6 +27,7 @@ import time
 import datetime
 import cv2
 import datetime
+from matplotlib.ticker import NullFormatter
 
 
 class Node:
@@ -43,12 +44,14 @@ class Node:
 		self.__pos2to = None # self position as a child
 		self.__board = None
 		self.__red = None
+		self.__orientation = None
+		self.__length = None 
 
 	def add_child(self, n):
 		n.set_parent(self)
 		self.__children.append(n)
 
-	def move_from_parent(self, tag, pos1from, pos2from, pos1to, pos2to):
+	def move_from_parent(self, tag, pos1from, pos2from, pos1to, pos2to, orientation, length):
 		''' if current node is a child, record how it is transformed from its parent 
 		'''
 		self.__tag = tag # car moved from parent
@@ -56,9 +59,11 @@ class Node:
 		self.__pos2from	= pos2from # parent car position
 		self.__pos1to = pos1to # current/child position
 		self.__pos2to = pos2to # current/child position
+		self.__orientation = orientation
+		self.__length = length
 
 	def get_move_from_parent(self):
-		return self.__tag, self.__pos1from, self.__pos2from, self.__pos1to, self.__pos2to
+		return self.__tag, self.__pos1from, self.__pos2from, self.__pos1to, self.__pos2to, self.__orientation, self.__length
 		
 	def get_move(self):
 		return self.__tag, self.__pos1, self.__pos2, self.__pos1old, self.__pos2old
@@ -202,9 +207,9 @@ def InitializeChildren(root_node):
 			new_list, _ = MAG.move2(root_car_list, tag, pos[0], pos[1])
 			for car in root_node.get_carlist():
 				if car.tag == tag:
-					pos1from, pos2from = car.start[0], car.start[1]
+					pos1from, pos2from, orientation, length = car.start[0], car.start[1], car.orientation, car.length
 			dummy_child = Node(new_list)
-			dummy_child.move_from_parent(tag, pos1from, pos2from, pos[0], pos[1])
+			dummy_child.move_from_parent(tag, pos1from, pos2from, pos[0], pos[1], orientation, length)
 			root_node.add_child(dummy_child)
 
 def SelectNode(root_node):
@@ -248,8 +253,9 @@ def MakeMove(state, delta=0, gamma=0.05, theta=10):
 	InitializeChildren(root)
 	if Lapse():
 		# print('Random move made')
-		return RandomMove(root), [], []
+		return RandomMove(root), [], [], 'Random Move Made'
 	else:
+		reason = 'Model Stopped' # reason of termination
 		DropFeatures(delta)
 		if plot_flag:
 			considered_node = [] # nodes already traversed along the branch in this ieration
@@ -261,12 +267,14 @@ def MakeMove(state, delta=0, gamma=0.05, theta=10):
 				considered_node.append(traversed)
 			n2 = ExpandNode(n, theta)
 			considered_node2.append(n2)
-			Backpropagate(n, root)
-			if n2.get_value() >= abs(np.random.normal(loc=mu, scale=sigma)): # terminate the algorithm if found a terminal node
+			# Backpropagate(n, root)
+			if n2.get_value() >= abs(np.random.normal(loc=mu, scale=sigma)): 
+			# terminate the algorithm if found a terminal node
+				reason = 'Solution Found'
 				break
 	if plot_flag:
-		return ArgmaxChild(root), considered_node, considered_node2
-	return ArgmaxChild(root), [], considered_node2
+		return ArgmaxChild(root), considered_node, considered_node2, reason
+	return ArgmaxChild(root), [], considered_node2, reason
 
 def estimate_prob(root_node, expected_board='', iteration=100):
 	''' Estimate the probability of next possible moves given the root node '''
@@ -276,7 +284,7 @@ def estimate_prob(root_node, expected_board='', iteration=100):
 	sol_idx = None
 	
 	for i in range(iteration):
-		new_node, _, _ = MakeMove(root_node)
+		new_node, _, _, _ = MakeMove(root_node)
 		if first_iteration:
 			frequency = [0] * len(root_node.get_children())
 			first_iteration = False
@@ -311,8 +319,8 @@ def plot_tree():
 	for i in range(trial_start-1, trial_end-2):
 		
 		# plot text
-		plot_blank(instance, img_count, text='Move Number '+str(move_num), color='orange')
-		img_count += 1
+		# plot_blank(instance, img_count, text='Move Number '+str(move_num), color='orange')
+		# img_count += 1
 		# plot blank space
 		plot_blank(instance, img_count, text='Initial Board', color='orange')
 		img_count += 1
@@ -336,7 +344,7 @@ def plot_tree():
 		move_to = row['move']
 
 		# run model to make one decision (which contains many iterations)
-		selectedmove, considered, considered2 = MakeMove(cur_node)
+		selectedmove, considered, considered2, reason = MakeMove(cur_node)
 		total_iteration = len(considered2)
 		cur_iteration_num = 1 # initialize iteration count
 
@@ -369,7 +377,7 @@ def plot_tree():
 					str(format(child.get_value(), '.2f')),
 					fixedsize='true', width='1', height='0.75', 
 					fontsize='25', penwidth='1.3')
-				dot.edge(str(id(tree_cur)), str(id(child)), penwidth='1.3')
+				dot.edge(str(id(tree_cur)), str(id(child)), penwidth='3')
 
 		# plot selected move 
 		plot_blank(instance, img_count, text='Selected Move', color='green')
@@ -390,7 +398,7 @@ def plot_tree():
 				str(id(human_node)), 
 				color='orange', 
 				label='human', fontsize='25',
-				penwidth='2')
+				penwidth='3')
 
 		# prepare to plot actual move made by human 
 		plot_blank(instance, img_count, text='Human Move', color='red')
@@ -407,7 +415,7 @@ def plot_tree():
 					str(id(selectedmove)), 
 					color='red',
 					label='model', fontsize='25', 
-					penwidth='2')
+					penwidth='3')
 
 		# update current node
 		cur_node = Node(cur_carlist)
@@ -455,7 +463,7 @@ def plot_model():
 	for i in range(trial_start-1, trial_end-2):
 		
 		# plot text
-		plot_blank(instance, img_count, text='Move Number '+str(move_num), color='orange')
+		# plot_blank(instance, img_count, text='Move Number '+str(move_num), color='orange')
 		# plot blank space
 		plot_blank(instance, img_count, text='Initial Board', color='orange')
 		img_count += 1
@@ -470,7 +478,7 @@ def plot_model():
 		move_to = row['move']
 
 		# run model to make one decision (which contains many iterations)
-		selectedmove, considered, considered2 = MakeMove(cur_node)
+		selectedmove, considered, considered2, reason = MakeMove(cur_node)
 		total_iteration = len(considered2)
 		cur_iteration_num = 1 # initialize iteration count
 
@@ -480,8 +488,9 @@ def plot_model():
 			img_count += 1
 		# plot each itertaion seperately
 		for pos, pos2 in zip(considered, considered2): # if any iteration is considered
-			# plot text
-			plot_blank(instance, img_count, text='Iteration '+str(cur_iteration_num)+'/'+str(total_iteration), color='blue')
+			# plot text, show/notshow the total number of iterations
+			# plot_blank(instance, img_count, text='Iteration '+str(cur_iteration_num)+'/'+str(total_iteration), color='blue')
+			plot_blank(instance, img_count, text='Iteration '+str(cur_iteration_num), color='blue')
 			cur_iteration_num += 1
 			img_count += 1
 			# plot board
@@ -498,6 +507,8 @@ def plot_model():
 			img_count += 1
 
 		# plot selected move 
+		plot_blank(instance, img_count, text=reason, color='green')
+		img_count += 1
 		plot_blank(instance, img_count, text='Selected Move', color='green')
 		img_count += 1
 		plot_state(cur_node, instance, img_count)
@@ -510,6 +521,7 @@ def plot_model():
 
 		# estimate probability through many simulations
 		children_list, frequency, sol_idx, _, _ = estimate_prob(cur_node, expected_board=Node(cur_carlist).board_to_str())
+		
 		# plot histogram
 		barlist = plt.bar(np.arange(len(frequency)), frequency)
 		barlist[sol_idx].set_color('r')
@@ -535,7 +547,9 @@ def plot_model():
 		img_count += 1
 
 		# prepare to plot histogram and heatmap
-		plot_blank(instance, img_count, text='Histogram\nHeatmap', color='orange')
+		plot_blank(instance, img_count, text='P(Human Move):\n'+str(format(frequency[sol_idx], '.3f')), color='orange')
+		img_count += 1
+		plot_blank(instance, img_count, text='Heatmap', color='orange')
 		img_count += 1
 
 		# increment paramter
@@ -549,6 +563,219 @@ def plot_model():
 		for item in test:
 		    if item.endswith(".jpg") or item.endswith('tree'):
 		        os.remove(os.path.join(dir_name, item))
+
+
+def plot_tree_evolution():
+	''' 		
+		Movie of multiple simulations, 
+		model's considerations and decisions and tree evolution.
+		histogram and heatmap of each possible move,
+		based on subject's current position from a trial. 
+	'''
+	os.chdir(dir_name)
+	# initialize parameters
+	cur_node = initial_node
+	cur_carlist = initial_car_list
+	move_num = 1 # move number in this human trial
+	img_count = 1
+
+	# every human move in the trial
+	for i in range(trial_start-1, trial_end-2):
+		# plot text
+		# plot_blank(instance, img_count, text='Move Number '+str(move_num), color='orange')
+		# plot blank space
+		plot_blank(instance, img_count, text='Initial Board', color='orange')
+		img_count += 1
+		# plot initial board
+		plot_state(cur_node, instance, img_count)
+		img_count += 1
+
+		# load data from datafile
+		print('Move number '+str(move_num))
+		row = sub_data.loc[i, :]
+		piece = row['piece']
+		move_to = row['move']
+
+		# run model to make one decision (which contains many iterations)
+		selectedmove, considered, considered2, reason = MakeMove(cur_node)
+		total_iteration = len(considered2)
+		cur_iteration_num = 1 # initialize iteration count
+
+		if considered == []:
+			# plot text
+			plot_blank(instance, img_count, text='Random Move', color='green')
+			img_count += 1
+		# plot each itertaion seperately
+		for pos, pos2 in zip(considered, considered2): # if any iteration is considered	
+			# plot text, show/notshow the total number of iterations
+			# plot_blank(instance, img_count, text='Iteration '+str(cur_iteration_num)+'/'+str(total_iteration), color='blue')
+			plot_blank(instance, img_count, text='Iteration '+str(cur_iteration_num), color='blue')
+			cur_iteration_num += 1
+			img_count += 1
+			# plot board
+			plot_state(cur_node, instance, img_count) # initial state
+			img_count += 1
+			# plot the node traversed along the selected branch in this iteration
+			tree_cur = cur_node
+			# initialize tree plot 
+			dot = Digraph(format='jpg', strict=True)
+			dot.attr(size='12.8,9.6', fixedsize='true', 
+					ratio='fill', margin='1, 0.5')
+			dot.node(str(id(cur_node)), 
+					str(format(cur_node.get_value(), '.2f')),
+					fixedsize='true', width='1', height='0.75', 
+					fontsize='25', penwidth='1.3')
+			for pos_cur in pos: 
+				# plot traversed nodes along the best branch
+				plot_state(pos_cur, instance, img_count) 
+				img_count += 1
+				for child in tree_cur.get_children():
+					dot.node(str(id(child)), 
+						str(format(child.get_value(), '.2f')),
+						fixedsize='true', width='1', height='0.75',
+						fontsize='25', penwidth='1.3')
+					dot.edge(str(id(tree_cur)), str(id(child)), penwidth='1.3')
+				tree_cur = pos_cur
+			# plot the new node expanded along this branch in this iteration
+			plot_state(pos2, instance, img_count)
+			img_count += 1
+			# plot the new node expanded along this branch in this iteration
+			for child in tree_cur.get_children():
+				dot.node(str(id(child)), 
+					str(format(child.get_value(), '.2f')),
+					fixedsize='true', width='1', height='0.75',
+					fontsize='25', penwidth='1.3')
+				dot.edge(str(id(tree_cur)), str(id(child)), penwidth='1.3')
+			tree_cur = pos2
+			for child in tree_cur.get_children():
+				dot.node(str(id(child)), 
+					str(format(child.get_value(), '.2f')),
+					fixedsize='true', width='1', height='0.75', 
+					fontsize='25', penwidth='1.3')
+				dot.edge(str(id(tree_cur)), str(id(child)), penwidth='1.3')
+			dot.render('/Users/chloe/Desktop/RHfig/'+instance+'_'+str(img_count)+'_board',
+					view=False)
+			img_count += 1
+
+		# plot selected move 
+		plot_blank(instance, img_count, text=reason, color='green')
+		img_count += 1
+		plot_blank(instance, img_count, text='Selected Move', color='green')
+		img_count += 1
+		plot_state(cur_node, instance, img_count)
+		img_count += 1
+		plot_state(selectedmove, instance, img_count)
+		img_count += 1
+
+		# make human move, mark human move
+		cur_carlist, _ = MAG.move(cur_carlist, piece, move_to)
+		# estimate probability through many simulations
+		children_list, frequency, sol_idx, _, _ = estimate_prob(cur_node, expected_board=Node(cur_carlist).board_to_str())
+		
+		# plot histogram
+		barlist = plt.bar(np.arange(len(frequency)), frequency)
+		barlist[sol_idx].set_color('r')
+		plt.ylim(top=1.0, bottom=0)
+		plt.title('Instance '+instance+', move number '+str(move_num))
+		plt.savefig(dir_name+instance+'_hist_move_'+str(move_num)+'.jpg')
+		plt.close()
+
+		# plot heatmap
+		plot_heatmap(cur_node, instance, move_num, children_list, frequency, sol_idx, imgtype='heatmap')
+		img_count += 1
+
+		# prepare to plot actual move made by human 
+		plot_blank(instance, img_count, text='Human Move', color='red')
+		img_count += 1
+		plot_state(cur_node, instance, img_count)
+		img_count += 1
+		
+		# update current node
+		cur_node = Node(cur_carlist)
+		# plot actual move made by human
+		plot_state(cur_node, instance, img_count)
+		img_count += 1
+
+		# prepare to plot histogram and heatmap
+		plot_blank(instance, img_count, text='P(Human Move):\n'+str(format(frequency[sol_idx], '.3f')), color='orange')
+		img_count += 1
+		plot_blank(instance, img_count, text='Heatmap', color='orange')
+		img_count += 1
+
+		# increment paramter
+		move_num += 1
+		# make movie
+		# make_movie(move_num-1, imgtype='model')
+		
+		# clean all jpg files after movie done
+		test = os.listdir(dir_name)
+		for item in test:
+		    if item.endswith("board") or item.endswith('tree'):
+		        os.remove(os.path.join(dir_name, item))
+
+		sys.exit()
+
+
+def plot_trial_human(trial_start=2, trial_end=20):
+	''' show movie of a human trial
+		trial_start: starting row number in the raw data
+		trial_end: ending row number in the raw data
+	'''
+	sub_data = pd.read_csv('/Users/chloe/Desktop/trialdata_valid_true_dist7_processed.csv')
+	dir_name = '/Users/chloe/Desktop/RHfig/' # dir for new images
+	os.chdir(dir_name)
+	# construct initial node
+	first_line = sub_data.loc[trial_start-2,:]
+	instance = first_line['instance']
+	ins_dir = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/'
+	ins_file = ins_dir + instance + '.json'
+	initial_car_list, initial_red = MAG.json_to_car_list(ins_file)
+	initial_board, initial_red = MAG.construct_board(initial_car_list)
+	initial_node = Node(initial_car_list)
+	# print('Initial board:\n'+initial_node.board_to_str())
+	
+	# initialize parameters
+	cur_node = initial_node
+	cur_carlist = initial_car_list
+	global move_num
+	move_num = 1
+	img_count = 0 # image count
+
+	# plot blank space
+	plot_blank(instance, img_count, text='Human Trial, \n'+instance, color='orange', imgtype='human')
+	img_count += 1
+	# plot initial board
+	plot_state(cur_node, instance, img_count, imgtype='human')
+	img_count += 1
+
+	# every human move in the trial
+	for i in range(trial_start-1, trial_end-1):
+	
+		# load data from datafile
+		print('Move number '+str(move_num))
+		row = sub_data.loc[i, :]
+		piece = row['piece']
+		move_to = row['move']
+
+		# make move
+		cur_carlist, _ = MAG.move(cur_carlist, piece, move_to)
+		cur_board, _ = MAG.construct_board(cur_carlist)
+		cur_node = Node(cur_carlist)
+		move_num += 1
+		
+		# plot current human move 
+		plot_state(cur_node, instance, img_count, imgtype='human')
+		img_count += 1
+
+	# make movie and save
+	make_movie(1, format='avi', imgtype='human')
+	
+	# clean all jpg files after movie done
+	test = os.listdir(dir_name)
+	for item in test:
+	    if item.endswith("human.jpg"):
+	        os.remove(os.path.join(dir_name, item))
+	
 
 
 
@@ -580,21 +807,39 @@ def plot_state(cur_node, instance, idx, out_file='/Users/chloe/Desktop/RHfig/', 
 	cmap = plt.cm.Set1
 	cmap.set_bad(color='white')
 	fig, ax = plt.subplots(figsize=(12.8,9.6))
+	ax.set_xticks(np.arange(-0.5, 5, 1))
+	ax.set_yticks(np.arange(-0.5, 5, 1))
+	ax.set_axisbelow(True)
+	ax.grid(b=True, which='major',color='gray', linestyle='-', linewidth=1, alpha=0.1)
+	ax.set_xticklabels([])
+	ax.set_yticklabels([])
+	for tic in ax.xaxis.get_major_ticks():
+		tic.tick1On = tic.tick2On = False
+	for tic in ax.yaxis.get_major_ticks():
+		tic.tick1On = tic.tick2On = False
 	im = ax.imshow(matrix, cmap=cmap)
-	for i in range(len(matrix)):
-		for j in range(len(matrix[i])):
-			num = matrix[i, j]
-			if num == 0:
-				num = 'R'
-			elif num > 0:
-				num -= 1
-			else:
-				num = ''
-			text = ax.text(j, i, num, ha="center", va="center", color="black", fontsize=36)
+	show_car_label = False
+	if show_car_label:
+		for i in range(len(matrix)):
+			for j in range(len(matrix[i])):
+				num = matrix[i, j]
+				if num == 0:
+					num = 'R'
+				elif num > 0:
+					num -= 1
+				else:
+					num = ''
+				text = ax.text(j, i, num, ha="center", va="center", color="black", fontsize=36)
 	if imgtype == 'human':
-		plt.title('Move '+str(move_num-1))
-	ax.tick_params(axis='both', which='major', labelsize=25)
-	plt.savefig(out_file+instance+'_'+str(idx)+'_'+imgtype+'.jpg')
+		plt.title('Move '+str(move_num-1), fontsize=26)
+	# ax.tick_params(axis='both', which='major', labelsize=25)
+	for axis in ['top','bottom','left','right']:
+		ax.spines[axis].set_linewidth(4)
+		ax.spines[axis].set_zorder(0)
+	fig.patch.set_facecolor('grey')
+	fig.patch.set_alpha(0.2)
+	plt.savefig(out_file+instance+'_'+str(idx)+'_'+imgtype+'.jpg', 
+			facecolor = fig.get_facecolor(), transparent = True)
 	plt.close()
 
 def plot_blank(instance, idx, text, color, out_file='/Users/chloe/Desktop/RHfig/', imgtype='board'):
@@ -621,31 +866,69 @@ def plot_heatmap(cur_node, instance, move_num, children_list, frequency, sol_idx
 	cmap = plt.cm.Set1
 	cmap.set_bad(color='white')
 	fig, ax = plt.subplots()
+	ax.set_xticks(np.arange(-0.5, 5, 1))
+	ax.set_yticks(np.arange(-0.5, 5, 1))
+	ax.set_axisbelow(True)
+	ax.grid(b=True, which='major',color='gray', linestyle='-', linewidth=1, alpha=0.1)
+	ax.set_xticklabels([])
+	ax.set_yticklabels([])
+	for tic in ax.xaxis.get_major_ticks():
+		tic.tick1On = tic.tick2On = False
+	for tic in ax.yaxis.get_major_ticks():
+		tic.tick1On = tic.tick2On = False
 	im = ax.imshow(matrix, cmap=cmap)
-	for i in range(len(matrix)):
-		for j in range(len(matrix[i])):
-			num = matrix[i, j]
-			if num == 0:
-				num = 'R'
-			elif num > 0:
-				num -= 1
-			else:
-				num = ''
-			text = ax.text(j, i, num, ha="center", va="center", color="black", fontsize=14)
+	show_car_label = False
+	if show_car_label:
+		for i in range(len(matrix)):
+			for j in range(len(matrix[i])):
+				num = matrix[i, j]
+				if num == 0:
+					num = 'R'
+				elif num > 0:
+					num -= 1
+				else:
+					num = ''
+				text = ax.text(j, i, num, ha="center", va="center", color="black", fontsize=14)
 	count = 0
 	for child in children_list:
-		tag, pos1from, pos2from, pos1to, pos2to = child.get_move_from_parent()
+		tag, pos1from, pos2from, pos1to, pos2to, orientation, length = child.get_move_from_parent()
 		if count == sol_idx:
-			plt.arrow(x=pos1from, y=pos2from, dx=(pos1to-pos1from), dy=(pos2to-pos2from), 
-					head_width=0.15, head_length=0.1, alpha=0.8, color='red',
-					lw= 20 * frequency[count])
+			if frequency[count] != 0:
+				if orientation == 'horizontal' and (pos1to-pos1from)>0:
+					plt.arrow(x=pos1from+length-1, y=pos2from, dx=(pos1to-pos1from), dy=(pos2to-pos2from), 
+						head_width=0.20, head_length=0.15, alpha=0.5, color='red',
+						lw= 25 * frequency[count])
+				elif orientation == 'vertical' and (pos2to-pos2from)>0:
+					plt.arrow(x=pos1from, y=pos2from+length-1, dx=(pos1to-pos1from), dy=(pos2to-pos2from), 
+						head_width=0.20, head_length=0.15, alpha=0.5, color='red',
+						lw= 25 * frequency[count])
+				else:
+					plt.arrow(x=pos1from, y=pos2from, dx=(pos1to-pos1from), dy=(pos2to-pos2from), 
+						head_width=0.20, head_length=0.15, alpha=0.5, color='red',
+						lw= 25 * frequency[count])
 		else:
-			plt.arrow(x=pos1from, y=pos2from, dx=(pos1to-pos1from), dy=(pos2to-pos2from), 
-					head_width=0.15, head_length=0.1, alpha=0.5, color='black',
-					lw= 20 * frequency[count])
+			if frequency[count] != 0:
+				if orientation == 'horizontal' and (pos1to-pos1from)>0:
+					plt.arrow(x=pos1from+length-1, y=pos2from, dx=(pos1to-pos1from), dy=(pos2to-pos2from), 
+						head_width=0.20, head_length=0.15, alpha=0.5, color='black',
+						lw= 25 * frequency[count])
+				elif orientation == 'vertical' and (pos2to-pos2from)>0:
+					plt.arrow(x=pos1from, y=pos2from+length-1, dx=(pos1to-pos1from), dy=(pos2to-pos2from), 
+						head_width=0.20, head_length=0.15, alpha=0.5, color='black',
+						lw= 25 * frequency[count])
+				else:
+					plt.arrow(x=pos1from, y=pos2from, dx=(pos1to-pos1from), dy=(pos2to-pos2from), 
+						head_width=0.20, head_length=0.15, alpha=0.5, color='black',
+						lw= 25 * frequency[count])
 		count += 1
-	plt.title('Heatmap Move '+str(move_num))	
-	plt.savefig(out_file+instance+'_'+imgtype+'_move_'+str(move_num)+'.jpg')
+	# plt.title('Heatmap Move '+str(move_num))
+	for axis in ['top','bottom','left','right']:
+		ax.spines[axis].set_linewidth(4)
+		ax.spines[axis].set_zorder(0)
+	fig.patch.set_facecolor('grey')
+	fig.patch.set_alpha(0.2)
+	plt.savefig(out_file+instance+'_'+imgtype+'_move_'+str(move_num)+'.jpg',
+				facecolor = fig.get_facecolor(), transparent = True)
 	plt.close()
 
 def make_movie(move_num, path='/Users/chloe/Desktop/RHfig/', format='avi', imgtype='tree'):
@@ -665,11 +948,11 @@ def make_movie(move_num, path='/Users/chloe/Desktop/RHfig/', format='avi', imgty
 			video.write(resized)
 		cv2.destroyAllWindows()
 		video.release()
-	if imgtype == 'model':
+	elif imgtype == 'model':
 		image_folder = path
 		video_name = 'MOVIE-'+imgtype+'-%s.avi' % (str(move_num)+'-'+datetime.datetime.now().strftime('%Y-%M-%d-%H-%M-%S'))
 		images = sorted(filter(os.path.isfile, [x for x in os.listdir(path) if x.endswith('_board.jpg')]), key=lambda p: os.path.exists(p) and os.stat(p).st_mtime or time.mktime(datetime.now().timetuple()))
-		images.append(instance+'_hist_move_'+str(move_num)+'.jpg')
+		# images.append(instance+'_hist_move_'+str(move_num)+'.jpg')
 		images.append(instance+'_heatmap_move_'+str(move_num)+'.jpg')
 		frame = cv2.imread(os.path.join(image_folder, images[0]))
 		height, width, layers = frame.shape
@@ -679,13 +962,40 @@ def make_movie(move_num, path='/Users/chloe/Desktop/RHfig/', format='avi', imgty
 			video.write(resized)
 		cv2.destroyAllWindows()
 		video.release()
+	elif imgtype == 'evolve':
+		image_folder = path
+		video_name = 'MOVIE-'+imgtype+'-%s.avi' % (str(move_num)+'-'+datetime.datetime.now().strftime('%Y-%M-%d-%H-%M-%S'))
+		images = sorted(filter(os.path.isfile, [x for x in os.listdir(path) if x.endswith('jpg')]))
+		# print images
+		# sys.exit()
+		frame = cv2.imread(os.path.join(image_folder, images[0]))
+		height, width, layers = frame.shape
+		video = cv2.VideoWriter(video_name, 0, 1, (width,height))
+		for image in images:
+			resized=cv2.resize(cv2.imread(os.path.join(image_folder, image)), (width, height)) 
+			video.write(resized)
+		cv2.destroyAllWindows()
+		video.release()
+	elif imgtype == 'human':
+		image_folder = path
+		video_name = 'MOVIE-'+imgtype+'-%s.avi' % (str(move_num)+'-'+datetime.datetime.now().strftime('%Y-%M-%d-%H-%M-%S'))
+		images = sorted(filter(os.path.isfile, [x for x in os.listdir(path) if x.endswith('_human.jpg')]), key=lambda p: os.path.exists(p) and os.stat(p).st_mtime or time.mktime(datetime.now().timetuple()))
+		frame = cv2.imread(os.path.join(image_folder, images[0]))
+		height, width, layers = frame.shape
+		video = cv2.VideoWriter(video_name, 0, 1, (width,height))
+		for image in images:
+			resized=cv2.resize(cv2.imread(os.path.join(image_folder, image)), (width, height)) 
+			video.write(resized)
+		cv2.destroyAllWindows()
+		video.release()
 
-
+def filename(x):
+    return x[:20]
 
 
 global w0, w1, w2, w3, w4, w5, w6, w7, mu, sigma, weights, num_parameters
 w0 = 0
-w1 = -8
+w1 = -7
 w2 = -10
 w3 = -7
 w4 = -6
@@ -696,8 +1006,8 @@ mu = 0
 sigma = 1
 weights = [w0, w1, w2, w3, w4, w5, w6, w7]
 num_parameters = len(weights)
-trial_start = 21 # starting row number in the raw data
-trial_end = 53
+trial_start = 2 # starting row number in the raw data, 21,53
+trial_end = 20
 global move_num # move number in this human trial
 global plot_flag # whether to plot
 plot_flag = True
@@ -717,7 +1027,9 @@ print('========================== started =======================')
 
 
 # plot_tree()
-plot_model()
-
+# plot_model()
+# plot_trial_human()
+# plot_tree_evolution()
+make_movie(1, imgtype='evolve')
 
 
