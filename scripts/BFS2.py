@@ -15,8 +15,6 @@ import cProfile, pstats, StringIO
 from operator import methodcaller
 import multiprocessing as mp
 
-global w0, w1, w2, w3, w4, w5, w6, w7, mu, sigma, weights, num_parameters
-global plot_flag # whether to plot
 
 class Node:
 	def __init__(self, cl):
@@ -103,14 +101,13 @@ def Value1(car_list2, red):
 		+ w7 * num_cars{MAG-level 7}  
 		+ noise
 	'''
-	weights = [w0, w1, w2, w3, w4, w5, w6, w7]
-	noise = np.random.normal(loc=mu, scale=sigma)
+	noise = np.random.normal(loc=params[-2], scale=params[-1])
 	# initialize MAG
 	my_board2, my_red2 = MAG.construct_board(car_list2)
 	new_car_list2 = MAG.construct_mag(my_board2, my_red2)
 	# each following level
 	new_car_list2 = MAG.assign_level(new_car_list2, my_red2)
-	value = np.sum(np.array(MAG.get_num_cars_from_levels(new_car_list2, num_parameters)) * np.array(weights))
+	value = np.sum(np.array(MAG.get_num_cars_from_levels(new_car_list2, num_weights)) * np.array(params[:num_weights]))
 	return value+noise
 
 def DropFeatures(delta):
@@ -197,7 +194,7 @@ def MakeMove(state, delta=0, gamma=0.05, theta=10):
 			n2 = ExpandNode(n, theta)
 			considered_node2.append(n2)
 			Backpropagate(n, root)
-			if n2.get_value() >= abs(np.random.normal(loc=mu, scale=sigma)): # terminate the algorithm if found a terminal node
+			if n2.get_value() >= abs(np.random.normal(loc=params[-2], scale=params[-1])): # terminate the algorithm if found a terminal node
 				break
 	if plot_flag:
 		return ArgmaxChild(root), considered_node, considered_node2
@@ -225,7 +222,7 @@ def estimate_prob(root_node, expected_board='', iteration=100):
 	return root_node.get_children(), frequency, sol_idx, [], []
 
 def ibs(root_node, expected_board=''):
-	''' inverse binomial sampling 
+	''' inverse binomial sampling: 
 		return the number of simulations until hit target
 	'''
 	InitializeChildren(root_node)
@@ -295,6 +292,7 @@ def my_ll_sequential(params): # non-parallel
 	# ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
 	# ps.print_stats()
 	# print s.getvalue()
+	print params
 	return -ll
 
 
@@ -302,19 +300,9 @@ def my_ll_sequential(params): # non-parallel
 # pr = cProfile.Profile()
 # pr.enable()
 
-w0 = 0
-w1 = -8
-w2 = -10
-w3 = -5
-w4 = -3
-w5 = -1
-w6 = -1
-w7 = -1
-mu = 0
-sigma = 1
-weights = [w0, w1, w2, w3, w4, w5, w6, w7]
-weights_tofit = [w1, w2]
-num_parameters = len(weights)
+# 		  [w0, w1, w2, w3, w4, w5, w6, w7, mu, sigma]
+params = [0, -8, -10, -5, -3, -1, -1, -1, 0, 4]
+num_weights = len(params)-2
 trial_start = 2 # starting row number in the raw data
 trial_end = 20
 plot_flag = True
@@ -351,14 +339,14 @@ for i in range(trial_start-1, trial_end-2):
 	
 
 # parallel processing	
-pool = mp.Pool(processes=len(node_list))
-
+# pool = mp.Pool(processes=len(node_list))
 
 # fit
-results = minimize(my_ll_parallel, weights_tofit, 
+# print(sys.getrecursionlimit())
+results = minimize(my_ll_sequential, params, 
 		method='Nelder-Mead', options={'disp': True})	
 print(results)
-pool.close()
+# pool.close()
 
 
 
