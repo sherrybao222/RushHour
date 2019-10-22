@@ -101,7 +101,7 @@ def Value1(car_list2, red):
 		+ w7 * num_cars{MAG-level 7}  
 		+ noise
 	'''
-	noise = np.random.normal(loc=params[-2], scale=params[-1])
+	noise = np.random.normal(loc=params[mu_idx], scale=params[sigma_idx])
 	# initialize MAG
 	my_board2, my_red2 = MAG.construct_board(car_list2)
 	new_car_list2 = MAG.construct_mag(my_board2, my_red2)
@@ -179,7 +179,6 @@ def MakeMove(state, delta=0, gamma=0.05, theta=10):
 	root = state # state is already a node
 	InitializeChildren(root)
 	if Lapse():
-		# print('Random move made')
 		return RandomMove(root), [], []
 	else:
 		DropFeatures(delta)
@@ -188,41 +187,20 @@ def MakeMove(state, delta=0, gamma=0.05, theta=10):
 		considered_node2 = [] # new node expanded along the branch in this iteration
 		while not Stop(probability=gamma) and not Determined(root):
 			n, traversed = SelectNode(root)
-			# n, _ = SelectNode(root)
 			if plot_flag:
 				considered_node.append(traversed)
 			n2 = ExpandNode(n, theta)
 			considered_node2.append(n2)
 			Backpropagate(n, root)
-			if n2.get_value() >= abs(np.random.normal(loc=params[-2], scale=params[-1])): # terminate the algorithm if found a terminal node
+			if n2.get_value() >= abs(np.random.normal(loc=params[mu_idx], scale=params[sigma_idx])): # terminate the algorithm if found a terminal node
 				break
 	if plot_flag:
 		return ArgmaxChild(root), considered_node, considered_node2
 	return ArgmaxChild(root), [], considered_node2
 
-def estimate_prob(root_node, expected_board='', iteration=100):
-	''' Estimate the probability of next possible moves given the root node '''
-	# InitializeChildren(root_node)
-	first_iteration = True
-	frequency = None
-	sol_idx = None
-	
-	for i in range(iteration):
-		new_node, _, _ = MakeMove(root_node)
-		if first_iteration:
-			frequency = [0] * len(root_node.get_children())
-			first_iteration = False
-		child_idx = root_node.find_child(new_node)
-		frequency[child_idx] += 1
-	# turn frequency into probability
-	frequency = np.array(frequency, dtype=np.float32)/iteration 
-	for i in range(len(root_node.get_children())):
-		if root_node.get_child(i).board_to_str() == expected_board:
-			sol_idx = i
-	return root_node.get_children(), frequency, sol_idx, [], []
-
 def ibs(root_node, expected_board=''):
-	''' inverse binomial sampling: 
+	''' 
+		inverse binomial sampling: 
 		return the number of simulations until hit target
 	'''
 	InitializeChildren(root_node)
@@ -244,20 +222,119 @@ def harmonic_sum(n):
 	return s
 
 def my_ll_parallel(params): # parallel computing
+	ll_one_sim = []
+	num_sim[0] += 1
+	print('-------- parallel simulation '+str(num_sim[0])+' ---------')
+	all_ibs_obj = [pool.apply_async(ibs, args=(cur, exp_str)) for cur, exp_str in zip(node_list, expected_list)]
+	# for cur, exp_str in zip(node_list, expected_list):
+	# 	pool.apply_async(ibs, args=(cur, exp_str), callback=collect_result)
+	all_ibs_result = [r.get() for r in all_ibs_obj]
+	print('all_ibs_result', all_ibs_result)
+	all_ll = pool.map(harmonic_sum, [n for n in all_ibs_result])
+	print('params', params)
+	return -np.sum(all_ll)
+
+def collect_result(r):
+	# call back function for parallel result collection
+	global ll_one_sim
+	ll_one_sim.append(r)
+
+
+if __name__ == '__main__':
+	# 		  [w0, w1, w2, w3, w4, w5, w6, w7, mu, sigma]
+	num_sim = [0]
+	params = [0, -8, -10, -5, -3, -1, -1, -1, 0, 4]
+	num_weights = len(params)-2
+	mu_idx = len(params)-2
+	sigma_idx = len(params)-1
+	trial_start = 2 # starting row number in the raw data
+	trial_end = 20
+	plot_flag = False
+	sub_data = pd.read_csv('/Users/chloe/Desktop/trialdata_valid_true_dist7_processed.csv')
+
+	# construct initial node
+	dir_name = '/Users/chloe/Desktop/RHfig/' # dir for new images
+	node_list = [] # list of node from data
+	expected_list = [] # list of expected human move node, str
+	cur_node = None
+	cur_carlist = None
+	ll_one_sim = [] # ll result from one simulation
+	for i in range(trial_start-2, trial_end-2):
+		# load data from datafile
+		row = sub_data.loc[i, :]
+		if row['event'] == 'start':
+			# print row
+			instance = row['instance']
+			ins_file = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/'+instance+'.json'
+			initial_car_list, _ = MAG.json_to_car_list(ins_file)
+			initial_node = Node(initial_car_list)
+			cur_node = initial_node
+			cur_carlist = initial_car_list
+			continue
+		piece = row['piece']
+		move_to = row['move']
+		node_list.append(cur_node) # previous board position
+		# create human move
+		cur_carlist, _ = MAG.move(cur_carlist, piece, move_to)
+		cur_node = Node(cur_carlist)
+		expected_list.append(cur_node.board_to_str())
+	print('====================== started =====================')
+
+
 	# pr = cProfile.Profile()
 	# pr.enable()
-	print('---------------- parallel simulation ----------------')
-	all_ibs = [pool.apply(ibs, args=(cur, exp_str)) 
-			for cur, exp_str in zip(node_list, expected_list)]
-	print('all_ibs ', all_ibs)
-	all_ll = pool.map(harmonic_sum, [n for n in all_ibs])
+		
+	# parallel processing	
+	pool = mp.Pool(processes=mp.cpu_count())
+
+	# fit
+	results = minimize(my_ll_parallel, params, 
+			method='Nelder-Mead', options={'disp': True})	
+	print(results)
+	pool.close()
+	pool.join()
+
 	# pr.disable()
 	# s = StringIO.StringIO()
 	# sortby = 'cumulative'
 	# ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
 	# ps.print_stats()
 	# print s.getvalue()
-	return -np.sum(all_ll)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def estimate_prob(root_node, expected_board='', iteration=100):
+	''' Estimate the probability of next possible moves given the root node '''
+	# InitializeChildren(root_node)
+	first_iteration = True
+	frequency = None
+	sol_idx = None
+	
+	for i in range(iteration):
+		new_node, _, _ = MakeMove(root_node)
+		if first_iteration:
+			frequency = [0] * len(root_node.get_children())
+			first_iteration = False
+		child_idx = root_node.find_child(new_node)
+		frequency[child_idx] += 1
+	# turn frequency into probability
+	frequency = np.array(frequency, dtype=np.float32)/iteration 
+	for i in range(len(root_node.get_children())):
+		if root_node.get_child(i).board_to_str() == expected_board:
+			sol_idx = i
+	return root_node.get_children(), frequency, sol_idx, [], []
 
 
 
@@ -294,69 +371,4 @@ def my_ll_sequential(params): # non-parallel
 	# print s.getvalue()
 	print params
 	return -ll
-
-
-
-# pr = cProfile.Profile()
-# pr.enable()
-
-# 		  [w0, w1, w2, w3, w4, w5, w6, w7, mu, sigma]
-params = [0, -8, -10, -5, -3, -1, -1, -1, 0, 4]
-num_weights = len(params)-2
-trial_start = 2 # starting row number in the raw data
-trial_end = 20
-plot_flag = True
-sub_data = pd.read_csv('/Users/chloe/Desktop/trialdata_valid_true_dist7_processed.csv')
-
-# construct initial node
-first_line = sub_data.loc[trial_start-2,:]
-instance = first_line['instance']
-ins_dir = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/'
-dir_name = '/Users/chloe/Desktop/RHfig/' # dir for new images
-ins_file = ins_dir + instance + '.json'
-initial_car_list, _ = MAG.json_to_car_list(ins_file)
-initial_node = Node(initial_car_list)
-print('====================== started =====================')
-
-# initialize parameters
-node_list = [] # list of node from data
-expected_list = [] # list of expected human move node, str
-cur_node = initial_node
-cur_carlist = initial_car_list
-
-# save data in advance
-for i in range(trial_start-1, trial_end-2):
-	# load data from datafile
-	row = sub_data.loc[i, :]
-	piece = row['piece']
-	move_to = row['move']
-	# create human move
-	cur_carlist, _ = MAG.move(cur_carlist, piece, move_to)
-	node_list.append(cur_node)
-	# make human move node
-	cur_node = Node(cur_carlist)
-	expected_list.append(cur_node.board_to_str())
-	
-
-# parallel processing	
-# pool = mp.Pool(processes=len(node_list))
-
-# fit
-# print(sys.getrecursionlimit())
-results = minimize(my_ll_sequential, params, 
-		method='Nelder-Mead', options={'disp': True})	
-print(results)
-# pool.close()
-
-
-
-
-# pr.disable()
-# s = StringIO.StringIO()
-# sortby = 'cumulative'
-# ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-# ps.print_stats()
-# print s.getvalue()
-
-
 
