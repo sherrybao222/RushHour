@@ -288,8 +288,10 @@ if __name__ == '__main__':
 	pool = mp.Pool(processes=mp.cpu_count())
 
 	# fit
+	# results = minimize(my_ll_parallel, params, 
+	# 		method='Nelder-Mead', options={'disp': True})	
 	results = minimize(my_ll_parallel, params, 
-			method='Nelder-Mead', options={'disp': True})	
+			method='BFGS', options={'eps': 0.1})	
 	print(results)
 	pool.close()
 	pool.join()
