@@ -5,16 +5,14 @@ py27
 '''
 
 import MAG, rushhour
-import random, sys, copy, os
+import random, sys, copy, os, pickle
 import numpy as np
 import matplotlib.pyplot as plt
-import pandas as pd
 from graphviz import Digraph
 from scipy.optimize import minimize
 import cProfile, pstats, StringIO
 from operator import methodcaller
 import multiprocessing as mp
-
 
 class Node:
 	def __init__(self, cl):
@@ -142,14 +140,8 @@ def InitializeChildren(root_node):
 def SelectNode(root_node):
 	''' return the child with max value '''
 	n = root_node
-	if plot_flag:
-		traversed = []
 	while len(n.get_children()) != 0:
 		n = ArgmaxChild(n)
-		if plot_flag:
-			traversed.append(n)
-	if plot_flag:
-		return n, traversed
 	return n, []
  
 def ExpandNode(node, threshold):
@@ -182,20 +174,14 @@ def MakeMove(state, delta=0, gamma=0.05, theta=10):
 		return RandomMove(root), [], []
 	else:
 		DropFeatures(delta)
-		if plot_flag:
-			considered_node = [] # nodes already traversed along the branch in this ieration
 		considered_node2 = [] # new node expanded along the branch in this iteration
 		while not Stop(probability=gamma) and not Determined(root):
 			n, traversed = SelectNode(root)
-			if plot_flag:
-				considered_node.append(traversed)
 			n2 = ExpandNode(n, theta)
 			considered_node2.append(n2)
 			Backpropagate(n, root)
 			if n2.get_value() >= abs(np.random.normal(loc=params[mu_idx], scale=params[sigma_idx])): # terminate the algorithm if found a terminal node
 				break
-	if plot_flag:
-		return ArgmaxChild(root), considered_node, considered_node2
 	return ArgmaxChild(root), [], considered_node2
 
 def ibs(root_node, expected_board=''):
@@ -221,84 +207,47 @@ def harmonic_sum(n):
 		s += 1.0/i
 	return s
 
-def my_ll_parallel(params): # parallel computing
+def my_ll_parallel(w0, w1, w2, w3, w4, w5, w6, w7, mu, sigma): # parallel computing
+	global params, num_weights, mu_idx, sigma_idx
 	ll_one_sim = []
-	num_sim[0] += 1
-	print('-------- parallel simulation '+str(num_sim[0])+' ---------')
+	params = [w0, w1, w2, w3, w4, w5, w6, w7, mu, sigma]
+	num_weights = len(params)-2
+	mu_idx = len(params)-2
+	sigma_idx = len(params)-1
+	pool = mp.Pool(processes=mp.cpu_count())
+	with open("/Users/chloe/Documents/RushHour/scripts/node_list.txt", "rb") as fp:
+		node_list = pickle.load(fp)
+	with open("/Users/chloe/Documents/RushHour/scripts/expected_list.txt", "rb") as fp:
+		expected_list = pickle.load(fp)
 	all_ibs_obj = [pool.apply_async(ibs, args=(cur, exp_str)) for cur, exp_str in zip(node_list, expected_list)]
-	# for cur, exp_str in zip(node_list, expected_list):
-	# 	pool.apply_async(ibs, args=(cur, exp_str), callback=collect_result)
 	all_ibs_result = [r.get() for r in all_ibs_obj]
-	print('params\n'+str(params))
-	print('all_ibs_result\n'+str(all_ibs_result))
+	print('all_ibs_result', all_ibs_result)
 	all_ll = pool.map(harmonic_sum, [n for n in all_ibs_result])
-	print('sum_ll\n'+str(np.sum(all_ll)))
+	# print('params', params)
+	pool.close()
+	pool.join()
 	return -np.sum(all_ll)
 
-def collect_result(r):
-	# call back function for parallel result collection
-	global ll_one_sim
-	ll_one_sim.append(r)
 
-
-
-def estimate_prob(root_node, expected_board='', iteration=100):
-	''' Estimate the probability of next possible moves given the root node '''
-	# InitializeChildren(root_node)
-	first_iteration = True
-	frequency = None
-	sol_idx = None
-	
-	for i in range(iteration):
-		new_node, _, _ = MakeMove(root_node)
-		if first_iteration:
-			frequency = [0] * len(root_node.get_children())
-			first_iteration = False
-		child_idx = root_node.find_child(new_node)
-		frequency[child_idx] += 1
-	# turn frequency into probability
-	frequency = np.array(frequency, dtype=np.float32)/iteration 
-	for i in range(len(root_node.get_children())):
-		if root_node.get_child(i).board_to_str() == expected_board:
-			sol_idx = i
-	return root_node.get_children(), frequency, sol_idx, [], []
-
-
-
-def my_ll_sequential(params): # non-parallel
-	# pr = cProfile.Profile()
-	# pr.enable()
-	num_sim[0] += 1
-	print('-------- sequential simulation '+str(num_sim[0])+' ---------')
-	# initialize parameters
-	cur_node = initial_node
-	cur_carlist = initial_car_list
-	move_num = 1
+def my_ll_sequential(w0, w1, w2, w3, w4, w5, w6, w7, mu, sigma): # non-parallel
+	global params, num_weights, mu_idx, sigma_idx
 	ll = 0
+	params = [w0, w1, w2, w3, w4, w5, w6, w7, mu, sigma]
+	num_weights = len(params)-2
+	mu_idx = len(params)-2
+	sigma_idx = len(params)-1
+	with open("/Users/chloe/Documents/RushHour/scripts/node_list.txt", "rb") as fp:
+		node_list = pickle.load(fp)
+	with open("/Users/chloe/Documents/RushHour/scripts/expected_list.txt", "rb") as fp:
+		expected_list = pickle.load(fp)
 	# every human move in the trial
-	for i in range(trial_start-1, trial_end-1):
-		# load data from datafile
-		row = sub_data.loc[i, :]
-		piece = row['piece']
-		move_to = row['move']
-		# create human move
-		cur_carlist, _ = MAG.move(cur_carlist, piece, move_to)
+	for cur_node, exp_str in zip(node_list, expected_list):
 		# log likelihood calculation
-		num_simulated = ibs(cur_node, 
-				expected_board=Node(cur_carlist).board_to_str())
+		num_simulated = ibs(cur_node, expected_board=exp_str)
 		ll += harmonic_sum(num_simulated)
 		print('ibs: '+str(num_simulated))
-		# make human move node
-		cur_node = Node(cur_carlist)
-		move_num += 1
-	# pr.disable()
-	# s = StringIO.StringIO()
-	# sortby = 'cumulative'
-	# ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-	# ps.print_stats()
-	# print s.getvalue()
-	print('params\n'+str(params))
-	print('ll\n'+str(ll))
+	print('params\n', params)
+	print('ll\n', ll)
 	return -ll
 
 
@@ -314,66 +263,56 @@ def my_ll_sequential(params): # non-parallel
 
 if __name__ == '__main__':
 	# 		  [w0, w1, w2, w3, w4, w5, w6, w7, mu, sigma]
-	num_sim = [0]
-	params = [0, -1, -1, -1, -1, -1, -1, -1, 0, 2]
+	params = [0, -1, -1, -1, -1, -1, -1, -1, 0, 1]
 	num_weights = len(params)-2
 	mu_idx = len(params)-2
 	sigma_idx = len(params)-1
 	trial_start = 2072 #1189 # starting row number in the raw data
 	trial_end = 2114 #1216
-	plot_flag = False
-	sub_data = pd.read_csv('/Users/chloe/Desktop/trialdata_valid_true_dist7_processed.csv')
+	# sub_data = pd.read_csv('/Users/chloe/Desktop/trialdata_valid_true_dist7_processed.csv')
 
-	# construct initial node
-	dir_name = '/Users/chloe/Desktop/RHfig/' # dir for new images
-	node_list = [] # list of node from data
-	expected_list = [] # list of expected human move node, str
-	cur_node = None
-	cur_carlist = None
-	ll_one_sim = [] # ll result from one simulation
-	for i in range(trial_start-2, trial_end-1):
-		# load data from datafile
-		row = sub_data.loc[i, :]
-		print(row['ord'])
-		if row['event'] == 'start':
-			# print row
-			instance = row['instance']
-			ins_file = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/'+instance+'.json'
-			initial_car_list, _ = MAG.json_to_car_list(ins_file)
-			initial_node = Node(initial_car_list)
-			cur_node = initial_node
-			cur_carlist = initial_car_list
-			continue
-		piece = row['piece']
-		move_to = row['move']
-		node_list.append(cur_node) # previous board position
-		# create human move
-		cur_carlist, _ = MAG.move(cur_carlist, piece, move_to)
-		cur_node = Node(cur_carlist)
-		expected_list.append(cur_node.board_to_str())
-	# print node_list[-1].board_to_str()
-	# print expected_list[-1]
-	# sys.exit()
-	# import my_ll
-	# my_ll.my_ll_parallel(params)
-	# sys.exit()
+	# # construct initial node
+	# dir_name = '/Users/chloe/Desktop/RHfig/' # dir for new images
+	# node_list = [] # list of node from data
+	# expected_list = [] # list of expected human move node, str
+	# cur_node = None
+	# cur_carlist = None
+	# ll_one_sim = [] # ll result from one simulation
+	# for i in range(trial_start-2, trial_end-1):
+	# 	# load data from datafile
+	# 	row = sub_data.loc[i, :]
+	# 	print row['ord']
+	# 	if row['event'] == 'start':
+	# 		# print row
+	# 		instance = row['instance']
+	# 		ins_file = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/'+instance+'.json'
+	# 		initial_car_list, _ = MAG.json_to_car_list(ins_file)
+	# 		initial_node = Node(initial_car_list)
+	# 		cur_node = initial_node
+	# 		cur_carlist = initial_car_list
+	# 		continue
+	# 	piece = row['piece']
+	# 	move_to = row['move']
+	# 	node_list.append(cur_node) # previous board position
+	# 	# create human move
+	# 	cur_carlist, _ = MAG.move(cur_carlist, piece, move_to)
+	# 	cur_node = Node(cur_carlist)
+	# 	expected_list.append(cur_node.board_to_str())
+	# # save list
+	# with open("/Users/chloe/Documents/RushHour/scripts/node_list.txt", "wb") as fp:
+	# 	pickle.dump(node_list, fp)
+	# with open("/Users/chloe/Documents/RushHour/scripts/expected_list.txt", "wb") as fp:
+	# 	pickle.dump(expected_list, fp)
 
-	print('====================== started =====================')
+	# print('====================== started =====================')
 
 	# pr = cProfile.Profile()
 	# pr.enable()
 		
 	# parallel processing	
-	pool = mp.Pool(processes=mp.cpu_count())
-
-	# fit
-	# results = minimize(my_ll_parallel, params, 
-	# 		method='Nelder-Mead', options={'disp': True})	
-	results = minimize(my_ll_parallel, params, 
-			method='BFGs', options={'gtol': 100, 'eps': 0.1})	
-	print(results)
-	pool.close()
-	pool.join()
+	my_ll = my_ll_sequential(0, -1, -1, -1, -1, -1, -1, -1, 0, 1)
+	# pool.close()
+	# pool.join()
 
 	# pr.disable()
 	# s = StringIO.StringIO()

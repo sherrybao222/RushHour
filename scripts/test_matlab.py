@@ -20,9 +20,10 @@ sio.savemat('df.mat', {'x':df['x'], 'y':df['y'], 'constant':df['constant']})
 eng = matlab.engine.start_matlab()
 eng.load('df.mat')
 eng.load('MLERegression.m')
-# x, fval = eng.bads('MLERegression', '[5.0 5.0 2.0]', 
-# 					'[-10.0 -10.0 -10.0]','[10.0 10.0 10.0]',
-# 					'[-10.0 -10.0 -10.0]','[10.0 10.0 10.0]')
+# x, fval = eng.my_script()
+x, fval = eng.bads('@my_ll', '[5.0 5.0 2.0]', 
+					'[-10.0 -10.0 -10.0]','[10.0 10.0 10.0]',
+					'[-10.0 -10.0 -10.0]','[10.0 10.0 10.0]')
 x, fval = eng.bads('MLERegression', [5.0,5.0,2.0], [-10.0,-10.0,-10.0],[10.0,10.0,10.0],[-10.0,-10.0,-10.0],[10.0,10.0,10.0])
 print(x)
 print(fval)
