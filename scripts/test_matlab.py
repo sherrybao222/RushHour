@@ -18,13 +18,15 @@ df['constant'] = 1
 
 sio.savemat('df.mat', {'x':df['x'], 'y':df['y'], 'constant':df['constant']})
 eng = matlab.engine.start_matlab()
-eng.load('df.mat')
-eng.load('MLERegression.m')
-# x, fval = eng.my_script()
-x, fval = eng.bads('@my_ll', '[5.0 5.0 2.0]', 
-					'[-10.0 -10.0 -10.0]','[10.0 10.0 10.0]',
-					'[-10.0 -10.0 -10.0]','[10.0 10.0 10.0]')
-x, fval = eng.bads('MLERegression', [5.0,5.0,2.0], [-10.0,-10.0,-10.0],[10.0,10.0,10.0],[-10.0,-10.0,-10.0],[10.0,10.0,10.0])
+# eng.load('df.mat')
+# eng.load('MLERegression.m')
+x, fval = eng.bads('@ll', 
+					'[0 1 1 1 1 1 1 1 0 1]',  # x0
+					'[-2 -20 -20 -20 -20 -20 -20 -20 -15 0]', # lb
+					'[2 10 10 10 10 10 10 10 15 20]', # ub
+					'[-1 -15 -15 -15 -15 -10 -10 -10 -10 0]', # plb
+					'[1 5 5 5 5 5 2 2 10 15]') # pub
+# x, fval = eng.bads('MLERegression', [5.0,5.0,2.0], [-10.0,-10.0,-10.0],[10.0,10.0,10.0],[-10.0,-10.0,-10.0],[10.0,10.0,10.0])
 print(x)
 print(fval)
 eng.quit()

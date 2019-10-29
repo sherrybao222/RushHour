@@ -28,8 +28,6 @@ pause;
 % Run BADS, which returns the minimum X and its value FVAL.
 [x,fval] = bads(@ll,x0,lb,ub,plb,pub)
 
-display('The true global minimum is at X = [1,1], where FVAL = 0.');
-
 % Note that BADS by default does not aim for extreme numerical precision 
 % (e.g., beyond the 2nd or 3rd decimal place), since in realistic 
 % model-fitting problems such a resolution is typically pointless.

@@ -2,11 +2,11 @@
 BFS model self-defined ll function,
 speeded version, prepared for BADS,
 now working but very slow (generating data every time),
-need to fix pickle data loading issue to speed up.
+this version is trying to fix the pickle loading issue.
 py27
 '''
 
-import MAG, rushhour
+import MAG, rushhour, time
 import random, sys, copy, os, pickle
 import numpy as np
 import matplotlib.pyplot as plt
@@ -15,7 +15,7 @@ from scipy.optimize import minimize
 import cProfile, pstats, StringIO
 from operator import methodcaller
 import multiprocessing as mp
-# import Node
+from numpy import recfromcsv
 
 class Node:
 	def __init__(self, cl):
@@ -211,107 +211,106 @@ def harmonic_sum(n):
 	return s
 
 def my_ll_parallel(w0, w1, w2, w3, w4, w5, w6, w7, mu, sigma): # parallel computing
+	start_time = time.time()
 	global params, num_weights, mu_idx, sigma_idx
-	ll_one_sim = []
 	params = [w0, w1, w2, w3, w4, w5, w6, w7, mu, sigma]
 	num_weights = len(params)-2
 	mu_idx = len(params)-2
 	sigma_idx = len(params)-1
+	with open("/Users/chloe/Documents/RushHour/scripts/node_list.pickle", "r") as fp:
+		node_list = pickle.load(fp)
+	with open("/Users/chloe/Documents/RushHour/scripts/expected_list.pickle", "r") as fp:
+		expected_list = pickle.load(fp)
+	# 		  [w0, w1, w2, w3, w4, w5, w6, w7, mu, sigma]
+	# trial_start = 2072 #1189 # starting row number in the raw data
+	# trial_end = 2114 #1216
+	# sub_data = recfromcsv('/Users/chloe/Desktop/trialdata_valid_true_dist7_processed.csv')
+	# # construct initial node
+	# dir_name = '/Users/chloe/Desktop/RHfig/' # dir for new images
+	# node_list = [] # list of node from data
+	# expected_list = [] # list of expected human move node, str
+	# cur_node = None
+	# cur_carlist = None
+	# for i in range(trial_start-2, trial_end-1):
+	# 	# load data from datafile
+	# 	row = sub_data[i]
+	# 	if row['event'] == 'start':
+	# 		instance = row['instance']
+	# 		ins_file = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/'+instance+'.json'
+	# 		initial_car_list, _ = MAG.json_to_car_list(ins_file)
+	# 		initial_node = Node(initial_car_list)
+	# 		cur_node = initial_node
+	# 		cur_carlist = initial_car_list
+	# 		continue
+	# 	piece = row['piece']
+	# 	move_to = int(row['move'])
+	# 	node_list.append(cur_node) # previous board position
+	# 	# create human move
+	# 	cur_carlist, _ = MAG.move(cur_carlist, piece, move_to)
+	# 	cur_node = Node(cur_carlist)
+	# 	expected_list.append(cur_node.board_to_str())
+	# node_list = np.load('/Users/chloe/Documents/RushHour/scripts/node_list.npy', allow_pickle=True)
+	# expected_list = np.load('/Users/chloe/Documents/RushHour/scripts/expected_list.npy', allow_pickle=True)
 	pool = mp.Pool(processes=mp.cpu_count())
-	# import Node
-	# with open("/Users/chloe/Documents/RushHour/scripts/node_list.txt", "rb") as fp:
-	# 	node_list = pickle.load(fp)
-	# with open("/Users/chloe/Documents/RushHour/scripts/expected_list.txt", "rb") as fp:
-	# 	expected_list = pickle.load(fp)
-	node_list = np.load('/Users/chloe/Documents/RushHour/scripts/node_list.npy', allow_pickle=True)
-	expected_list = np.load('/Users/chloe/Documents/RushHour/scripts/expected_list.npy', allow_pickle=True)
 	all_ibs_obj = [pool.apply_async(ibs, args=(cur, exp_str)) for cur, exp_str in zip(node_list, expected_list)]
 	all_ibs_result = [r.get() for r in all_ibs_obj]
-	print('all_ibs_result', all_ibs_result)
 	all_ll = pool.map(harmonic_sum, [n for n in all_ibs_result])
-	# print('params', params)
 	pool.close()
 	pool.join()
-	return -np.sum(all_ll)
+	ll_result = -np.sum(all_ll)
+	# print('ll_result: '+str(ll_result))
+	print('time '+str(time.time() - start_time))
+	return ll_result
 
 
 def my_ll_sequential(w0, w1, w2, w3, w4, w5, w6, w7, mu, sigma): # non-parallel
+	start_time = time.time()
 	global params, num_weights, mu_idx, sigma_idx
 	ll = 0
 	params = [w0, w1, w2, w3, w4, w5, w6, w7, mu, sigma]
 	num_weights = len(params)-2
 	mu_idx = len(params)-2
 	sigma_idx = len(params)-1
-	# with open("/Users/chloe/Documents/RushHour/scripts/node_list.txt", "rb") as fp:
-	# 	node_list = pickle.load(fp)
-	# with open("/Users/chloe/Documents/RushHour/scripts/expected_list.txt", "rb") as fp:
-	# 	expected_list = pickle.load(fp)
-	node_list = np.load('/Users/chloe/Documents/RushHour/scripts/node_list.npy', allow_pickle=True)
-	expected_list = np.load('/Users/chloe/Documents/RushHour/scripts/expected_list.npy', allow_pickle=True)
+	with open("/Users/chloe/Documents/RushHour/scripts/node_list.pickle", "r") as fp:
+		node_list = pickle.load(fp)
+	with open("/Users/chloe/Documents/RushHour/scripts/expected_list.pickle", "r") as fp:
+		expected_list = pickle.load(fp)
+	# node_list = np.load('/Users/chloe/Documents/RushHour/scripts/node_list.npy', allow_pickle=True)
+	# expected_list = np.load('/Users/chloe/Documents/RushHour/scripts/expected_list.npy', allow_pickle=True)
 	# every human move in the trial
 	for cur_node, exp_str in zip(node_list, expected_list):
 		# log likelihood calculation
 		num_simulated = ibs(cur_node, expected_board=exp_str)
 		ll += harmonic_sum(num_simulated)
-		print('ibs: '+str(num_simulated))
-	print('params\n', params)
+		# print('ibs: '+str(num_simulated))
+	# print('params\n', params)
 	print('ll\n', ll)
+	print(time.time() - start_time)
 	return -ll
 
+def dumb_func(w0, w1, w2, w3, w4, w5, w6, w7, mu, sigma):
+	global params, num_weights, mu_idx, sigma_idx
+	params = [w0, w1, w2, w3, w4, w5, w6, w7, mu, sigma]
+	num_weights = len(params)-2
+	mu_idx = len(params)-2
+	sigma_idx = len(params)-1
+	print('I am so dumb.')
+	return w0+w1+w2+w3+w4+w5+w6+w7+mu+sigma
 
-if __name__ == '__main__':
-	my_ll_parallel(0, -1, -1, -1, -1, -1, -1, -1, 0, 1)
 
-
-
+def wrap_make_move(this_params, node):
+	global params, num_weights, mu_idx, sigma_idx
+	params = this_params
+	num_weights = len(params)-2
+	mu_idx = len(params)-2
+	sigma_idx = len(params)-1
+	params = this_params
+	n, _, _ = MakeMove(node)
+	return n
 
 
 # if __name__ == '__main__':
-# 	# 		  [w0, w1, w2, w3, w4, w5, w6, w7, mu, sigma]
-# 	params = [0, -1, -1, -1, -1, -1, -1, -1, 0, 1]
-# 	num_weights = len(params)-2
-# 	mu_idx = len(params)-2
-# 	sigma_idx = len(params)-1
-# 	trial_start = 2072 #1189 # starting row number in the raw data
-# 	trial_end = 2114 #1216
-# 	import pandas as pd
-# 	sub_data = pd.read_csv('/Users/chloe/Desktop/trialdata_valid_true_dist7_processed.csv')
-
-# 	# construct initial node
-# 	dir_name = '/Users/chloe/Desktop/RHfig/' # dir for new images
-# 	node_list = [] # list of node from data
-# 	expected_list = [] # list of expected human move node, str
-# 	cur_node = None
-# 	cur_carlist = None
-# 	ll_one_sim = [] # ll result from one simulation
-# 	for i in range(trial_start-2, trial_end-1):
-# 		# load data from datafile
-# 		row = sub_data.loc[i, :]
-# 		print row['ord']
-# 		if row['event'] == 'start':
-# 			# print row
-# 			instance = row['instance']
-# 			ins_file = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/'+instance+'.json'
-# 			initial_car_list, _ = MAG.json_to_car_list(ins_file)
-# 			initial_node = Node(initial_car_list)
-# 			cur_node = initial_node
-# 			cur_carlist = initial_car_list
-# 			continue
-# 		piece = row['piece']
-# 		move_to = row['move']
-# 		node_list.append(cur_node) # previous board position
-# 		# create human move
-# 		cur_carlist, _ = MAG.move(cur_carlist, piece, move_to)
-# 		cur_node = Node(cur_carlist)
-# 		expected_list.append(cur_node.board_to_str())
-# 	# save list
-# 	Node.__module__ = "node"
-# 	with open("/Users/chloe/Documents/RushHour/scripts/node_list.pickle", "w") as fp:
-# 		pickle.dump(node_list, fp)
-# 	with open("/Users/chloe/Documents/RushHour/scripts/expected_list.pickle", "w") as fp:
-# 		pickle.dump(expected_list, fp)
-# 	# np.save('/Users/chloe/Documents/RushHour/scripts/node_list.npy', node_list)
-# 	# np.save('/Users/chloe/Documents/RushHour/scripts/expected_list.npy', expected_list)
+	# my_ll_parallel(0, -1, -1, -1, -1, -1, -1, -1, 0, 1)
 
 
 
@@ -322,29 +321,3 @@ if __name__ == '__main__':
 
 
 
-
-
-
-# 	# print('====================== started =====================')
-
-# 	# pr = cProfile.Profile()
-# 	# pr.enable()
-		
-# 	# parallel processing	
-# 	my_ll = my_ll_sequential(0, -1, -1, -1, -1, -1, -1, -1, 0, 1)
-# 	# pool.close()
-# 	# pool.join()
-
-# 	# pr.disable()
-# 	# s = StringIO.StringIO()
-# 	# sortby = 'cumulative'
-# 	# ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-# 	# ps.print_stats()
-# 	# print s.getvalue()
-
-
-
-# '''
-# [ 0.07316925, -0.87602019, -0.99267043, -0.87480174, -0.99468143,
-#        -0.88768205, -1.02818747, -0.79444525,  0.15310249,  0.94641344]
-# '''

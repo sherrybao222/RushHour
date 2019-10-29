@@ -264,6 +264,10 @@ def estimate_prob(root_node, expected_board='', iteration=100):
 	return root_node.get_children(), frequency, sol_idx, [], []
 
 
+def wrap_make_move(this_params, node):
+	global params
+	params = this_params
+	return MakeMove(node)[0]
 
 def my_ll_sequential(params): # non-parallel
 	# pr = cProfile.Profile()
