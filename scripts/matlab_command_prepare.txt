@@ -1,9 +1,4 @@
 P = py.sys.path;
-if count(P,'/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages') == 0
-insert(P,int32(0),'/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages');
-end
-
-P = py.sys.path;
 if count(P,'/Users/chloe/Documents/RushHour/scripts') == 0
 insert(P,int32(0),'/Users/chloe/Documents/RushHour/scripts');
 end
@@ -12,5 +7,11 @@ P = py.sys.path;
 if count(P,'/usr/local/bin/python') == 0
 insert(P,int32(0),'/usr/local/bin/python');
 end
+
+P = py.sys.path;
+if count(P,'/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages') == 0
+insert(P,int32(0),'/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages');
+end
+
 
 py.importlib.import_module('my_llfast')

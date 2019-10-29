@@ -12,7 +12,7 @@ display('Open ''bads_examples.m'' to see additional comments and instructions.')
 % contain the solution. Plausible bounds represent your best guess at 
 % bounding the region where the solution might lie.
 
-x0 = [0 1 1 1 1 1 1 1 0 1];                 % Starting point
+x0 = [-0.5391 -3.9844 3.8281 -5.5469 -2.5781 -8.8867 -2.5469 -0.7656 1.4844 5.3320];                 % Starting point
 lb = [-2 -20 -20 -20 -20 -20 -20 -20 -15 0];             % Lower bounds
 ub = [2 10 10 10 10 10 10 10 15 20];               % Upper bounds
 plb = [-1 -15 -15 -15 -15 -10 -10 -10 -10 0];              % Plausible lower bounds

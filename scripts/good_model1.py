@@ -12,6 +12,7 @@ from operator import methodcaller
 import my_llfast
 
 # load data
+# [-0.5391 -3.9844 3.8281 -5.5469 -2.5781 -8.8867 -2.5469 -0.7656 1.4844 5.3320]
 model_params = [-0.5391, -3.9844, 3.8281, -5.5469, -2.5781, -8.8867, -2.5469, -0.7656, 1.4844, 5.3320]
 human_nodes = pickle.load(open('/Users/chloe/Documents/RushHour/scripts/node_list.pickle', 'r'))
 # MAG attribute to be plotted
