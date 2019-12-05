@@ -1,3 +1,11 @@
+------------------- data index ------------------
+2-65
+node_list_03.pickle
+expected_list_03.pickle
+
+
+
+------------------- local matlab -----------------
 P = py.sys.path;
 if count(P,'/Users/chloe/Documents/RushHour/scripts') == 0
 insert(P,int32(0),'/Users/chloe/Documents/RushHour/scripts');
@@ -15,3 +23,35 @@ end
 
 
 py.importlib.import_module('my_llfast')
+
+
+------------------ cluster matlab -------------------
+ssh yl3506@gw.hpc.nyu.edu
+ssh -Y prince
+
+srun -c20 -t2:00:00 --mem=60000 --pty /bin/bash
+
+module load matlab/2019b
+cd /home/yl3506/RushHour/scripts/
+
+matlab
+
+P = py.sys.path;
+if count(P,'/home/yl3506/RushHour/scripts') == 0
+insert(P,int32(0),'/home/yl3506/RushHour/scripts');
+end
+
+P = py.sys.path;
+if count(P,'/usr/bin/python') == 0
+insert(P,int32(0),'/usr/bin/python');
+end
+
+P = py.sys.path;
+if count(P,'/usr/lib64/python2.7/') == 0
+insert(P,int32(0),'/usr/lib64/python2.7/');
+end
+
+py.importlib.import_module('my_llfast')
+
+cd bads
+

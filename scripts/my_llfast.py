@@ -203,7 +203,7 @@ def harmonic_sum(n):
 	''' return sum of harmonic series from 1 to k '''
 	i = 1
 	s = 0.0
-	for i in range(1, n+1):
+	for i in range(1, n):
 		s += 1.0/i
 	return s
 
