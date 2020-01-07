@@ -8,164 +8,61 @@ py27
 import MAG, time
 import random, sys, copy, os, pickle
 import numpy as np
-from operator import methodcaller
+from operator import attrgetter
 import multiprocessing as mp
 from numpy import recfromcsv
 from json import dump, load
-
-class Params:
-	def __init__(self, w1, w2, w3, w4, w5, w6, w7):
-		self.w0 = 0
-		self.w1 = w1
-		self.w2 = w2
-		self.w3 = w3
-		self.w4 = w4
-		self.w5 = w5
-		self.w6 = w6
-		self.w7 = w7
-		self.weights = [w0, w1, w2, w3, w4, w5, w6, w7]
-		self.num_weights = len(self.weights)
-		self.mu = 0
-		self.sigma = 1
-
-class Node:
-	def __init__(self, cl):
-		self.__car_list = cl
-		self.__children = []
-		self.__value = None
-		self.__red = None
-		self.__board = None #str
-	def add_child(self, n):
-		n.set_parent(self)
-		self.__children.append(n)
-	def set_parent(self, p):
-		self.__parent = p
-	def set_value(self, v):
-		self.__value = v
-	def get_carlist(self):
-		return self.__car_list
-	def get_red(self):
-		if self.__red == None:
-			for car in self.__car_list:
-				if car.tag == 'r':
-					self.__red = car
-		return self.__red
-	def get_board(self):
-		tmp_b, _ = construct_board(self.__car_list)
-		return tmp_b
-	def get_value(self):
-		if self.__value == None:
-			self.__value = self.heuristic_value_function()
-		return self.__value
-	def get_child(self, ind):
-		return self.__children[ind]
-	def get_children(self):
-		return self.__children
-	def find_child(self, c):
-		for i in range(len(self.__children)):
-			if self.__children[i] == c:
-				return i
-		return None
-	def find_child_by_str(self, bstr):
-		for i in range(len(self.__children)):
-			if self.__children[i].board_to_str() == bstr:
-				return i
-		return None
-	def get_parent(self):
-		return self.__parent
-	def remove_child(self, c):
-		for i in range(len(self.__children)):
-			if self.__children[i] == c:
-				c.parent = None
-				self.__children.pop(i)
-				return	
-	def board_to_str(self):
-		if self.__board == None:
-			tmp_board, tmp_red = construct_board(self.__car_list)
-			out_str = ''
-			for i in range(tmp_board.height):
-				for j in range(tmp_board.width):
-					cur_car = tmp_board.board_dict[(j, i)]
-					if cur_car == None:
-						out_str += '.'
-						if i == 2 and j == 5:
-							out_str += '>'
-						continue
-					if cur_car.tag == 'r':
-						out_str += 'R'
-					else:
-						out_str += cur_car.tag
-					if i == 2 and j == 5:
-						out_str += '>'
-				out_str += '\n'
-			self.__board = out_str
-		return self.__board
-	def heuristic_value_function(self):
-		'''
-		value = w0 * num_cars{MAG-level RED}
-			+ w1 * num_cars{MAG-level 1} 
-			+ w2 * num_cars{MAG-level 2}  
-			+ w3 * num_cars{MAG-level 3} 
-			+ w4 * num_cars{MAG-level 4} 
-			+ w5 * num_cars{MAG-level 5} 
-			+ w6 * num_cars{MAG-level 6}
-			+ w7 * num_cars{MAG-level 7}  
-			+ noise
-		'''
-		noise = np.random.normal(loc=params.mu, scale=params.sigma)
-		# initialize MAG
-		my_board2, my_red2 = construct_board(self.__car_list)
-		new_car_list2 = construct_mag(my_board2, my_red2)
-		# each following level
-		new_car_list2 = assign_level(new_car_list2)
-		value = np.sum(np.array(get_num_cars_from_levels(new_car_list2, params.num_weights-1)) * np.array(params.weights))
-		return value+noise
-
+from graphviz import Digraph
+from datetime import datetime
+from PIL import Image
 
 ######################################## MAG CONTENT ##############
 
 class Car:
-	start, end, length = [0,0], [0,0], 0 # [hor,ver]
-	tag = ''
-	puzzle_tag = ''
-	orientation = ''
-	edge_to = []
-	visited = False
-	level = []
 	def __init__(self, s, l, t, o, p):
-		self.start = s
-		self.length = l
-		self.tag = t
-		self.orientation = o
-		self.puzzle_tag = p
+		self.start = s # [hor, ver]
+		self.length = l # int
+		self.tag = t # str
+		self.orientation = o # str
+		self.puzzle_tag = p # str
 		if self.orientation == 'horizontal':
 			self.end = [self.start[0] + self.length - 1, self.start[1]]
 		elif self.orientation == 'vertical':
 			self.end = [self.start[0], self.start[1] + self.length - 1]
 		self.edge_to = []
+		self.level = []
 		self.visited = False
 
 class Board:
-	height, width = 6, 6
-	board_dict = {}
-	puzzle_tag = ''
-	def __init__(self):
+	def __init__(self, car_list):
+		self.height = 6
+		self.width = 6
+		self.board_dict = {}
 		for i in range(0, self.height):
 			for j in range(0, self.width):
 				self.board_dict[(j, i)] = None
+		for car in car_list:
+			if car.tag == 'r':
+				self.red = car
+			occupied_space = []
+			if car.orientation == 'horizontal':
+				for i in range(car.length):
+					occupied_space.append((car.start[0] + i, car.start[1]))
+			elif car.orientation == 'vertical':
+				for i in range(car.length):
+					occupied_space.append((car.start[0], car.start[1] + i))
+			for xy in occupied_space:
+				self.board_dict[xy] = car
 
 def json_to_car_list(filename):
 	with open(filename,'r') as data_file:
 		car_list = []
 		data = load(data_file)
-		red = ''
 		for c in data['cars']:
 			cur_car = Car(s = [int(c['position'])%6, int(c['position']/6)], \
 				l = int(c['length']), t = c['id'], o = c['orientation'], p = data['id'])
 			car_list.append(cur_car)
-			if cur_car.tag == 'r':
-				red = cur_car
-	return car_list, red
+	return car_list
 
 def move(car_list, car_tag, to_position): 
 	'''
@@ -173,9 +70,7 @@ def move(car_list, car_tag, to_position):
 		single position label
 	'''
 	new_list2 = []
-	red = ''
-	for i in range(len(car_list)):
-		cur_car = car_list[i]
+	for cur_car in car_list:
 		if cur_car.tag == car_tag:
 			new_car = Car(s = [int(to_position)%6, int(to_position/6)],\
 				l = int(cur_car.length), t = car_tag, \
@@ -185,18 +80,16 @@ def move(car_list, car_tag, to_position):
 							l = int(cur_car.length), t = cur_car.tag,\
 							o = cur_car.orientation, p = cur_car.puzzle_tag)
 		new_list2.append(new_car)
-		if new_list2[i].tag == 'r':
-			red = new_list2[i]
+		if new_car.tag == 'r':
+			red = new_list2[-1]
 	return new_list2, red
 
-def move2(car_list, car_tag, to_position1, to_position2): 
+def move_xy(car_list, car_tag, to_position1, to_position2): 
 	'''
-	make a move and return the new car list, x and y
+		make a move and return the new car list, x and y
 	'''
 	new_list2 = []
-	red = ''
-	for i in range(len(car_list)):
-		cur_car = car_list[i]
+	for cur_car in car_list:
 		if cur_car.tag == car_tag:
 			new_car = Car(s = [int(to_position1), int(to_position2)],\
 				l = int(cur_car.length), t = car_tag, \
@@ -206,29 +99,9 @@ def move2(car_list, car_tag, to_position1, to_position2):
 							l = int(cur_car.length), t = cur_car.tag,\
 							o = cur_car.orientation, p = cur_car.puzzle_tag)
 		new_list2.append(new_car)
-		if new_list2[i].tag == 'r':
-			red = new_list2[i]
+		if new_car.tag == 'r':
+			red = new_list2[-1]
 	return new_list2, red
-
-def construct_board(car_list):
-	board = Board()
-	red = ''
-	for car in car_list:
-		if car.tag == 'r':
-			red = car
-		cur_start = car.start
-		cur_len = car.length
-		cur_orientation = car.orientation
-		occupied_space = []
-		if cur_orientation == 'horizontal':
-			for i in range(0, cur_len):
-				occupied_space.append((cur_start[0] + i, cur_start[1]))
-		elif cur_orientation == 'vertical':
-			for i in range(0, cur_len):
-				occupied_space.append((cur_start[0], cur_start[1] + i))
-		for j in range(0, len(occupied_space)):
-			board.board_dict[occupied_space[j]] = car
-	return board, red
 
 def all_legal_moves(car_list, board):
 	moves = []
@@ -256,9 +129,13 @@ def all_legal_moves(car_list, board):
 				cur_position2 += 1
 	return moves
 			
-def check_win(board, red): # return true if current board state can win
-	cur_position = red.end[0] + 1 # search right of red car
-	while(cur_position < board.width):
+def is_solved(board, red): 
+	'''
+		return true if current board state can win
+		no car in front of red
+	'''
+	cur_position = red.end[0] + 1 
+	while(cur_position < board.width): # search right of red car
 		if board.board_dict[(cur_position, red.start[1])] is not None:
 			return False
 		cur_position += 1
@@ -268,7 +145,6 @@ def assign_level(car_list):
 	''' 
 	assign level to each car
 	'''
-	red = None
 	for car in car_list: # clean levels of each car 
 		car.level = []
 		if car.tag == 'r': # find red
@@ -285,7 +161,6 @@ def assign_level(car_list):
 			if child not in visited:
 				queue.append(child)
 				visited.append(child)
-	return visited
 
 def get_num_cars_from_levels(car_list, highest_level):
 	''' 
@@ -303,7 +178,6 @@ def construct_mag(board, red):
 		assign graph children, return a new car list
 	'''
 	queue = []
-	finished_list = set() # list to be returned, all cars in MAG
 	i = board.width - 1
 	for i in range(red.end[0], board.width): # obstacles in front of red, include red
 		cur_car = board.board_dict[(i, red.end[1])]
@@ -370,140 +244,215 @@ def construct_mag(board, red):
 			cur_car = board.board_dict[(i, j)]
 			if cur_car is not None:
 				cur_car.visited = False
-				finished_list.add(cur_car)
-	return list(finished_list)
 	
-
-
-if __name__ == '__main__':
-	trial_start = 21 # starting row number in the raw data
-	trial_end = 24 # inclusive
-	sub_data = recfromcsv('/Users/chloe/Desktop/trialdata_valid_true_dist7_processed.csv')
-	cur_carlist = None
-	cur_node = None
-	for i in range(trial_start-2, trial_end-1): 
-		print('Line number '+str(i))
-		row = sub_data[i]
-		if row['event'] == 'start':
-			instance = row['instance']
-			ins_file = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/'+instance+'.json'
-			initial_car_list, _ = json_to_car_list(ins_file)
-			cur_carlist = initial_car_list
-			cur_node = Node(cur_carlist)
-			print('Instance '+str(instance))
-			print('Initial board \n'+cur_node.board_to_str())
-			print('----------------------------------')
-			continue
-		cur_node = Node(cur_carlist)
-		print('Current Board:\n'+cur_node.board_to_str())
-		print('Car Levels: ')
-		cur_board, cur_red = construct_board(cur_carlist)
-		cur_carlist = construct_mag(cur_board, cur_red)
-		assign_level(cur_carlist)
-		for car in cur_carlist:
-			print('\tCar tag '+car.tag+', level '+str(car.level))
-		print('Number of cars at each level: '+str(get_num_cars_from_levels(cur_carlist, 7)))
-		print('\nLegal Moves:')
-		for (tag, pos) in all_legal_moves(cur_carlist, construct_board(cur_carlist)[0]):
-			print(Node(move2(cur_carlist, tag, pos[0], pos[1])[0]).board_to_str())
-		print('----------------------------------')
-		# make human move
-		piece = row['piece']
-		move_to = int(row['move'])
-		cur_carlist, _ = move(cur_carlist, piece, move_to) 
-
-
 
 ######################################## BFS MODEL ##############
 
-def DropFeatures(delta):
+class Node:
+	def __init__(self, cl, params):
+		self.car_list = cl # list of Car
+		self.parent = None # Node
+		self.children = [] # list of Node
+		self.board = Board(self.car_list) # str
+		for car in self.car_list: # Car
+				if car.tag == 'r':
+					self.red = car
+		construct_mag(self.board, self.red)
+		assign_level(self.car_list)
+		self.value = self.heuristic_value_function(params) # float
+	def __members(self):
+		return (self.car_list, self.children, self.value, self.red, self.board)
+	def __eq__(self, other):
+		if type(other) is type(self):
+			return self.__members() == other.__members()
+		else:
+			return False
+	def __hash__(self):
+		return hash(self.__members())
+	def find_child(self, c):
+		for o in self.children:
+			if o == c:
+				return o
+		return None
+	def find_child_by_str(self, bstr):
+		for c in self.children:
+			if c.board_to_str() == bstr:
+				return c
+		return None
+	def remove_child(self, c):
+		for i in range(len(self.children)):
+			if self.children[i] == c:
+				c.parent = None
+				self.children.pop(i)
+				return	
+	def board_to_str(self):
+		out_str = ''
+		for i in range(self.board.height):
+			for j in range(self.board.width):
+				cur_car = self.board.board_dict[(j, i)]
+				if cur_car == None:
+					out_str += '.'
+					if i == 2 and j == 5:
+						out_str += '>'
+					continue
+				if cur_car.tag == 'r':
+					out_str += 'R'
+				else:
+					out_str += cur_car.tag
+				if i == 2 and j == 5:
+					out_str += '>'
+			out_str += '\n'
+		return out_str
+	def heuristic_value_function(self, params):
+		'''
+		value = w0 * num_cars{MAG-level RED}
+			+ w1 * num_cars{MAG-level 1} 
+			+ w2 * num_cars{MAG-level 2}  
+			+ w3 * num_cars{MAG-level 3} 
+			+ w4 * num_cars{MAG-level 4} 
+			+ w5 * num_cars{MAG-level 5} 
+			+ w6 * num_cars{MAG-level 6}
+			+ w7 * num_cars{MAG-level 7}  
+			+ noise
+		'''
+		value = np.sum(np.array(get_num_cars_from_levels(self.car_list, params.num_weights-1), dtype=np.int64) 
+				* np.array(params.weights, dtype=np.float64), dtype=np.float64)
+		noise = np.random.normal(loc=params.mu, scale=params.sigma)
+		return value+noise
+		# return value
+
+class Params:
+	def __init__(self, w1, w2, w3, w4, w5, w6, w7, 
+					mu, sigma,
+					feature_dropping_rate, 
+					stopping_probability,
+					pruning_threshold, 
+					lapse_rate):
+		self.w0 = 0.0
+		self.w1 = w1
+		self.w2 = w2
+		self.w3 = w3
+		self.w4 = w4
+		self.w5 = w5
+		self.w6 = w6
+		self.w7 = w7
+		self.weights = [self.w0, self.w1, self.w2, self.w3, self.w4, self.w5, self.w6, self.w7]
+		self.num_weights = len(self.weights)
+		self.mu = mu
+		self.sigma = sigma
+		self.feature_dropping_rate = feature_dropping_rate
+		self.stopping_probability = stopping_probability
+		self.pruning_threshold = pruning_threshold
+		self.lapse_rate = lapse_rate
+
+def DropFeatures(probability):
 	pass
 
-def Lapse(probability=0.05): 
+def Lapse(probability):
 	''' return true with a probability '''
 	return random.random() < probability
 
-def Stop(probability=0.05): 
+def Stop(probability): 
 	''' return true with a probability '''
+	print('Stop')
 	return random.random() < probability
 
-def Determined(root_node): 
-	''' return true if win, false otherwise '''
-	return check_win(root_node.get_board(), root_node.get_red())
-
-def RandomMove(node):
+def RandomMove(node, params):
 	''' make a random move and return the resulted node '''
-	return random.choice(node.get_children())
+	if not is_solved(node.board, node.red):
+		InitializeChildren(node, params)
+		print('Random Move')
+		return random.choice(node.children)
+	return None
 	
-def InitializeChildren(root_node):
-	''' initialize the list of children (using all possible moves) '''
-	if len(root_node.get_children()) == 0:
-		all_moves = all_legal_moves(root_node.get_carlist(), root_node.get_board())
-		root_car_list = root_node.get_carlist()
-		for (tag, pos) in all_moves:
-			new_list, _ = move2(root_car_list, tag, pos[0], pos[1])
-			dummy_child = Node(new_list)
-			root_node.add_child(dummy_child)
+def InitializeChildren(node, params):
+	''' 
+		initialize the list of children nodes
+		(using all legal moves) 
+	'''
+	all_moves = all_legal_moves(node.car_list, node.board)
+	root_car_list = node.car_list
+	for (tag, pos) in all_moves:
+		new_list, _ = move_xy(root_car_list, tag, pos[0], pos[1])
+		node.children.append(Node(new_list, params))
+		node.children[-1].parent = node
 
 def SelectNode(root_node):
 	''' return the child with max value '''
 	n = root_node
-	while len(n.get_children()) != 0:
+	while len(n.children) != 0:
 		n = ArgmaxChild(n)
-	return n, []
+	return n, is_solved(n.board, n.red)
  
-def ExpandNode(node, threshold):
-	''' create all possible nodes under input node, 
-	cut the ones below threshold '''
+def ExpandNode(node, params):
+	''' 
+	create all possible nodes under input node, 
+	cut the ones below threshold 
+	'''
+	InitializeChildren(node, params)
 	Vmaxchild = ArgmaxChild(node)
-	Vmax = Vmaxchild.get_value()
-	for child in node.get_children():
-		if abs(child.get_value() - Vmax) > threshold:
+	Vmax = Vmaxchild.value
+	for child in node.children:
+		if abs(child.value - Vmax) > params.pruning_threshold:
 			node.remove_child(child)
-	return Vmaxchild
 
 def Backpropagate(this_node, root_node):
 	''' update value back until root node '''
-	this_node.set_value(ArgmaxChild(this_node).get_value())
+	this_node.value = ArgmaxChild(this_node).value
 	if this_node != root_node:
-		Backpropagate(this_node.get_parent(), root_node)
+		Backpropagate(this_node.parent, root_node)
 
-def ArgmaxChild(root_node): 
-	''' return the child with max value '''
-	return max(root_node.get_children(), key=methodcaller('get_value'))
+def ArgmaxChild(node): 
+	''' 
+		return the child with max value 
+	'''
+	return max(node.children, key=attrgetter('value'))
 	
-def MakeMove(state, delta=0, gamma=0.05, theta=10):
-	''' returns an optimal move to make next, given current state '''
-	root = state # state is already a node
-	InitializeChildren(root)
-	if Lapse():
-		return RandomMove(root), [], []
+def MakeMove(root, params):
+	''' 
+	`	returns an optimal move to make next, 
+		given current state
+	'''
+	print(len(root.children))
+	if Lapse(params.lapse_rate):
+		random_choice = RandomMove(root, params)
+		plot_tree(root, selected_node=random_choice)
+		return random_choice
 	else:
-		DropFeatures(delta)
-		considered_node2 = [] # new node expanded along the branch in this iteration
-		while not Stop(probability=gamma) and not Determined(root):
-			n, traversed = SelectNode(root)
-			n2 = ExpandNode(n, theta)
-			considered_node2.append(n2)
-			Backpropagate(n, root)
-			if n2.get_value() >= abs(np.random.normal(loc=params.mu, scale=params.sigma)): # terminate the algorithm if found a terminal node
-				break
-	return ArgmaxChild(root), [], considered_node2
+		DropFeatures(params.feature_dropping_rate)
+		while not Stop(probability=params.stopping_probability):
+		# for i in range(4):
+			plot_tree(root)
+			leaf, leaf_is_solution = SelectNode(root)
+			plot_tree(root, selected_node=leaf)
+			if leaf_is_solution:
+				return None
+			ExpandNode(leaf, params)
+			plot_tree(root, selected_node=leaf)
+			plot_tree(root, selected_node=ArgmaxChild(leaf))
+			Backpropagate(leaf, root)
+			plot_tree(root, selected_node=ArgmaxChild(leaf))
+			print('iteration')
+	if root.children != []:
+		return ArgmaxChild(root)
+	else:
+		return root
 
-def ibs(root_node, expected_board=''):
+
+
+##################################### FITTING ##########################
+def ibs(root_car_list, expected_board, params):
 	''' 
 		inverse binomial sampling: 
 		return the number of simulations until hit target
 	'''
-	InitializeChildren(root_node)
 	num_simulated = 0
-	hit = False
-	while not hit:
-		new_node, _, _ = MakeMove(root_node)
+	while True:
+		root_node = Node(root_car_list, params)
+		model_decision = MakeMove(root_node, params)
 		num_simulated += 1
-		if new_node.board_to_str() == expected_board:
-			hit = True
-	return num_simulated
+		if model_decision != None and model_decision.board_to_str() == expected_board:
+			return num_simulated
 
 def harmonic_sum(n):
 	''' return sum of harmonic series from 1 to k '''
@@ -513,9 +462,19 @@ def harmonic_sum(n):
 		s += 1.0/i
 	return s
 
-def my_ll_parallel(w1, w2, w3, w4, w5, w6, w7): # parallel computing
+def my_ll_parallel(w1, w2, w3, w4, w5, w6, w7, 
+					mu=0.0, sigma=1.0,
+					feature_dropping_rate=0.0, 
+					stopping_probability=0.05,
+					pruning_threshold=10.0, 
+					lapse_rate=0.05): # parallel computing
 	start_time = time.time()
-	params = Params(w1, w2, w3, w4, w5, w6, w7)
+	params = Params(w1, w2, w3, w4, w5, w6, w7, 
+					mu, sigma,
+					feature_dropping_rate, 
+					stopping_probability,
+					pruning_threshold, 
+					lapse_rate)
 	with open("/Users/chloe/Documents/RushHour/scripts/node_list_03.pickle", "r") as fp:
 		node_list = pickle.load(fp)
 	with open("/Users/chloe/Documents/RushHour/scripts/expected_list_03.pickle", "r") as fp:
@@ -533,7 +492,7 @@ def my_ll_parallel(w1, w2, w3, w4, w5, w6, w7): # parallel computing
 	print('time '+str(time.time() - start_time))
 	return ll_result
 
-def create_data():
+def create_data(params):
 	trial_start = 2 # 2072 # starting row number in the raw data
 	trial_end = 65 # 2114
 	sub_data = recfromcsv('/Users/chloe/Desktop/trialdata_valid_true_dist7_processed.csv')
@@ -549,7 +508,7 @@ def create_data():
 			instance = row['instance']
 			ins_file = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/'+instance+'.json'
 			initial_car_list, _ = json_to_car_list(ins_file)
-			initial_node = Node(initial_car_list)
+			initial_node = Node(initial_car_list, params)
 			cur_node = initial_node
 			cur_carlist = initial_car_list
 			continue
@@ -558,7 +517,7 @@ def create_data():
 		node_list.append(cur_node) # previous board position
 		# create human move
 		cur_carlist, _ = move(cur_carlist, piece, move_to)
-		cur_node = Node(cur_carlist)
+		cur_node = Node(cur_carlist, params)
 		user_choice.append(cur_node.board_to_str())
 	# save list
 	with open("/Users/chloe/Documents/RushHour/scripts/node_list_03.pickle", "w") as fp:
@@ -578,16 +537,57 @@ def estimate_prob(root_node, expected_board='', iteration=100):
 	for i in range(iteration):
 		new_node, _, _ = MakeMove(root_node)
 		if first_iteration:
-			frequency = [0] * len(root_node.get_children())
+			frequency = [0] * len(root_node.children)
 			first_iteration = False
 		child_idx = root_node.find_child(new_node)
 		frequency[child_idx] += 1
 	# turn frequency into probability
-	frequency = np.array(frequency, dtype=np.float32)/iteration 
-	for i in range(len(root_node.get_children())):
-		if root_node.get_child(i).board_to_str() == expected_board:
+	frequency = np.array(frequency, dtype=np.float64)/iteration 
+	for i in range(len(root_node.children)):
+		if root_node.children[i].board_to_str() == expected_board:
 			sol_idx = i
-	return root_node.get_children(), frequency, sol_idx, [], []
+	return root_node.children, frequency, sol_idx, [], []
+
+def plot_tree(root, selected_node=None):
+	graph_attr={'fixedsize':'true', 
+				'size':'12,12',
+				'bgcolor':'transparent',
+				'resolution':'100'}
+	node_attr = dict(style='filled',
+						align='top',
+						fontsize='12',
+						# ranksep='0.1',
+						height='0.4',
+						# pad='0.212,0.055',
+						autosize='false', 
+						fixedsize='true',
+						size="3!")
+	dot = Digraph(graph_attr=graph_attr,node_attr=node_attr)
+	queue = []
+	queue.append(root)
+	if root==selected_node:
+		dot.node(str(root), str(round(root.value,3)), pos='0,2!', fillcolor='lightblue')
+	else:
+		dot.node(str(root), str(round(root.value,3)), pos='0,2!')
+	while queue:
+		n = queue.pop(0)
+		for child in n.children:
+			if child==selected_node:
+				dot.node(str(child), str(round(child.value,3)), fillcolor='lightblue')
+				print('found')
+			else:
+				dot.node(str(child), str(round(child.value,3)))
+			dot.edge(str(n), str(child))
+			queue.append(child)
+	filename = datetime.utcnow().strftime('%Y%m%d%H%M%S%f')
+	dot.render('/Users/chloe/Desktop/'+filename,view=False, cleanup=True, format='png')
+	img = Image.open('/Users/chloe/Desktop/'+filename+'.png')
+	background = Image.open('/Users/chloe/Desktop/zbackground.png')
+	background.paste(img, ((background.size[0]-img.size[0])/2,0),img)
+	background.save('/Users/chloe/Desktop/resized_'+filename+'.png','PNG')
+	os.remove('/Users/chloe/Desktop/'+filename+'.png')
+
+
 
 
 # if __name__ == '__main__':
