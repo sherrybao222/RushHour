@@ -359,11 +359,10 @@ def Stop(probability):
 
 def RandomMove(node, params):
 	''' make a random move and return the resulted node '''
-	if not is_solved(node.board, node.red):
-		InitializeChildren(node, params)
-		print('Random Move')
-		return random.choice(node.children)
-	return None
+	assert not is_solved(node.board, node.red), "RandomMove input node is already solved."
+	InitializeChildren(node, params)
+	print('Random Move')
+	return random.choice(node.children)
 	
 def InitializeChildren(node, params):
 	''' 
@@ -374,8 +373,9 @@ def InitializeChildren(node, params):
 	root_car_list = node.car_list
 	for (tag, pos) in all_moves:
 		new_list, _ = move_xy(root_car_list, tag, pos[0], pos[1])
-		node.children.append(Node(new_list, params))
-		node.children[-1].parent = node
+		child = Node(new_list, params)
+		child.parent = node
+		node.children.append(child)
 
 def SelectNode(root_node):
 	''' return the child with max value '''
@@ -413,7 +413,7 @@ def MakeMove(root, params):
 	`	returns an optimal move to make next, 
 		given current state
 	'''
-	print(len(root.children))
+	assert len(root.children) == 0
 	if Lapse(params.lapse_rate):
 		random_choice = RandomMove(root, params)
 		plot_tree(root, selected_node=random_choice)
@@ -426,17 +426,16 @@ def MakeMove(root, params):
 			leaf, leaf_is_solution = SelectNode(root)
 			plot_tree(root, selected_node=leaf)
 			if leaf_is_solution:
-				return None
+				break
 			ExpandNode(leaf, params)
 			plot_tree(root, selected_node=leaf)
 			plot_tree(root, selected_node=ArgmaxChild(leaf))
 			Backpropagate(leaf, root)
 			plot_tree(root, selected_node=ArgmaxChild(leaf))
 			print('iteration')
-	if root.children != []:
-		return ArgmaxChild(root)
-	else:
-		return root
+	if root.children == []:
+		ExpandNode(root, params)
+	return ArgmaxChild(root)
 
 
 
@@ -451,7 +450,7 @@ def ibs(root_car_list, expected_board, params):
 		root_node = Node(root_car_list, params)
 		model_decision = MakeMove(root_node, params)
 		num_simulated += 1
-		if model_decision != None and model_decision.board_to_str() == expected_board:
+		if model_decision.board_to_str() == expected_board:
 			return num_simulated
 
 def harmonic_sum(n):

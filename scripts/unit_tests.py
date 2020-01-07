@@ -1,14 +1,12 @@
 from BFS import *
 
 def test_all_legal_moves(car_list, answer):
-	print('--------------- test all_legal_moves --------------')
 	all_moves = all_legal_moves(car_list, Board(car_list))
-	assert len(all_moves) == answer, 'observe '+str(len(all_moves))
+	assert len(all_moves) == answer, 'test_all_legal_moves FAILED, observe '+str(len(all_moves))
 
 def test_InitializeChildren(node, params, answer):
-	print('-------------- test InitializeChildren -------------')
 	InitializeChildren(node, params)
-	assert len(node.children) == answer, 'observe '+str(len(node.children))
+	assert len(node.children) == answer, 'test_InitializedChildren FAILED, observe '+str(len(node.children))
 	test_Node(node.children[1], params)
 
 def test_move(car_list, car_tag, to_position, params, answer):
@@ -16,7 +14,7 @@ def test_move(car_list, car_tag, to_position, params, answer):
 	new_list, new_red = move(car_list, car_tag, to_position)
 	new_node = Node(new_list, params)
 	test_Node(new_node, params)
-	test_InitializeChildren(new_node, params, 7)
+	test_InitializeChildren(new_node, params, answer)
 	test_all_legal_moves(new_list, answer)
 
 def test_red(node):
@@ -31,6 +29,9 @@ def test_Node(node, params):
 		print('Car '+ car.tag 
 			+ ', edge_to:'+str([str(i.tag) for i in car.edge_to])
 			+ ', levels:'+str(car.level))
+
+def test_is_solved(board, red, answer):
+	assert is_solved(board, red) == answer, "test_is_solved FAILED"
 
 
 if __name__ == '__main__':
@@ -53,11 +54,18 @@ if __name__ == '__main__':
 			+ ', levels:'+str(car.level))
 
 	test_all_legal_moves(car_list, 9)
+	test_is_solved(node.board, node.red, False)
+	# sys.exit()
 	# test_InitializeChildren(node, params, 9)
-	MakeMove(node, params)
+	# MakeMove(node, params)
 
-	sys.exit()
 	test_move(car_list, '7', 6, params, 7)
+	new_list, new_red = move(car_list, '2', 0)
+	node = Node(new_list, params)
+	print(node.board_to_str())
+	test_is_solved(node.board, node.red, True)
+	test_move(car_list, '2', 0, params, 10)
+	sys.exit()
 	# MakeMove(node, params)
 
 
