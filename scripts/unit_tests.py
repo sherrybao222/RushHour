@@ -38,90 +38,84 @@ if __name__ == '__main__':
 	params = Params(0.7,0.6,0.5,0.4,0.3,0.2,0.1, 
 					mu=0.0, sigma=1.0,
 					feature_dropping_rate=0.0, 
-					stopping_probability=0.04,
+					stopping_probability=0.05,
 					pruning_threshold=10.0, 
 					lapse_rate=0.05)
-	instance = 'prb25861'
-	ins_file = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/'+instance+'.json'
-	car_list = json_to_car_list(ins_file)
+	# instance = 'prb11647'
+	# ins_file = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/'+instance+'.json'
+	# car_list = json_to_car_list(ins_file)
 
-	node = Node(car_list, params)
-	test_Node(node, params)
-	print()
-	for car in car_list:
-		print('Car '+ car.tag 
-			+ ', edge_to:'+str([str(i.tag) for i in car.edge_to])
-			+ ', levels:'+str(car.level))
+	# node = Node(car_list, params)
 
-	test_all_legal_moves(car_list, 9)
-	test_is_solved(node.board, node.red, False)
+	# MakeMove(node, params)
 	# sys.exit()
+	
+	# test_Node(node, params)
+	# print()
+	# for car in car_list:
+	# 	print('Car '+ car.tag 
+	# 		+ ', edge_to:'+str([str(i.tag) for i in car.edge_to])
+	# 		+ ', levels:'+str(car.level))
+
+	# test_all_legal_moves(car_list, 9)
+	# test_is_solved(node.board, node.red, False)
 	# test_InitializeChildren(node, params, 9)
-	# MakeMove(node, params)
-
-	test_move(car_list, '7', 6, params, 7)
-	new_list, new_red = move(car_list, '2', 0)
-	node = Node(new_list, params)
-	print(node.board_to_str())
-	test_is_solved(node.board, node.red, True)
-	test_move(car_list, '2', 0, params, 10)
-	sys.exit()
-	# MakeMove(node, params)
+	# test_move(car_list, '7', 6, params, 7)
+	# new_list, new_red = move(car_list, '2', 0)
+	# node = Node(new_list, params)
+	# print(node.board_to_str())
+	# test_is_solved(node.board, node.red, True)
+	# test_move(car_list, '2', 0, params, 10)
 
 
 
-	for c in n.children:
-		print(c.board_to_str())
-		print('value='+str(c.value))
-	selected = MakeMove(n, params)
-	print('\n\nSelected Move:\n'+selected.board_to_str()+'value='+str(selected.value)+'\n')
-	for c in selected.children:
-		print(c.board_to_str()+'value='+str(c.value)+'\n')
+	# for c in n.children:
+	# 	print(c.board_to_str())
+	# 	print('value='+str(c.value))
+	# selected = MakeMove(n, params)
+	# print('\n\nSelected Move:\n'+selected.board_to_str()+'value='+str(selected.value)+'\n')
+	# for c in selected.children:
+	# 	print(c.board_to_str()+'value='+str(c.value)+'\n')
 
-	sys.exit()
-	new_list, new_red = move_xy(new_list, 'r', 1, 2)
-	print(Node(new_list, params).board_to_str())
-	print(new_list)
-	new_list, new_red = move(new_list, '0', 18)
-	print(Node(new_list, params).board_to_str())
-	print(new_list)
+	# sys.exit()
+	# new_list, new_red = move_xy(new_list, 'r', 1, 2)
+	# print(Node(new_list, params).board_to_str())
+	# print(new_list)
+	# new_list, new_red = move(new_list, '0', 18)
+	# print(Node(new_list, params).board_to_str())
+	# print(new_list)
 
 
-# 	trial_start = 21 # starting row number in the raw data
-# 	trial_end = 24 # inclusive
-# 	sub_data = recfromcsv('/Users/chloe/Desktop/trialdata_valid_true_dist7_processed.csv')
-# 	cur_carlist = None
-# 	cur_node = None
-# 	for i in range(trial_start-2, trial_end-1): 
-# 		row = sub_data[i]
-# 		if row['event'] == 'start':
-# 			instance = row['instance']
-# 			ins_file = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/'+instance+'.json'
-# 			initial_car_list, _ = json_to_car_list(ins_file)
-# 			cur_carlist = initial_car_list
-# 			cur_node = Node(cur_carlist, params)
-# 			print('Instance '+str(instance))
-# 			print('Initial board \n'+cur_node.board_to_str())
-# 			print('----------------------------------')
-# 			continue
-# 		cur_node = Node(cur_carlist, params)
-# 		print('Current Board:\n'+cur_node.board_to_str())
-# 		print('Car Levels: ')
-# 		cur_board = Board(cur_carlist)
-# 		cur_carlist = construct_mag(cur_board, cur_board.red)
-# 		assign_level(cur_carlist)
-# 		for car in cur_carlist:
-# 			print('\tCar tag '+car.tag+', level '+str(car.level))
-# 		print('Number of cars at each level: '+str(get_num_cars_from_levels(cur_carlist, 7)))
-# 		print('\nLegal Moves:')
-# 		for (tag, pos) in all_legal_moves(cur_carlist, Board(cur_carlist)):
-# 			print(Node(move_xy(cur_carlist, tag, pos[0], pos[1])[0], params).board_to_str())
-# 		print('----------------------------------')
-# 		# make human move
-# 		piece = row['piece']
-# 		move_to = int(row['move'])
-# 		cur_carlist, _ = move(cur_carlist, piece, move_to) 
+	trial_start = 2 # starting row number in the raw data
+	trial_end = 15 # inclusive
+	sub_data = recfromcsv('/Users/chloe/Desktop/trialdata_valid_true_dist7_processed.csv')
+	cur_carlist = None
+	cur_node = None
+	for i in range(trial_start-2, trial_end-1): 
+		row = sub_data[i]
+		if row['event'] == 'start':
+			instance = row['instance']
+			ins_file = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/'+instance+'.json'
+			initial_car_list = json_to_car_list(ins_file)
+			cur_carlist = initial_car_list
+			cur_node = Node(cur_carlist, params)
+			print('Instance '+str(instance))
+			print('Initial board \n'+cur_node.board_to_str())
+			print('----------------------------------')
+			continue
+		# make human move
+		piece = row['piece']
+		move_to = int(row['move'])
+		cur_carlist, _ = move(cur_carlist, piece, move_to) 
+		cur_node = Node(cur_carlist, params)
+		print('Current Board:\n'+cur_node.board_to_str())
 
+	cur_carlist, _ = move(cur_carlist, '3', 3)
+	cur_node = Node(cur_carlist, params)
+	print('Current Board:\n'+cur_node.board_to_str())
+	
+	cur_node = MakeMove(cur_node, params)
+	print('Decision:\n'+cur_node.board_to_str())
 
 
 

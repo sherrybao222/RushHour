@@ -4,17 +4,19 @@ speeded version, prepared for BADS in MATLAB,
 now working but very slow (generating data every time).
 py27
 '''
-
-import MAG, time
-import random, sys, copy, os, pickle
-import numpy as np
+import random, copy, pickle, os, sys, time
 from operator import attrgetter
 import multiprocessing as mp
+import numpy as np
 from numpy import recfromcsv
 from json import dump, load
-from graphviz import Digraph
-from datetime import datetime
-from PIL import Image
+from plot import *
+# from graphviz import Digraph
+# from datetime import datetime
+# from PIL import Image
+# from PIL import ImageFont
+# from PIL import ImageDraw 
+# import matplotlib.pyplot as plt
 
 ######################################## MAG CONTENT ##############
 
@@ -318,8 +320,34 @@ class Node:
 		value = np.sum(np.array(get_num_cars_from_levels(self.car_list, params.num_weights-1), dtype=np.int64) 
 				* np.array(params.weights, dtype=np.float64), dtype=np.float64)
 		noise = np.random.normal(loc=params.mu, scale=params.sigma)
-		return value+noise
-		# return value
+		return -(value+noise)
+	def find_path_to_root(self): 
+		''' return path of Node from self to root '''
+		trajectory = []
+		cur = self
+		while cur != None:
+			trajectory.insert(0, cur)
+			cur = cur.parent
+		return trajectory
+	def board_matrix(self):
+		''' convert to an int matrix of board configuration '''
+		matrix = np.zeros((6,6), dtype=int)
+		line_idx = 0
+		for line in self.board_to_str().split('\n'):
+			char_idx = 0
+			for char in line:
+				if char == '>':
+					continue
+				elif char == '.':
+					matrix[line_idx][char_idx] = -1
+				elif char == 'R':
+					matrix[line_idx][char_idx] = 0
+				else:
+					matrix[line_idx][char_idx] = int(char)+1
+				char_idx += 1
+			line_idx += 1
+		matrix = np.ma.masked_where(matrix==-1, matrix)
+		return matrix
 
 class Params:
 	def __init__(self, w1, w2, w3, w4, w5, w6, w7, 
@@ -354,7 +382,6 @@ def Lapse(probability):
 
 def Stop(probability): 
 	''' return true with a probability '''
-	print('Stop')
 	return random.random() < probability
 
 def RandomMove(node, params):
@@ -416,25 +443,59 @@ def MakeMove(root, params):
 	assert len(root.children) == 0
 	if Lapse(params.lapse_rate):
 		random_choice = RandomMove(root, params)
-		plot_tree(root, selected_node=random_choice)
+		plot_board_and_tree(root, board_node=root, text='Random Move', text2='Initial Board')
+		plot_board_and_tree(root, board_node=random_choice, highlighted_node=random_choice, text='Random Move', text2='Move 1')
 		return random_choice
 	else:
 		DropFeatures(params.feature_dropping_rate)
+		hash_most_promising_node = None
+		hash_PV = [] # principal variation from last iteration
 		while not Stop(probability=params.stopping_probability):
 		# for i in range(4):
-			plot_tree(root)
 			leaf, leaf_is_solution = SelectNode(root)
-			plot_tree(root, selected_node=leaf)
+			both = [value for value in leaf.find_path_to_root() if value in hash_PV]
+			if leaf == hash_most_promising_node:
+				plot_board_and_tree(root, board_node=leaf, highlighted_node=leaf, highlighted_edges=leaf.find_path_to_root(), text='Select', text2='Move '+str(move_num))
+				move_num += 1
+			elif both:
+				move_num = [hash_PV.index(x) for x in both][-1]+1
+				for n in leaf.find_path_to_root()[move_num:]:
+					plot_board_and_tree(root, board_node=n, highlighted_node=n, highlighted_edges=n.find_path_to_root(), text='Select', text2='Move '+str(move_num))
+					move_num += 1
+			else:
+				plot_board_and_tree(root, board_node=root, text='Initial State', text2='Initial Board')
+				move_num = 0
+				for n in leaf.find_path_to_root():
+					if move_num == 0:
+						plot_board_and_tree(root, board_node=n, highlighted_node=n, highlighted_edges=n.find_path_to_root(), text='Select', text2='Initial Board')
+					else:
+						plot_board_and_tree(root, board_node=n, highlighted_node=n, highlighted_edges=n.find_path_to_root(), text='Select', text2='Move '+str(move_num))
+					move_num += 1
 			if leaf_is_solution:
+				print('solution found, backprop and break')
+				plot_board_and_tree(root, board_node=leaf, highlighted_node=leaf, highlighted_edges=leaf.find_path_to_root(), text='Solution Found', text2='Solved')
+				Backpropagate(leaf.parent, root)
+				for n in leaf.find_path_to_root()[::-1][1:]:
+					plot_board_and_tree(root, board_node=leaf, highlighted_node=leaf, updated_node=[n], highlighted_edges=leaf.find_path_to_root(), text='Backpropagate', text2='Solved')
 				break
 			ExpandNode(leaf, params)
-			plot_tree(root, selected_node=leaf)
-			plot_tree(root, selected_node=ArgmaxChild(leaf))
+			hash_most_promising_node = ArgmaxChild(leaf)
+			if move_num-1 != 0:
+				plot_board_and_tree(root, board_node=leaf, highlighted_node=leaf, highlighted_edges=leaf.find_path_to_root(), text='Expand', text2='Move '+str(move_num-1))
+			if move_num-1 == 0:
+				plot_board_and_tree(root, board_node=leaf, highlighted_node=leaf, highlighted_edges=leaf.find_path_to_root(), text='Expand', text2='Initial Board')
+			plot_board_and_tree(root, board_node=ArgmaxChild(leaf), highlighted_node=ArgmaxChild(leaf), highlighted_edges=ArgmaxChild(leaf).find_path_to_root(), text='Most Promising Node', text2='Move '+str(move_num))
 			Backpropagate(leaf, root)
-			plot_tree(root, selected_node=ArgmaxChild(leaf))
-			print('iteration')
+			for n in leaf.find_path_to_root()[::-1]:
+				plot_board_and_tree(root, board_node=ArgmaxChild(leaf), highlighted_node=ArgmaxChild(leaf), updated_node=[n], highlighted_edges=ArgmaxChild(leaf).find_path_to_root(), text='Backpropagate', text2='Move '+str(move_num))
+			hash_PV = ArgmaxChild(leaf).find_path_to_root()
+			print('\titeration')
+		print('Stop')
 	if root.children == []:
 		ExpandNode(root, params)
+	plot_board_and_tree(root, board_node=root, decision_node=root, text='Decision', text2='Initial Board')
+	plot_board_and_tree(root, board_node=ArgmaxChild(root), decision_node=ArgmaxChild(root), text='Decision', text2='Move 1')
+	make_movie()
 	return ArgmaxChild(root)
 
 
@@ -532,7 +593,6 @@ def estimate_prob(root_node, expected_board='', iteration=100):
 	first_iteration = True
 	frequency = None
 	sol_idx = None
-	
 	for i in range(iteration):
 		new_node, _, _ = MakeMove(root_node)
 		if first_iteration:
@@ -546,46 +606,6 @@ def estimate_prob(root_node, expected_board='', iteration=100):
 		if root_node.children[i].board_to_str() == expected_board:
 			sol_idx = i
 	return root_node.children, frequency, sol_idx, [], []
-
-def plot_tree(root, selected_node=None):
-	graph_attr={'fixedsize':'true', 
-				'size':'12,12',
-				'bgcolor':'transparent',
-				'resolution':'100'}
-	node_attr = dict(style='filled',
-						align='top',
-						fontsize='12',
-						# ranksep='0.1',
-						height='0.4',
-						# pad='0.212,0.055',
-						autosize='false', 
-						fixedsize='true',
-						size="3!")
-	dot = Digraph(graph_attr=graph_attr,node_attr=node_attr)
-	queue = []
-	queue.append(root)
-	if root==selected_node:
-		dot.node(str(root), str(round(root.value,3)), pos='0,2!', fillcolor='lightblue')
-	else:
-		dot.node(str(root), str(round(root.value,3)), pos='0,2!')
-	while queue:
-		n = queue.pop(0)
-		for child in n.children:
-			if child==selected_node:
-				dot.node(str(child), str(round(child.value,3)), fillcolor='lightblue')
-				print('found')
-			else:
-				dot.node(str(child), str(round(child.value,3)))
-			dot.edge(str(n), str(child))
-			queue.append(child)
-	filename = datetime.utcnow().strftime('%Y%m%d%H%M%S%f')
-	dot.render('/Users/chloe/Desktop/'+filename,view=False, cleanup=True, format='png')
-	img = Image.open('/Users/chloe/Desktop/'+filename+'.png')
-	background = Image.open('/Users/chloe/Desktop/zbackground.png')
-	background.paste(img, ((background.size[0]-img.size[0])/2,0),img)
-	background.save('/Users/chloe/Desktop/resized_'+filename+'.png','PNG')
-	os.remove('/Users/chloe/Desktop/'+filename+'.png')
-
 
 
 

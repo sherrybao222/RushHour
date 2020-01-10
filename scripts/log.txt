@@ -1,0 +1,9 @@
+Parameters Log
+
+Used for Weiji's talk in London
+Params(0.7,0.6,0.5,0.4,0.3,0.2,0.1, 
+					mu=0.0, sigma=1.0,
+					feature_dropping_rate=0.0, 
+					stopping_probability=0.04,
+					pruning_threshold=10.0, 
+					lapse_rate=0.05)
