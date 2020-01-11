@@ -41,14 +41,14 @@ if __name__ == '__main__':
 					stopping_probability=0.05,
 					pruning_threshold=10.0, 
 					lapse_rate=0.05)
-	# instance = 'prb11647'
-	# ins_file = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/'+instance+'.json'
-	# car_list = json_to_car_list(ins_file)
+	instance = 'prb3217'
+	ins_file = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/'+instance+'.json'
+	car_list = json_to_car_list(ins_file)
 
-	# node = Node(car_list, params)
+	node = Node(car_list, params)
 
-	# MakeMove(node, params)
-	# sys.exit()
+	MakeMove(node, params)
+	sys.exit()
 	
 	# test_Node(node, params)
 	# print()
@@ -86,36 +86,36 @@ if __name__ == '__main__':
 	# print(new_list)
 
 
-	trial_start = 2 # starting row number in the raw data
-	trial_end = 15 # inclusive
-	sub_data = recfromcsv('/Users/chloe/Desktop/trialdata_valid_true_dist7_processed.csv')
-	cur_carlist = None
-	cur_node = None
-	for i in range(trial_start-2, trial_end-1): 
-		row = sub_data[i]
-		if row['event'] == 'start':
-			instance = row['instance']
-			ins_file = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/'+instance+'.json'
-			initial_car_list = json_to_car_list(ins_file)
-			cur_carlist = initial_car_list
-			cur_node = Node(cur_carlist, params)
-			print('Instance '+str(instance))
-			print('Initial board \n'+cur_node.board_to_str())
-			print('----------------------------------')
-			continue
-		# make human move
-		piece = row['piece']
-		move_to = int(row['move'])
-		cur_carlist, _ = move(cur_carlist, piece, move_to) 
-		cur_node = Node(cur_carlist, params)
-		print('Current Board:\n'+cur_node.board_to_str())
+	# trial_start = 2 # starting row number in the raw data
+	# trial_end = 15 # inclusive
+	# sub_data = recfromcsv('/Users/chloe/Desktop/trialdata_valid_true_dist7_processed.csv')
+	# cur_carlist = None
+	# cur_node = None
+	# for i in range(trial_start-2, trial_end-1): 
+	# 	row = sub_data[i]
+	# 	if row['event'] == 'start':
+	# 		instance = row['instance']
+	# 		ins_file = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/'+instance+'.json'
+	# 		initial_car_list = json_to_car_list(ins_file)
+	# 		cur_carlist = initial_car_list
+	# 		cur_node = Node(cur_carlist, params)
+	# 		print('Instance '+str(instance))
+	# 		print('Initial board \n'+cur_node.board_to_str())
+	# 		print('----------------------------------')
+	# 		continue
+	# 	# make human move
+	# 	piece = row['piece']
+	# 	move_to = int(row['move'])
+	# 	cur_carlist, _ = move(cur_carlist, piece, move_to) 
+	# 	cur_node = Node(cur_carlist, params)
+	# 	print('Current Board:\n'+cur_node.board_to_str())
 
-	cur_carlist, _ = move(cur_carlist, '3', 3)
-	cur_node = Node(cur_carlist, params)
-	print('Current Board:\n'+cur_node.board_to_str())
+	# cur_carlist, _ = move(cur_carlist, '3', 3)
+	# cur_node = Node(cur_carlist, params)
+	# print('Current Board:\n'+cur_node.board_to_str())
 	
-	cur_node = MakeMove(cur_node, params)
-	print('Decision:\n'+cur_node.board_to_str())
+	# cur_node = MakeMove(cur_node, params)
+	# print('Decision:\n'+cur_node.board_to_str())
 
 
 
