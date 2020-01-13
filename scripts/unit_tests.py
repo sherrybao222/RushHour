@@ -33,12 +33,11 @@ def test_Node(node, params):
 def test_is_solved(board, red, answer):
 	assert is_solved(board, red) == answer, "test_is_solved FAILED"
 
-
 if __name__ == '__main__':
-	params = Params(0.7,0.6,0.5,0.4,0.3,0.2,0.1, 
+	params = Params(1.1,0.7,0.6,0.5,0.4,0.3,0.2, 
 					mu=0.0, sigma=1.0,
 					feature_dropping_rate=0.0, 
-					stopping_probability=0.05,
+					stopping_probability=0.07,
 					pruning_threshold=10.0, 
 					lapse_rate=0.05)
 	instance = 'prb3217'
@@ -46,8 +45,9 @@ if __name__ == '__main__':
 	car_list = json_to_car_list(ins_file)
 
 	node = Node(car_list, params)
-
-	MakeMove(node, params)
+	print('Board\n'+str(node.board_to_str()))
+	node = MakeMove(node, params)
+	print('Board\n'+str(node.board_to_str()))
 	sys.exit()
 	
 	# test_Node(node, params)

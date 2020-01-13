@@ -348,6 +348,11 @@ class Node:
 			line_idx += 1
 		matrix = np.ma.masked_where(matrix==-1, matrix)
 		return matrix
+	def find_changed_car(self, to_node):
+		for tocar in to_node.car_list:
+			for fromcar in self.car_list:
+				if fromcar.tag == tocar.tag and fromcar.start != tocar.start:
+					return fromcar, tocar
 
 class Params:
 	def __init__(self, w1, w2, w3, w4, w5, w6, w7, 
@@ -437,8 +442,9 @@ def ArgmaxChild(node):
 	
 def MakeMove(root, params):
 	''' 
-	`	returns an optimal move to make next, 
-		given current state
+	`	returns an optimal move to make next 
+		according to value function, 
+		current state given
 	'''
 	assert len(root.children) == 0
 	if Lapse(params.lapse_rate):
@@ -449,20 +455,15 @@ def MakeMove(root, params):
 	else:
 		DropFeatures(params.feature_dropping_rate)
 		hash_most_promising_node = None
-		hash_PV = [] # principal variation from last iteration
 		while not Stop(probability=params.stopping_probability):
 		# for i in range(4):
 			leaf, leaf_is_solution = SelectNode(root)
-			both = [value for value in leaf.find_path_to_root() if value in hash_PV]
-			if leaf == hash_most_promising_node:
+			if leaf == hash_most_promising_node: # expand along last principal variation
 				plot_board_and_tree(root, board_node=leaf, highlighted_node=leaf, highlighted_edges=leaf.find_path_to_root(), text='Select', text2='Move '+str(move_num))
 				move_num += 1
-			elif both:
-				move_num = [hash_PV.index(x) for x in both][-1]+1
-				for n in leaf.find_path_to_root()[move_num:]:
-					plot_board_and_tree(root, board_node=n, highlighted_node=n, highlighted_edges=n.find_path_to_root(), text='Select', text2='Move '+str(move_num))
-					move_num += 1
-			else:
+			else: 
+				if hash_most_promising_node:
+					plot_blank(text='New Principal Variation')
 				plot_board_and_tree(root, board_node=root, text='Initial State', text2='Initial Board')
 				move_num = 0
 				for n in leaf.find_path_to_root():
@@ -484,21 +485,44 @@ def MakeMove(root, params):
 				plot_board_and_tree(root, board_node=leaf, highlighted_node=leaf, highlighted_edges=leaf.find_path_to_root(), text='Expand', text2='Move '+str(move_num-1))
 			if move_num-1 == 0:
 				plot_board_and_tree(root, board_node=leaf, highlighted_node=leaf, highlighted_edges=leaf.find_path_to_root(), text='Expand', text2='Initial Board')
+			plot_board_and_tree(root, board_node=leaf, board_to_node=ArgmaxChild(leaf), highlighted_node=ArgmaxChild(leaf), highlighted_edges=ArgmaxChild(leaf).find_path_to_root(), text='Most Promising Node', text2='Move '+str(move_num))
 			plot_board_and_tree(root, board_node=ArgmaxChild(leaf), highlighted_node=ArgmaxChild(leaf), highlighted_edges=ArgmaxChild(leaf).find_path_to_root(), text='Most Promising Node', text2='Move '+str(move_num))
 			Backpropagate(leaf, root)
 			for n in leaf.find_path_to_root()[::-1]:
 				plot_board_and_tree(root, board_node=ArgmaxChild(leaf), highlighted_node=ArgmaxChild(leaf), updated_node=[n], highlighted_edges=ArgmaxChild(leaf).find_path_to_root(), text='Backpropagate', text2='Move '+str(move_num))
-			hash_PV = ArgmaxChild(leaf).find_path_to_root()
 			print('\titeration')
 		print('Stop')
 	if root.children == []:
 		ExpandNode(root, params)
-	plot_board_and_tree(root, board_node=root, decision_node=root, text='Decision', text2='Initial Board')
+	plot_blank(text='Best-First Search terminated.\n        Predicted move:')
+	plot_board_and_tree(root, board_node=root, board_to_node=ArgmaxChild(root), decision_node=root, text='Decision', text2='Initial Board')
 	plot_board_and_tree(root, board_node=ArgmaxChild(root), decision_node=ArgmaxChild(root), text='Decision', text2='Move 1')
 	make_movie()
 	return ArgmaxChild(root)
 
-
+def MakeMove_noplot(root, params):
+	''' 
+	`	returns an optimal move to make next 
+		according to value function, 
+		current state given
+	'''
+	assert len(root.children) == 0
+	if Lapse(params.lapse_rate):
+		return RandomMove(root, params)
+	else:
+		DropFeatures(params.feature_dropping_rate)
+		while not Stop(probability=params.stopping_probability):
+			leaf, leaf_is_solution = SelectNode(root)
+			if leaf_is_solution:
+				Backpropagate(leaf.parent, root)
+				break
+			ExpandNode(leaf, params)
+			Backpropagate(leaf, root)
+			print('\titeration')
+		print('Stop')
+	if root.children == []:
+		ExpandNode(root, params)
+	return ArgmaxChild(root)
 
 ##################################### FITTING ##########################
 def ibs(root_car_list, expected_board, params):

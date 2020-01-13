@@ -69,7 +69,7 @@ def plot_tree(root, highlighted_node=None, updated_node=[], decision_node=None, 
 	os.remove('/Users/chloe/Desktop/'+curtime+'.png')
 	return '/Users/chloe/Desktop/resized_'+curtime+'.png'
 
-def plot_board(node):
+def plot_board(node, to_node=None, show_car_label=False):
 	''' visualize the current board configuration '''
 	matrix = node.board_matrix()
 	cmap = plt.cm.Set1
@@ -86,7 +86,6 @@ def plot_board(node):
 	for tic in ax.yaxis.get_major_ticks():
 		tic.tick1On = tic.tick2On = False
 	im = ax.imshow(matrix, cmap=cmap)
-	show_car_label = False
 	if show_car_label:
 		for i in range(len(matrix)):
 			for j in range(len(matrix[i])):
@@ -98,6 +97,26 @@ def plot_board(node):
 				else:
 					num = ''
 				text = ax.text(j, i, num, ha="center", va="center", color="black", fontsize=36)
+	if to_node: # plot arrow of car move
+		fromcar, tocar = node.find_changed_car(to_node)	
+		orientation=fromcar.orientation
+		length=fromcar.length
+		pos1from=fromcar.start[0]
+		pos1to=tocar.start[0]
+		pos2from=fromcar.start[1]
+		pos2to=tocar.start[1]	
+		if orientation == 'horizontal' and (pos1to-pos1from)>0: # move right
+			plt.arrow(x=pos1from+length-1, y=pos2from, dx=(pos1to-pos1from), dy=0, 
+				head_width=0.20, head_length=0.15, alpha=0.9, color='black',
+				lw=25)
+		elif orientation == 'vertical' and (pos2to-pos2from)>0: # move down
+			plt.arrow(x=pos1from, y=pos2from+length-1, dx=0, dy=(pos2to-pos2from), 
+				head_width=0.20, head_length=0.15, alpha=0.9, color='black',
+				lw=25)
+		else:
+			plt.arrow(x=pos1from, y=pos2from, dx=(pos1to-pos1from), dy=(pos2to-pos2from), 
+				head_width=0.20, head_length=0.15, alpha=0.9, color='black',
+				lw=25)
 	for axis in ['top','bottom','left','right']:
 		ax.spines[axis].set_linewidth(4)
 		ax.spines[axis].set_zorder(0)
@@ -109,13 +128,12 @@ def plot_board(node):
 	plt.close()
 	return '/Users/chloe/Desktop/board_'+curtime+'.png'
 
-
-def plot_board_and_tree(root, board_node, highlighted_node=None, 
+def plot_board_and_tree(root, board_node, board_to_node=None, highlighted_node=None, 
 					updated_node=[], decision_node=None, highlighted_edges=[], 
 					text='', text2=''):
 	''' plot board and tree in the same image '''
 	tree_filename = plot_tree(root, highlighted_node, updated_node, decision_node, highlighted_edges)
-	board_filename = plot_board(board_node)
+	board_filename = plot_board(board_node, to_node=board_to_node)
 	final_img = concatenate_images_h(Image.open(board_filename), Image.open(tree_filename))
 	draw = ImageDraw.Draw(final_img)
 	font = ImageFont.truetype("Verdana.ttf", 100)
@@ -127,6 +145,15 @@ def plot_board_and_tree(root, board_node, highlighted_node=None,
 	os.remove(tree_filename)
 	os.remove(board_filename)
 
+def plot_blank(text=''):
+	''' plot blank image with text '''
+	img = Image.new('RGB', (6100, 1200), (255, 255, 255))
+	draw = ImageDraw.Draw(img)
+	font = ImageFont.truetype("Verdana.ttf", 100)
+	draw.text((img.size[0]/2-600, 500), text, (0,0,0), font=font)
+	curtime = datetime.utcnow().strftime('%Y%m%d%H%M%S%f')
+	img_filename = '/Users/chloe/Desktop/RH/zip_'+curtime+'.png'
+	img.save(img_filename)
 
 def concatenate_images_h(im1, im2):
 	''' concatenate two images one next to another horizontally '''
@@ -135,7 +162,25 @@ def concatenate_images_h(im1, im2):
 	dst.paste(im2, (im1.width, 0))
 	return dst
 
-def make_movie(path='/Users/chloe/Desktop/RH/'):
+def crop_and_concatenate(left1, upper1, right1, lower1,
+							left2, upper2, right2, lower2,
+							path, final_path):
+	for file in sorted(os.listdir(path)):
+		img1 = Image.open(path+file).crop(box=(left1, upper1, right1, lower1))
+		img2 = Image.open(path+file).crop(box=(left2, upper2, right2, lower2))
+		final_img = concatenate_images_h(img1, img2)
+		final_img.save(final_path+file)
+
+def crop_resize_paste(left, upper, right, lower,
+							new_width, new_height,
+							path, final_path):
+	for file in sorted(os.listdir(path)):
+		img = Image.open(path+file).crop(box=(left, upper, right, lower)).resize((new_width, new_height))
+		background = Image.open(path+file)
+		background.paste(img, (left, upper))
+		background.save(final_path+file,'PNG')
+
+def make_movie(path='/Users/chloe/Desktop/RH_text3/'):
 	''' make a movie using png files '''
 	os.chdir(path)
 	image_folder = path
@@ -150,7 +195,20 @@ def make_movie(path='/Users/chloe/Desktop/RH/'):
 	cv2.destroyAllWindows()
 	video.release()
 
+make_movie()
+# crop_and_concatenate(250, 0, 1400, 1200,
+# 							2300, 0, 5400, 1200,
+# 							'/Users/chloe/Desktop/RH/', '/Users/chloe/Desktop/RH_cropped/')
+# crop_resize_paste(1200, 170, 4250, 900,
+# 					3050, 1030,
+# 					'/Users/chloe/Desktop/RH_cropped/', 
+# 					'/Users/chloe/Desktop/RH_resized/')
 # make_movie()
+# img = Image.new('RGB', (6100, 1200), (255, 255, 255))
+# img2 = Image.open('/Users/chloe/Desktop/RH/zip_20200111162628416418.png')
+# img2.paste(img, (0, 0))
+# img.save('/Users/chloe/Desktop/RH/zip_20200111162628416420.png')
+
 
 
 # img = Image.new('RGB', (4500, 1200), (255, 255, 255))
