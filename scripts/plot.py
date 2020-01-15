@@ -180,7 +180,7 @@ def crop_resize_paste(left, upper, right, lower,
 		background.paste(img, (left, upper))
 		background.save(final_path+file,'PNG')
 
-def make_movie(path='/Users/chloe/Desktop/RH_text3/'):
+def make_movie(path='/Users/chloe/Desktop/RH_text6/'):
 	''' make a movie using png files '''
 	os.chdir(path)
 	image_folder = path
@@ -196,9 +196,9 @@ def make_movie(path='/Users/chloe/Desktop/RH_text3/'):
 	video.release()
 
 make_movie()
-# crop_and_concatenate(250, 0, 1400, 1200,
-# 							2300, 0, 5400, 1200,
-# 							'/Users/chloe/Desktop/RH/', '/Users/chloe/Desktop/RH_cropped/')
+# crop_and_concatenate(0, 0, 1200, 1200,
+# 							1200, 0, 3950, 1200,
+# 							'/Users/chloe/Desktop/RH_text5/', '/Users/chloe/Desktop/RH_text6/')
 # crop_resize_paste(1200, 170, 4250, 900,
 # 					3050, 1030,
 # 					'/Users/chloe/Desktop/RH_cropped/', 
