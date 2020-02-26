@@ -1,3 +1,7 @@
+'''
+Early version of decision tree node
+now the BFS model has its own node class definition in its script
+'''
 import MAG
 # import random, sys, copy, os, pickle
 import numpy as np

@@ -1,3 +1,9 @@
+'''
+Early version of MAG
+include dynamic and static attribute calculation functions
+mainly used for characteristic statistic stage
+now the BFS model has its own MAG class definition in its script
+'''
 from graphviz import Digraph
 from json import dump,load
 import Graph

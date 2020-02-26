@@ -22,7 +22,12 @@ insert(P,int32(0),'/Library/Frameworks/Python.framework/Versions/2.7/lib/python2
 end
 
 
-py.importlib.import_module('my_llfast')
+P = py.sys.path;
+if count(P,'/Applications/MATLAB_R2019b.app/toolbox/matlab/external/interfaces/python') == 0
+insert(P,int32(0),'/Applications/MATLAB_R2019b.app/toolbox/matlab/external/interfaces/python');
+end
+
+py.importlib.import_module('BFS')
 
 
 ------------------ cluster matlab -------------------

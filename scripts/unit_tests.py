@@ -37,7 +37,7 @@ if __name__ == '__main__':
 	params = Params(1.1,0.7,0.6,0.5,0.4,0.3,0.2, 
 					mu=0.0, sigma=1.0,
 					feature_dropping_rate=0.0, 
-					stopping_probability=0.07,
+					stopping_probability=0.05,
 					pruning_threshold=10.0, 
 					lapse_rate=0.05)
 	instance = 'prb3217'
@@ -46,8 +46,8 @@ if __name__ == '__main__':
 
 	node = Node(car_list, params)
 	print('Board\n'+str(node.board_to_str()))
-	node = MakeMove(node, params)
-	print('Board\n'+str(node.board_to_str()))
+	# test_all_legal_moves(car_list, 17)
+	MakeMove(node, params)
 	sys.exit()
 	
 	# test_Node(node, params)
@@ -72,7 +72,7 @@ if __name__ == '__main__':
 	# for c in n.children:
 	# 	print(c.board_to_str())
 	# 	print('value='+str(c.value))
-	# selected = MakeMove(n, params)
+	# selected = MakeMove_plot(n, params)
 	# print('\n\nSelected Move:\n'+selected.board_to_str()+'value='+str(selected.value)+'\n')
 	# for c in selected.children:
 	# 	print(c.board_to_str()+'value='+str(c.value)+'\n')
@@ -114,7 +114,7 @@ if __name__ == '__main__':
 	# cur_node = Node(cur_carlist, params)
 	# print('Current Board:\n'+cur_node.board_to_str())
 	
-	# cur_node = MakeMove(cur_node, params)
+	# cur_node = MakeMove_plot(cur_node, params)
 	# print('Decision:\n'+cur_node.board_to_str())
 
 

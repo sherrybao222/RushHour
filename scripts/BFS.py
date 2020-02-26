@@ -10,13 +10,8 @@ import multiprocessing as mp
 import numpy as np
 from numpy import recfromcsv
 from json import dump, load
-from plot import *
-# from graphviz import Digraph
-# from datetime import datetime
-# from PIL import Image
-# from PIL import ImageFont
-# from PIL import ImageDraw 
-# import matplotlib.pyplot as plt
+# from plot_movie import *
+
 
 ######################################## MAG CONTENT ##############
 
@@ -62,7 +57,7 @@ def json_to_car_list(filename):
 		data = load(data_file)
 		for c in data['cars']:
 			cur_car = Car(s = [int(c['position'])%6, int(c['position']/6)], \
-				l = int(c['length']), t = c['id'], o = c['orientation'], p = data['id'])
+				l = int(c['length']), t = str(c['id']), o = c['orientation'], p = data['id'])
 			car_list.append(cur_car)
 	return car_list
 
@@ -177,7 +172,7 @@ def get_num_cars_from_levels(car_list, highest_level):
 
 def construct_mag(board, red):
 	'''
-		assign graph children, return a new car list
+		assign graph edges and neighbors, return a new car list
 	'''
 	queue = []
 	i = board.width - 1
@@ -356,11 +351,11 @@ class Node:
 
 class Params:
 	def __init__(self, w1, w2, w3, w4, w5, w6, w7, 
-					mu, sigma,
-					feature_dropping_rate, 
 					stopping_probability,
-					pruning_threshold, 
-					lapse_rate):
+					feature_dropping_rate=0.0, 
+					pruning_threshold=10.0, 
+					lapse_rate=0.05,
+					mu=0.0, sigma=1.0):
 		self.w0 = 0.0
 		self.w1 = w1
 		self.w2 = w2
@@ -393,7 +388,7 @@ def RandomMove(node, params):
 	''' make a random move and return the resulted node '''
 	assert not is_solved(node.board, node.red), "RandomMove input node is already solved."
 	InitializeChildren(node, params)
-	print('Random Move')
+	# print('Random Move')
 	return random.choice(node.children)
 	
 def InitializeChildren(node, params):
@@ -440,74 +435,19 @@ def ArgmaxChild(node):
 	'''
 	return max(node.children, key=attrgetter('value'))
 	
-def MakeMove(root, params):
-	''' 
-	`	returns an optimal move to make next 
-		according to value function, 
-		current state given
-	'''
-	assert len(root.children) == 0
-	if Lapse(params.lapse_rate):
-		random_choice = RandomMove(root, params)
-		plot_board_and_tree(root, board_node=root, text='Random Move', text2='Initial Board')
-		plot_board_and_tree(root, board_node=random_choice, highlighted_node=random_choice, text='Random Move', text2='Move 1')
-		return random_choice
-	else:
-		DropFeatures(params.feature_dropping_rate)
-		hash_most_promising_node = None
-		while not Stop(probability=params.stopping_probability):
-		# for i in range(4):
-			leaf, leaf_is_solution = SelectNode(root)
-			if leaf == hash_most_promising_node: # expand along last principal variation
-				plot_board_and_tree(root, board_node=leaf, highlighted_node=leaf, highlighted_edges=leaf.find_path_to_root(), text='Select', text2='Move '+str(move_num))
-				move_num += 1
-			else: 
-				if hash_most_promising_node:
-					plot_blank(text='New Principal Variation')
-				plot_board_and_tree(root, board_node=root, text='Initial State', text2='Initial Board')
-				move_num = 0
-				for n in leaf.find_path_to_root():
-					if move_num == 0:
-						plot_board_and_tree(root, board_node=n, highlighted_node=n, highlighted_edges=n.find_path_to_root(), text='Select', text2='Initial Board')
-					else:
-						plot_board_and_tree(root, board_node=n, highlighted_node=n, highlighted_edges=n.find_path_to_root(), text='Select', text2='Move '+str(move_num))
-					move_num += 1
-			if leaf_is_solution:
-				print('solution found, backprop and break')
-				plot_board_and_tree(root, board_node=leaf, highlighted_node=leaf, highlighted_edges=leaf.find_path_to_root(), text='Solution Found', text2='Solved')
-				Backpropagate(leaf.parent, root)
-				for n in leaf.find_path_to_root()[::-1][1:]:
-					plot_board_and_tree(root, board_node=leaf, highlighted_node=leaf, updated_node=[n], highlighted_edges=leaf.find_path_to_root(), text='Backpropagate', text2='Solved')
-				break
-			ExpandNode(leaf, params)
-			hash_most_promising_node = ArgmaxChild(leaf)
-			if move_num-1 != 0:
-				plot_board_and_tree(root, board_node=leaf, highlighted_node=leaf, highlighted_edges=leaf.find_path_to_root(), text='Expand', text2='Move '+str(move_num-1))
-			if move_num-1 == 0:
-				plot_board_and_tree(root, board_node=leaf, highlighted_node=leaf, highlighted_edges=leaf.find_path_to_root(), text='Expand', text2='Initial Board')
-			plot_board_and_tree(root, board_node=leaf, board_to_node=ArgmaxChild(leaf), highlighted_node=ArgmaxChild(leaf), highlighted_edges=ArgmaxChild(leaf).find_path_to_root(), text='Most Promising Node', text2='Move '+str(move_num))
-			plot_board_and_tree(root, board_node=ArgmaxChild(leaf), highlighted_node=ArgmaxChild(leaf), highlighted_edges=ArgmaxChild(leaf).find_path_to_root(), text='Most Promising Node', text2='Move '+str(move_num))
-			Backpropagate(leaf, root)
-			for n in leaf.find_path_to_root()[::-1]:
-				plot_board_and_tree(root, board_node=ArgmaxChild(leaf), highlighted_node=ArgmaxChild(leaf), updated_node=[n], highlighted_edges=ArgmaxChild(leaf).find_path_to_root(), text='Backpropagate', text2='Move '+str(move_num))
-			print('\titeration')
-		print('Stop')
-	if root.children == []:
-		ExpandNode(root, params)
-	plot_blank(text='Best-First Search terminated.\n        Predicted move:')
-	plot_board_and_tree(root, board_node=root, board_to_node=ArgmaxChild(root), decision_node=root, text='Decision', text2='Initial Board')
-	plot_board_and_tree(root, board_node=ArgmaxChild(root), decision_node=ArgmaxChild(root), text='Decision', text2='Move 1')
-	make_movie()
-	return ArgmaxChild(root)
 
-def MakeMove_noplot(root, params):
+def MakeMove(root, params, hit=False):
 	''' 
 	`	returns an optimal move to make next 
-		according to value function, 
-		current state given
+		according to value function and current board position
 	'''
+	if hit:
+		return root
+	# start_time = time.time()
 	assert len(root.children) == 0
 	if Lapse(params.lapse_rate):
+		# print('Random move made')
+		# print('MakeMove Time lapse: '+format(time.time()-start_time, '.6f'))
 		return RandomMove(root, params)
 	else:
 		DropFeatures(params.feature_dropping_rate)
@@ -518,10 +458,11 @@ def MakeMove_noplot(root, params):
 				break
 			ExpandNode(leaf, params)
 			Backpropagate(leaf, root)
-			print('\titeration')
-		print('Stop')
+			# print('\tnew simulation')
+		# print('Simulation terminated')
 	if root.children == []:
 		ExpandNode(root, params)
+	# print('Time lapse: '+str(time.time()-start_time))
 	return ArgmaxChild(root)
 
 ##################################### FITTING ##########################
@@ -538,14 +479,89 @@ def ibs(root_car_list, expected_board, params):
 		if model_decision.board_to_str() == expected_board:
 			return num_simulated
 
-def harmonic_sum(n):
-	''' return sum of harmonic series from 1 to k '''
-	i = 1
+def harmonic_sum_Luigi(n):
+	''' 
+		return sum of harmonic series from 1 to n-1
+		when n=1, return 0
+	'''
 	s = 0.0
 	for i in range(1, n):
 		s += 1.0/i
 	return s
 
+def harmonic_sum(n):
+	''' 
+		return sum of harmonic series from 1 to n
+		when n=1, return 1
+	'''
+	s = 0.0
+	for i in range(1, n+1):
+		s += 1.0/i
+	return s
+
+def ibs_early_stopping(w1, w2, w3, w4, w5, w6, w7, 
+					stopping_probability,
+					feature_dropping_rate=0.0, 
+					pruning_threshold=10.0, 
+					lapse_rate=0.05,
+					mu=0.0, sigma=1.0): # parallel computing
+	start_time = time.time()
+	params = Params(w1, w2, w3, w4, w5, w6, w7, 
+					mu, sigma,
+					feature_dropping_rate, 
+					stopping_probability,
+					pruning_threshold, 
+					lapse_rate)
+	with open("/Users/chloe/Documents/RushHour/scripts/list_carlist.pickle", "r") as fp:
+		list_carlist = pickle.load(fp)
+	with open("/Users/chloe/Documents/RushHour/scripts/user_choice.pickle", "r") as fp:
+		user_choice = pickle.load(fp)
+	pool = mp.Pool(processes=mp.cpu_count())
+	# calculate early stopping LL
+	hit_target = [False]*len(list_carlist)
+	count_iteration = [0]*len(list_carlist)
+	print('Sample size '+str(len(list_carlist)))
+	LL_lower = 0
+	list_rootnode = [Node(cur_root, params) for cur_root in list_carlist]
+	list_answer = [Node(cl, params).board_to_str() for cl in user_choice]
+	children_count = []
+	for node in list_rootnode:
+		children_count.append(len(all_legal_moves(node.car_list, node.board)))
+	LL_lower = np.mean([np.log(1.0/n) for n in children_count])
+	print('LL_lower '+str(LL_lower))
+	count_iteration = [x+1 for x in count_iteration]
+	# start iteration
+	k = 0
+	LL_k = 0
+	while hit_target.count(False) > 0:
+		start_time_k = time.time()
+		if LL_k < LL_lower:
+			LL_k = LL_lower
+			print('\texceeds LL_lower, break')
+			break
+		LL_k = 0
+		k += 1
+		print('Iteration K='+str(k))
+		list_rootnode = [Node(cur_root, params) for cur_root in list_carlist]
+		model_decision = [pool.apply_async(MakeMove, args=(cur_root, params, hit)).get() for cur_root, hit in zip(list_rootnode, hit_target)]
+		for i in range(len(count_iteration)):
+			if not hit_target:
+				count_iteration[i] += 1
+		hit_target = [a or b for a,b in zip(hit_target, [decision.board_to_str()==answer for decision, answer in zip(model_decision, user_choice)])]
+		for i in range(len(count_iteration)):
+			if hit_target:
+				LL_k += harmonic_sum(count_iteration[i])
+		LL_k = (-1.0/len(hit_target))*LL_k - (hit_target.count(False)/len(hit_target))*harmonic_sum(k)
+		print('\thit_target '+str(hit_target.count(True)))
+		print('\tKth LL_k '+str(LL_k))
+		print('\tIBS kth iteration lapse '+str(time.time() - start_time_k))	
+	pool.close()
+	pool.join()
+	print('IBS total time lapse '+str(time.time() - start_time))
+	print('Final LL_k: '+str(LL_k))
+	return LL_k
+
+'''
 def my_ll_parallel(w1, w2, w3, w4, w5, w6, w7, 
 					mu=0.0, sigma=1.0,
 					feature_dropping_rate=0.0, 
@@ -559,9 +575,9 @@ def my_ll_parallel(w1, w2, w3, w4, w5, w6, w7,
 					stopping_probability,
 					pruning_threshold, 
 					lapse_rate)
-	with open("/Users/chloe/Documents/RushHour/scripts/node_list_03.pickle", "r") as fp:
+	with open("/Users/chloe/Documents/RushHour/scripts/list_carlist.pickle", "r") as fp:
 		node_list = pickle.load(fp)
-	with open("/Users/chloe/Documents/RushHour/scripts/expected_list_03.pickle", "r") as fp:
+	with open("/Users/chloe/Documents/RushHour/scripts/user_choice.pickle", "r") as fp:
 		user_choice = pickle.load(fp)
 	pool = mp.Pool(processes=mp.cpu_count())
 	all_ibs_obj = [pool.apply_async(ibs, args=(cur, exp_str)) for cur, exp_str in zip(node_list, user_choice)]
@@ -573,17 +589,18 @@ def my_ll_parallel(w1, w2, w3, w4, w5, w6, w7,
 		all_ll.append(harmonic_sum(n))
 	print('sampl size '+str(len(all_ll)))
 	ll_result = -np.sum(all_ll)
-	print('time '+str(time.time() - start_time))
+	print('\ttime '+str(time.time() - start_time))
+	print('\tloglikelihood: '+str(ll_result))
 	return ll_result
+'''
 
-def create_data(params):
+def create_data():
 	trial_start = 2 # 2072 # starting row number in the raw data
-	trial_end = 65 # 2114
+	trial_end = 18 # 2114
 	sub_data = recfromcsv('/Users/chloe/Desktop/trialdata_valid_true_dist7_processed.csv')
 	# construct initial node
-	node_list = [] # list of node from data
+	list_carlist = [] # list of node from data
 	user_choice = [] # list of expected human move node, str
-	cur_node = None
 	cur_carlist = None
 	for i in range(trial_start-2, trial_end-1):
 		# load data from datafile
@@ -591,61 +608,99 @@ def create_data(params):
 		if row['event'] == 'start':
 			instance = row['instance']
 			ins_file = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/'+instance+'.json'
-			initial_car_list, _ = json_to_car_list(ins_file)
-			initial_node = Node(initial_car_list, params)
-			cur_node = initial_node
-			cur_carlist = initial_car_list
+			cur_carlist = json_to_car_list(ins_file)
 			continue
+		if row['piece'] == 'r':
+			piece = 'r'
 		piece = row['piece']
 		move_to = int(row['move'])
-		node_list.append(cur_node) # previous board position
-		# create human move
+		list_carlist.append(cur_carlist) # previous carlist
 		cur_carlist, _ = move(cur_carlist, piece, move_to)
-		cur_node = Node(cur_carlist, params)
-		user_choice.append(cur_node.board_to_str())
+		user_choice.append(cur_carlist)
+	for i in range(6):
+		list_carlist.extend(list_carlist)
+		user_choice.extend(user_choice)
 	# save list
-	with open("/Users/chloe/Documents/RushHour/scripts/node_list_03.pickle", "w") as fp:
-		pickle.dump(node_list, fp)
-	with open("/Users/chloe/Documents/RushHour/scripts/user_choice_03.pickle", "w") as fp:
+	with open("/Users/chloe/Documents/RushHour/scripts/list_carlist.pickle", "w") as fp:
+		pickle.dump(list_carlist, fp)
+	# np.save("/Users/chloe/Documents/RushHour/scripts/list_carlist.npy", list_carlist)
+	with open("/Users/chloe/Documents/RushHour/scripts/user_choice.pickle", "w") as fp:
 		pickle.dump(user_choice, fp)
-
-def estimate_prob(root_node, expected_board='', iteration=100):
-	''' 
-		Estimate the probability of next possible moves 
-		given the root node 
-	'''
-	first_iteration = True
-	frequency = None
-	sol_idx = None
-	for i in range(iteration):
-		new_node, _, _ = MakeMove(root_node)
-		if first_iteration:
-			frequency = [0] * len(root_node.children)
-			first_iteration = False
-		child_idx = root_node.find_child(new_node)
-		frequency[child_idx] += 1
-	# turn frequency into probability
-	frequency = np.array(frequency, dtype=np.float64)/iteration 
-	for i in range(len(root_node.children)):
-		if root_node.children[i].board_to_str() == expected_board:
-			sol_idx = i
-	return root_node.children, frequency, sol_idx, [], []
+	# np.save("/Users/chloe/Documents/RushHour/scripts/user_choice.npy", user_choice)
 
 
+# def MakeMove_plot(root, params):
+# 	''' 
+# 		MakeMove function with movie plotting arguments,
+# 		work together with script plot_movie.py
+# 	`	returns an optimal move to make next 
+# 		according to value function, 
+# 		current state given
+# 	'''
+# 	assert len(root.children) == 0
+# 	if Lapse(params.lapse_rate):
+# 		random_choice = RandomMove(root, params)
+# 		plot_board_and_tree(root, board_node=root, text='Random Move', text2='Initial Board')
+# 		plot_board_and_tree(root, board_node=random_choice, highlighted_node=random_choice, text='Random Move', text2='Move 1')
+# 		return random_choice
+# 	else:
+# 		DropFeatures(params.feature_dropping_rate)
+# 		hash_most_promising_node = None
+# 		while not Stop(probability=params.stopping_probability):
+# 		# for i in range(4):
+# 			leaf, leaf_is_solution = SelectNode(root)
+# 			if leaf == hash_most_promising_node: # expand along last principal variation
+# 				plot_board_and_tree(root, board_node=leaf, highlighted_node=leaf, highlighted_edges=leaf.find_path_to_root(), text='Select', text2='Move '+str(move_num))
+# 				move_num += 1
+# 			else: 
+# 				if hash_most_promising_node:
+# 					plot_blank(text='New Principal Variation')
+# 				plot_board_and_tree(root, board_node=root, text='Initial State', text2='Initial Board')
+# 				move_num = 0
+# 				for n in leaf.find_path_to_root():
+# 					if move_num == 0:
+# 						plot_board_and_tree(root, board_node=n, highlighted_node=n, highlighted_edges=n.find_path_to_root(), text='Select', text2='Initial Board')
+# 					else:
+# 						plot_board_and_tree(root, board_node=n, highlighted_node=n, highlighted_edges=n.find_path_to_root(), text='Select', text2='Move '+str(move_num))
+# 					move_num += 1
+# 			if leaf_is_solution:
+# 				print('solution found, backprop and break')
+# 				plot_board_and_tree(root, board_node=leaf, highlighted_node=leaf, highlighted_edges=leaf.find_path_to_root(), text='Solution Found', text2='Solved')
+# 				Backpropagate(leaf.parent, root)
+# 				for n in leaf.find_path_to_root()[::-1][1:]:
+# 					plot_board_and_tree(root, board_node=leaf, highlighted_node=leaf, updated_node=[n], highlighted_edges=leaf.find_path_to_root(), text='Backpropagate', text2='Solved')
+# 				break
+# 			ExpandNode(leaf, params)
+# 			hash_most_promising_node = ArgmaxChild(leaf)
+# 			if move_num-1 != 0:
+# 				plot_board_and_tree(root, board_node=leaf, highlighted_node=leaf, highlighted_edges=leaf.find_path_to_root(), text='Expand', text2='Move '+str(move_num-1))
+# 			if move_num-1 == 0:
+# 				plot_board_and_tree(root, board_node=leaf, highlighted_node=leaf, highlighted_edges=leaf.find_path_to_root(), text='Expand', text2='Initial Board')
+# 			plot_board_and_tree(root, board_node=leaf, board_to_node=ArgmaxChild(leaf), highlighted_node=ArgmaxChild(leaf), highlighted_edges=ArgmaxChild(leaf).find_path_to_root(), text='Most Promising Node', text2='Move '+str(move_num))
+# 			plot_board_and_tree(root, board_node=ArgmaxChild(leaf), highlighted_node=ArgmaxChild(leaf), highlighted_edges=ArgmaxChild(leaf).find_path_to_root(), text='Most Promising Node', text2='Move '+str(move_num))
+# 			Backpropagate(leaf, root)
+# 			for n in leaf.find_path_to_root()[::-1]:
+# 				plot_board_and_tree(root, board_node=ArgmaxChild(leaf), highlighted_node=ArgmaxChild(leaf), updated_node=[n], highlighted_edges=ArgmaxChild(leaf).find_path_to_root(), text='Backpropagate', text2='Move '+str(move_num))
+# 			print('\titeration')
+# 		print('Stop')
+# 	if root.children == []:
+# 		ExpandNode(root, params)
+# 	plot_blank(text='Best-First Search terminated.\n        Predicted move:')
+# 	plot_board_and_tree(root, board_node=root, board_to_node=ArgmaxChild(root), decision_node=root, text='Decision', text2='Initial Board')
+# 	plot_board_and_tree(root, board_node=ArgmaxChild(root), decision_node=ArgmaxChild(root), text='Decision', text2='Move 1')
+# 	make_movie()
+# 	return ArgmaxChild(root)
 
-# if __name__ == '__main__':
-	# my_ll_parallel(-0.5391, -3.9844, 3.8281, -5.5469, -2.5781, -8.8867, -2.5469, -0.7656, 1.4844, 5.3320)
-	# create_data()
-	# print('---- started 03 ----')
-	# with open("/Users/chloe/Documents/RushHour/scripts/node_list_03.pickle", "r") as fp:
-	# 	node_list = pickle.load(fp)
-	# print(type(node_list[0]))
-	# print(node_list[0])
-	# with open("/Users/chloe/Documents/RushHour/scripts/node_list.pickle", "r") as fp:
-	# 	expected_list = pickle.load(fp)
-	# print(type(expected_list[0]))
-	# print(expected_list[0])
 
+if __name__ == '__main__':
+	create_data()
+# 	# sys.exit()
+	ibs_early_stopping(0.7,0.6,0.5,0.4,0.3,0.2,0.1, 
+					stopping_probability=0.05,
+					feature_dropping_rate=0.0, 
+					pruning_threshold=10.0, 
+					lapse_rate=0.05,
+					mu=0.0, sigma=1.0)
 
 
 
