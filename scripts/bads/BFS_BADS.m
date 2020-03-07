@@ -13,9 +13,9 @@ display('Open ''bads_examples.m'' to see additional comments and instructions.')
 % bounding the region where the solution might lie.
 
 x0 = [0.5391 3.9844 3.8281 5.5469 2.5781 8.8867 2.5469 0.05];                 % Starting point
-lb = [-20 -20 -20 -20 -20 -20 -20 0];             % Lower bounds
+lb = [-20 -20 -20 -20 -20 -20 -20 0.01];             % Lower bounds
 ub = [10 10 10 10 10 10 10 1];               % Upper bounds
-plb = [-15 -15 -15 -15 -10 -10 -10 0];              % Plausible lower bounds
+plb = [-15 -15 -15 -15 -10 -10 -10 0.01];              % Plausible lower bounds
 pub = [5 5 5 5 5 2 2 1];                % Plausible upper bounds
 
 % Run BADS, which returns the minimum X and its value FVAL.

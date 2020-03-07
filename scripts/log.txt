@@ -1,9 +1,76 @@
-Parameters Log
 
-Used for Weiji's talk in London
+------------------------- Parameters ---------------
+Parameters used for Weiji's talk in London Jan 16th.
 Params(0.7,0.6,0.5,0.4,0.3,0.2,0.1, 
 					mu=0.0, sigma=1.0,
 					feature_dropping_rate=0.0, 
 					stopping_probability=0.04,
 					pruning_threshold=10.0, 
 					lapse_rate=0.05)
+
+------------------- local matlab -----------------
+
+setenv('PATH','/anaconda3/condabin:/Library/Frameworks/Python.framework/Versions/3.7/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Library/TeX/texbin:/opt/X11/bin')
+
+pyversion('/Library/Frameworks/Python.framework/Versions/3.7/bin/python3')
+py.importlib.import_module('BFS')
+
+py.importlib.import_module('BFS')
+// end
+
+
+
+P = py.sys.path;
+if count(P,'/Users/chloe/Documents/RushHour/scripts') == 0
+insert(P,int32(0),'/Users/chloe/Documents/RushHour/scripts');
+end
+
+P = py.sys.path;
+if count(P,'/usr/local/bin/python') == 0
+insert(P,int32(0),'/usr/local/bin/python');
+end
+
+P = py.sys.path;
+if count(P,'/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages') == 0
+insert(P,int32(0),'/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages');
+end
+
+
+P = py.sys.path;
+if count(P,'/Applications/MATLAB_R2019b.app/toolbox/matlab/external/interfaces/python') == 0
+insert(P,int32(0),'/Applications/MATLAB_R2019b.app/toolbox/matlab/external/interfaces/python');
+end
+
+py.importlib.import_module('BFS')
+
+
+------------------ cluster matlab -------------------
+ssh yl3506@gw.hpc.nyu.edu
+ssh -Y prince
+
+srun -c20 -t2:00:00 --mem=60000 --pty /bin/bash
+
+module load matlab/2019b
+cd /home/yl3506/RushHour/scripts/
+
+matlab
+
+P = py.sys.path;
+if count(P,'/home/yl3506/RushHour/scripts') == 0
+insert(P,int32(0),'/home/yl3506/RushHour/scripts');
+end
+
+P = py.sys.path;
+if count(P,'/usr/bin/python') == 0
+insert(P,int32(0),'/usr/bin/python');
+end
+
+P = py.sys.path;
+if count(P,'/usr/lib64/python2.7/') == 0
+insert(P,int32(0),'/usr/lib64/python2.7/');
+end
+
+py.importlib.import_module('my_llfast')
+
+cd bads
+

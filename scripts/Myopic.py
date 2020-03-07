@@ -11,7 +11,6 @@ import numpy as np
 from numpy import recfromcsv
 from json import dump, load
 import pandas as pd
-from datetime import datetime
 # from plot_movie import *
 
 
@@ -373,7 +372,7 @@ class Node:
 
 class Params:
 	def __init__(self, w1, w2, w3, w4, w5, w6, w7, 
-					stopping_probability,
+					stopping_probability=1.0,
 					feature_dropping_rate=0.0, 
 					pruning_threshold=10.0, 
 					lapse_rate=0.05,
@@ -402,10 +401,6 @@ def Lapse(probability):
 	''' return true with a probability '''
 	return random.random() < probability
 
-def Stop(probability): 
-	''' return true with a probability '''
-	return random.random() < probability
-
 def RandomMove(node, params):
 	''' make a random move and return the resulted node '''
 	assert not is_solved(node.board, node.red), "RandomMove input node is already solved."
@@ -426,13 +421,6 @@ def InitializeChildren(node, params):
 		child.parent = node
 		node.children.append(child)
 
-def SelectNode(root_node):
-	''' return the child with max value '''
-	n = root_node
-	while len(n.children) != 0:
-		n = ArgmaxChild(n)
-	return n, is_solved(n.board, n.red)
- 
 def ExpandNode(node, params):
 	''' 
 	create all possible nodes under input node, 
@@ -445,19 +433,12 @@ def ExpandNode(node, params):
 		if abs(child.value - Vmax) > params.pruning_threshold:
 			node.remove_child(child)
 
-def Backpropagate(this_node, root_node):
-	''' update value back until root node '''
-	this_node.value = ArgmaxChild(this_node).value
-	if this_node != root_node:
-		Backpropagate(this_node.parent, root_node)
-
 def ArgmaxChild(node): 
 	''' 
 		return the child with max value 
 	'''
 	return max(node.children, key=attrgetter('value'))
 	
-
 def MakeMove(root, params, hit=False):
 	''' 
 	`	returns an optimal move to make next 
@@ -465,44 +446,15 @@ def MakeMove(root, params, hit=False):
 	'''
 	if hit:
 		return root
-	# start_time = time.time()
 	assert len(root.children) == 0
 	if Lapse(params.lapse_rate):
-		# print('Random move made')
-		# print('MakeMove Time lapse: '+format(time.time()-start_time, '.6f'))
 		return RandomMove(root, params)
 	else:
 		DropFeatures(params.feature_dropping_rate)
-		while not Stop(probability=params.stopping_probability):
-			leaf, leaf_is_solution = SelectNode(root)
-			if leaf_is_solution:
-				Backpropagate(leaf.parent, root)
-				break
-			ExpandNode(leaf, params)
-			Backpropagate(leaf, root)
-			# print('\tnew simulation')
-		# print('Simulation terminated')
-	if root.children == []:
 		ExpandNode(root, params)
-	# print('\t\t MakeMove time lapse: '+str(time.time()-start_time))
 	return ArgmaxChild(root)
 
 ##################################### FITTING ##########################
-def ibs(root_car_list, expected_board, params):
-	''' 
-		inverse binomial sampling: 
-		return the number of simulations until hit target
-	'''
-	num_simulated = 0
-	while True:
-		root_node = Node(root_car_list, params)
-		model_decision = MakeMove(root_node, params)
-		num_simulated += 1
-		if model_decision.board_to_str() == expected_board:
-			return num_simulated
-		elif num_simulated > 15:
-			return num_simulated
-
 def harmonic_sum_Luigi(n):
 	''' 
 		return sum of harmonic series from 1 to n-1
@@ -524,12 +476,11 @@ def harmonic_sum(n):
 	return s
 
 def ibs_early_stopping(w1, w2, w3, w4, w5, w6, w7, 
-					stopping_probability,
+					stopping_probability=1.0,
 					feature_dropping_rate=0.0, 
 					pruning_threshold=10.0, 
 					lapse_rate=0.05,
 					mu=0.0, sigma=1.0): # parallel computing
-	sys.setrecursionlimit(10000)
 	start_time = time.time()
 	params = Params(w1, w2, w3, w4, w5, w6, w7, 
 					stopping_probability,
@@ -543,28 +494,28 @@ def ibs_early_stopping(w1, w2, w3, w4, w5, w6, w7,
 	hit_target = [False]*len(list_carlist)
 	count_iteration = [0]*len(list_carlist)
 	print('Sample size '+str(len(list_carlist)))
-	# LL_lower = 0
+	LL_lower = 0
 	list_rootnode = [Node(cur_root, params) for cur_root in list_carlist]
 	list_answer = [Node(cl, params).board_to_str() for cl in user_choice]
-	# children_count = []
-	# for node in list_rootnode:
-		# children_count.append(len(all_legal_moves(node.car_list, node.board)))
-	# LL_lower = np.mean([np.log(1.0/n) for n in children_count])
-	# print('LL_lower '+str(LL_lower))
-	print('Params sp '+str(params.stopping_probability))
+	children_count = []
+	for node in list_rootnode:
+		children_count.append(len(all_legal_moves(node.car_list, node.board)))
+	LL_lower = np.mean([np.log(1.0/n) for n in children_count])
+	print('LL_lower '+str(LL_lower))
+	print('Params w2 '+str(params.w2))
 	count_iteration = [x+1 for x in count_iteration]
 	# start iteration
 	k = 0
 	LL_k = 0
 	while hit_target.count(False) > 0:
 		start_time_k = time.time()
-		# if LL_k < LL_lower: 
-		# 	LL_k = LL_lower
-		# 	print('Exceeds LL_lower, break')
-		# 	break
+		if LL_k < LL_lower: 
+			LL_k = LL_lower
+			print('\texceeds LL_lower, break')
+			break
 		LL_k = 0
 		k += 1
-		print('Iteration K='+str(k))	
+		print('Iteration K='+str(k))
 		list_rootnode = [Node(cur_root, params) for cur_root in list_carlist]
 		model_decision = [pool.apply_async(MakeMove, args=(cur_root, params, hit)).get() for cur_root, hit in zip(list_rootnode, hit_target)]
 		# print('post makemove')
@@ -573,102 +524,19 @@ def ibs_early_stopping(w1, w2, w3, w4, w5, w6, w7,
 				count_iteration[i] += 1
 		hit_target = [a or b for a,b in zip(hit_target, [decision.board_to_str()==answer for decision, answer in zip(model_decision, list_answer)])]
 		for i in range(len(count_iteration)):
-			if hit_target[i]:
+			if hit_target:
 				LL_k += harmonic_sum(count_iteration[i])
-		print('\thit_target.count(False): '+str(hit_target.count(False)))
 		LL_k = (-1.0/len(hit_target))*LL_k - (hit_target.count(False)/len(hit_target))*harmonic_sum(k)
 		print('\thit_target '+str(hit_target.count(True)))
 		print('\tKth LL_k '+str(LL_k))
 		print('\tIBS kth iteration lapse '+str(time.time() - start_time_k))	
-		if k >= 10:
-			print('exceed 10 iterations, break')
-			break
 	pool.close()
 	pool.join()
 	print('IBS total time lapse '+str(time.time() - start_time))
-	print('now time: '+str(datetime.now()))
 	print('Final LL_k: '+str(LL_k))
 	return LL_k
 
-
-def my_ll_parallel(w1, w2, w3, w4, w5, w6, w7, 
-					stopping_probability,
-					feature_dropping_rate=0.0, 
-					pruning_threshold=10.0, 
-					lapse_rate=0.05,
-					mu=0.0, sigma=1.0): # parallel computing
-	sys.setrecursionlimit(10000)
-	start_time = time.time()
-	params = Params(w1, w2, w3, w4, w5, w6, w7, 
-					stopping_probability,
-					feature_dropping_rate, 
-					pruning_threshold, 
-					lapse_rate,
-					mu, sigma)
-	list_carlist, user_choice = load_data()
-	pool = mp.Pool(processes=mp.cpu_count())
-	# calculate early stopping LL
-	hit_target = [False]*len(list_carlist)
-	count_iteration = [0]*len(list_carlist)
-	print('Sample size '+str(len(list_carlist)))
-	list_answer = [Node(cl, params).board_to_str() for cl in user_choice] # str
-	print('\tParams sp '+str(params.stopping_probability))
-	all_ibs = [pool.apply_async(ibs, args=(cur, exp_str, params)).get() for cur, exp_str in zip(list_carlist, list_answer)]
-	pool.close()
-	pool.join()
-	# print('\tNum: '+str(all_ibs))
-	print('\tAvg Num: '+str(np.mean(all_ibs)))
-	all_ll = []
-	for n in all_ibs:
-		all_ll.append(harmonic_sum_Luigi(n))
-	ll_result = -np.sum(all_ll)
-	print('\ttime lapse '+str(time.time() - start_time))
-	print('\tnow time: '+str(datetime.now()))
-	print('\tFinal LL: '+str(ll_result))
-	return ll_result
-
-
-def my_ll_sequential(w1, w2, w3, w4, w5, w6, w7, 
-					stopping_probability,
-					feature_dropping_rate=0.0, 
-					pruning_threshold=10.0, 
-					lapse_rate=0.05,
-					mu=0.0, sigma=1.0): # parallel computing
-	sys.setrecursionlimit(10000)
-	start_time = time.time()
-	params = Params(w1, w2, w3, w4, w5, w6, w7, 
-					stopping_probability,
-					feature_dropping_rate, 
-					pruning_threshold, 
-					lapse_rate,
-					mu, sigma)
-	list_carlist, user_choice = load_data()
-	# calculate early stopping LL
-	hit_target = [False]*len(list_carlist)
-	count_iteration = [0]*len(list_carlist)
-	print('Sample size '+str(len(list_carlist)))
-	list_answer = [Node(cl, params).board_to_str() for cl in user_choice] # str
-	print('\tParams sp '+str(params.stopping_probability))
-	all_ibs = []
-	t = []
-	for curlist, answer in zip(list_carlist, list_answer):
-		t1 = time.time()
-		all_ibs.append(ibs(curlist, answer, params))
-		# print('\tll for one trial: '+str(time.time()-t1))
-		t.append(time.time()-t1)
-	print('\tAvg time per trial '+str(np.mean(t)))
-	print('\tAvg Num: '+str(np.mean(all_ibs)))
-	all_ll = []
-	for n in all_ibs:
-		all_ll.append(harmonic_sum_Luigi(n))
-	ll_result = -np.sum(all_ll)
-	print('\ttime lapse '+str(time.time() - start_time))
-	print('\tnow time: '+str(datetime.now()))
-	print('\tFinal LL: '+str(ll_result))
-	return ll_result
-
 def load_data(path='/Users/chloe/Desktop/A289D98Z4GAZ28-3ZV9H2YQQEFR2R3JK2IXZUJPXAF3WW.xlsx'): 
-	# sub_data = recfromcsv(path)
 	sub_data = pd.read_excel(path)
 	list_carlist = [] # list of node from data
 	user_choice = [] # list of expected human move node, str
@@ -689,130 +557,8 @@ def load_data(path='/Users/chloe/Desktop/A289D98Z4GAZ28-3ZV9H2YQQEFR2R3JK2IXZUJP
 	return list_carlist, user_choice
 
 
-def create_data():
-	trial_start = 2 # 2072 # starting row number in the raw data
-	trial_end = 18 # 2114
-	sub_data = recfromcsv('/Users/chloe/Desktop/trialdata_valid_true_dist7_processed.csv')
-	# construct initial node
-	list_carlist = [] # list of node from data
-	user_choice = [] # list of expected human move node, str
-	cur_carlist = None
-	for i in range(trial_start-2, trial_end-1):
-		# load data from datafile
-		row = sub_data[i]
-		if row['event'] == 'start':
-			instance = row['instance']
-			ins_file = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/'+instance+'.json'
-			cur_carlist = json_to_car_list(ins_file)
-			continue
-		if row['piece'] == 'r':
-			piece = 'r'
-		piece = row['piece']
-		move_to = int(row['move'])
-		list_carlist.append(cur_carlist) # previous carlist
-		cur_carlist, _ = move(cur_carlist, piece, move_to)
-		user_choice.append(cur_carlist)
-	for i in range(6): # dummy repeating data
-		list_carlist.extend(list_carlist)
-		user_choice.extend(user_choice)
-	# save list
-	with open("/Users/chloe/Documents/RushHour/scripts/list_carlist.pickle", "w") as fp:
-		pickle.dump(list_carlist, fp)
-	# np.save("/Users/chloe/Documents/RushHour/scripts/list_carlist.npy", list_carlist)
-	with open("/Users/chloe/Documents/RushHour/scripts/user_choice.pickle", "w") as fp:
-		pickle.dump(user_choice, fp)
-	# np.save("/Users/chloe/Documents/RushHour/scripts/user_choice.npy", user_choice)
 
 
-# def MakeMove_plot(root, params):
-# 	''' 
-# 		MakeMove function with movie plotting arguments,
-# 		work together with script plot_movie.py
-# 	`	returns an optimal move to make next 
-# 		according to value function, 
-# 		current state given
-# 	'''
-# 	assert len(root.children) == 0
-# 	if Lapse(params.lapse_rate):
-# 		random_choice = RandomMove(root, params)
-# 		plot_board_and_tree(root, board_node=root, text='Random Move', text2='Initial Board')
-# 		plot_board_and_tree(root, board_node=random_choice, highlighted_node=random_choice, text='Random Move', text2='Move 1')
-# 		return random_choice
-# 	else:
-# 		DropFeatures(params.feature_dropping_rate)
-# 		hash_most_promising_node = None
-# 		while not Stop(probability=params.stopping_probability):
-# 		# for i in range(4):
-# 			leaf, leaf_is_solution = SelectNode(root)
-# 			if leaf == hash_most_promising_node: # expand along last principal variation
-# 				plot_board_and_tree(root, board_node=leaf, highlighted_node=leaf, highlighted_edges=leaf.find_path_to_root(), text='Select', text2='Move '+str(move_num))
-# 				move_num += 1
-# 			else: 
-# 				if hash_most_promising_node:
-# 					plot_blank(text='New Principal Variation')
-# 				plot_board_and_tree(root, board_node=root, text='Initial State', text2='Initial Board')
-# 				move_num = 0
-# 				for n in leaf.find_path_to_root():
-# 					if move_num == 0:
-# 						plot_board_and_tree(root, board_node=n, highlighted_node=n, highlighted_edges=n.find_path_to_root(), text='Select', text2='Initial Board')
-# 					else:
-# 						plot_board_and_tree(root, board_node=n, highlighted_node=n, highlighted_edges=n.find_path_to_root(), text='Select', text2='Move '+str(move_num))
-# 					move_num += 1
-# 			if leaf_is_solution:
-# 				print('solution found, backprop and break')
-# 				plot_board_and_tree(root, board_node=leaf, highlighted_node=leaf, highlighted_edges=leaf.find_path_to_root(), text='Solution Found', text2='Solved')
-# 				Backpropagate(leaf.parent, root)
-# 				for n in leaf.find_path_to_root()[::-1][1:]:
-# 					plot_board_and_tree(root, board_node=leaf, highlighted_node=leaf, updated_node=[n], highlighted_edges=leaf.find_path_to_root(), text='Backpropagate', text2='Solved')
-# 				break
-# 			ExpandNode(leaf, params)
-# 			hash_most_promising_node = ArgmaxChild(leaf)
-# 			if move_num-1 != 0:
-# 				plot_board_and_tree(root, board_node=leaf, highlighted_node=leaf, highlighted_edges=leaf.find_path_to_root(), text='Expand', text2='Move '+str(move_num-1))
-# 			if move_num-1 == 0:
-# 				plot_board_and_tree(root, board_node=leaf, highlighted_node=leaf, highlighted_edges=leaf.find_path_to_root(), text='Expand', text2='Initial Board')
-# 			plot_board_and_tree(root, board_node=leaf, board_to_node=ArgmaxChild(leaf), highlighted_node=ArgmaxChild(leaf), highlighted_edges=ArgmaxChild(leaf).find_path_to_root(), text='Most Promising Node', text2='Move '+str(move_num))
-# 			plot_board_and_tree(root, board_node=ArgmaxChild(leaf), highlighted_node=ArgmaxChild(leaf), highlighted_edges=ArgmaxChild(leaf).find_path_to_root(), text='Most Promising Node', text2='Move '+str(move_num))
-# 			Backpropagate(leaf, root)
-# 			for n in leaf.find_path_to_root()[::-1]:
-# 				plot_board_and_tree(root, board_node=ArgmaxChild(leaf), highlighted_node=ArgmaxChild(leaf), updated_node=[n], highlighted_edges=ArgmaxChild(leaf).find_path_to_root(), text='Backpropagate', text2='Move '+str(move_num))
-# 			print('\titeration')
-# 		print('Stop')
-# 	if root.children == []:
-# 		ExpandNode(root, params)
-# 	plot_blank(text='Best-First Search terminated.\n        Predicted move:')
-# 	plot_board_and_tree(root, board_node=root, board_to_node=ArgmaxChild(root), decision_node=root, text='Decision', text2='Initial Board')
-# 	plot_board_and_tree(root, board_node=ArgmaxChild(root), decision_node=ArgmaxChild(root), text='Decision', text2='Move 1')
-# 	make_movie()
-# 	return ArgmaxChild(root)
-
-
-if __name__ == '__main__':
-# # # 	# create_data()
-# # # 	# sys.exit()
-	# my_ll_sequential(0.7,0.6,0.5,0.4,0.3,0.2,0.1, 
-	# 				stopping_probability=0.1,
-	# 				feature_dropping_rate=0.0, 
-	# 				pruning_threshold=10.0, 
-	# 				lapse_rate=0.05,
-	# 				mu=0.0, sigma=1.0)
-	params = Params(0.7,0.6,0.5,0.4,0.3,0.2,0.1, 
-					stopping_probability=0.1,
-					feature_dropping_rate=0.0, 
-					pruning_threshold=10.0, 
-					lapse_rate=0.05,
-					mu=0.0, sigma=1.0)
-	list_carlist, user_choice = load_data()
-	list_answer = [Node(cl, params).board_to_str() for cl in user_choice] # str
-	t = []
-	ts = time.time()
-	for curlist, answer in zip(list_carlist, list_answer):
-		harmonic_sum_Luigi(ibs(curlist, answer, params))
-		# print(tt)
-		# t.append(tt)
-	# print(np.mean(t))
-	print((time.time()-ts)/len(list_carlist))
-
-
+# if __name__ == '__main__':
 
 
