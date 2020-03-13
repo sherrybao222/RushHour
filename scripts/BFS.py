@@ -569,7 +569,7 @@ def ibs_early_stopping(w1, w2, w3, w4, w5, w6, w7,
 		model_decision = [pool.apply_async(MakeMove, args=(cur_root, params, hit)).get() for cur_root, hit in zip(list_rootnode, hit_target)]
 		# print('post makemove')
 		for i in range(len(count_iteration)):
-			if not hit_target:
+			if not hit_target[i]:
 				count_iteration[i] += 1
 		hit_target = [a or b for a,b in zip(hit_target, [decision.board_to_str()==answer for decision, answer in zip(model_decision, list_answer)])]
 		for i in range(len(count_iteration)):
