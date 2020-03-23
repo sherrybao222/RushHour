@@ -1,4 +1,9 @@
 from BFS import *
+import pandas as pd
+import numdifftools as ndt
+import statsmodels.api as sm
+from statsmodels.base.model import GenericLikelihoodModel
+from scipy.optimize import minimize
 
 def test_all_legal_moves(car_list, answer):
 	all_moves = all_legal_moves(car_list, Board(car_list))
@@ -33,22 +38,91 @@ def test_Node(node, params):
 def test_is_solved(board, red, answer):
 	assert is_solved(board, red) == answer, "test_is_solved FAILED"
 
-if __name__ == '__main__':
-	params = Params(1.1,0.7,0.6,0.5,0.4,0.3,0.2, 
-					mu=0.0, sigma=1.0,
-					feature_dropping_rate=0.0, 
-					stopping_probability=0.05,
-					pruning_threshold=10.0, 
-					lapse_rate=0.05)
-	instance = 'prb3217'
-	ins_file = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/'+instance+'.json'
-	car_list = json_to_car_list(ins_file)
+def my_negll(x,y,beta,sigma=1):
+	'''
+		return negative log likelihood for current parameters
+		BADS will find minimum based on this function value
+	'''
+	N = len(y)
+	RSS = np.sum((y-(beta[0]*x[:,-1]+beta[1]))**2) #residual sum of squares
+	return np.log(np.sqrt(2*np.pi*sigma**2))+(1/(2*sigma**2))*RSS
 
-	node = Node(car_list, params)
-	print('Board\n'+str(node.board_to_str()))
-	# test_all_legal_moves(car_list, 17)
-	MakeMove(node, params)
-	sys.exit()
+def find_line(xs, ys):
+    """Calculates the slope and intercept"""
+    # number of points
+    n = len(xs)
+    # calculate means
+    x_bar = sum(xs)/n
+    y_bar = sum(ys)/n   
+    # calculate slope
+    num = 0
+    denom = 0
+    for i in range(n):
+        num += (xs[i]-x_bar)*(ys[i]-y_bar)
+        denom += (xs[i]-x_bar)**2
+    slope = num/denom
+    # calculate intercept
+    intercept = y_bar - slope*x_bar
+    return slope, intercept
+
+class MyOLS(GenericLikelihoodModel):
+	def __init__(self, endog, exog, **kwds): # endog=y, exog=x
+		super(MyOLS, self).__init__(endog, exog, **kwds)
+	def nloglikeobs(self, params):
+		sigma = params[-1]
+		beta = params[:-1]
+		# print('params: '+str(params))
+		# print('sigma: '+str(sigma))
+		# print('beta: '+str(beta))
+		return my_negll(self.exog, self.endog, beta, sigma)
+	def fit(self, start_params=None, maxiter=10000, maxfun=5000, **kwds):
+		# we have one additional parameter and we need to add it for summary
+		self.exog_names.append('sigma')
+		if start_params == None:
+		    # Reasonable starting values
+		    start_params = np.append(np.zeros(self.exog.shape[1]), .5)
+		return super(MyOLS, self).fit(start_params=start_params,
+					     maxiter=maxiter, maxfun=maxfun,
+					     **kwds)
+
+N = 10
+x = 10 + 2*np.random.randn(N)
+y = 5 + x + np.random.randn(N)
+df = pd.DataFrame({'y':y, 'x':x})
+df['constant'] = 1
+
+print('x: '+str(x))
+print('y: '+str(y))
+
+sm_ols_manual = MyOLS(df.y,df[['constant','x']]).fit()
+print(sm_ols_manual.summary())
+print('find_line: '+str(find_line(x,y)))
+
+
+ibs_early_stopping(0.7,0.6,0.5,0.4,0.3,0.2,0.1, 
+					stopping_probability=0.1,
+					feature_dropping_rate=0.0, 
+					pruning_threshold=10.0, 
+					lapse_rate=0.05,
+					mu=0.0, sigma=1.0)
+					
+# print(my_ll(-2,4))
+# if __name__ == '__main__':
+# 	params = Params(1.1,0.7,0.6,0.5,0.4,0.3,0.2, 
+# 					mu=0.0, sigma=1.0,
+# 					feature_dropping_rate=0.0, 
+# 					stopping_probability=0.05,
+# 					pruning_threshold=10.0, 
+# 					lapse_rate=0.05)
+# 	instance = 'prb3217'
+# 	ins_file = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/'+instance+'.json'
+# 	car_list = json_to_car_list(ins_file)
+
+# 	node = Node(car_list, params)
+# 	print('Board\n'+str(node.board_to_str()))
+# 	# test_all_legal_moves(car_list, 17)
+# 	MakeMove(node, params)
+# 	sys.exit()
 	
 	# test_Node(node, params)
 	# print()

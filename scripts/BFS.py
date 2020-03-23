@@ -13,6 +13,8 @@ from json import dump, load
 import pandas as pd
 from datetime import datetime
 # from plot_movie import *
+import pandas as pd
+from statsmodels.base.model import GenericLikelihoodModel
 
 
 ######################################## MAG CONTENT ##############
@@ -523,7 +525,7 @@ def harmonic_sum(n):
 		s += 1.0/i
 	return s
 
-def ibs_early_stopping(w1, w2, w3, w4, w5, w6, w7, 
+def ibs_early_stopping(list_carlist, user_choice, w1, w2, w3, w4, w5, w6, w7, 
 					stopping_probability,
 					feature_dropping_rate=0.0, 
 					pruning_threshold=10.0, 
@@ -537,20 +539,20 @@ def ibs_early_stopping(w1, w2, w3, w4, w5, w6, w7,
 					pruning_threshold, 
 					lapse_rate,
 					mu, sigma)
-	list_carlist, user_choice = load_data()
-	pool = mp.Pool(processes=mp.cpu_count())
-	# calculate early stopping LL
-	hit_target = [False]*len(list_carlist)
-	count_iteration = [0]*len(list_carlist)
-	print('Sample size '+str(len(list_carlist)))
-	# LL_lower = 0
 	list_rootnode = [Node(cur_root, params) for cur_root in list_carlist]
 	list_answer = [Node(cl, params).board_to_str() for cl in user_choice]
-	# children_count = []
-	# for node in list_rootnode:
-		# children_count.append(len(all_legal_moves(node.car_list, node.board)))
-	# LL_lower = np.mean([np.log(1.0/n) for n in children_count])
-	# print('LL_lower '+str(LL_lower))
+	pool = mp.Pool(processes=mp.cpu_count())
+	print('cpu count: '+str(mp.cpu_count()))
+	# calculate early stopping LL
+	hit_target = [False]*len(list_rootnode)
+	count_iteration = [0]*len(list_rootnode)
+	print('Sample size '+str(len(list_rootnode)))
+	LL_lower = 0
+	children_count = []
+	for node in list_rootnode:
+		children_count.append(len(all_legal_moves(node.car_list, node.board)))
+	LL_lower = np.mean([np.log(1.0/n) for n in children_count])
+	print('LL_lower '+str(LL_lower))
 	print('Params sp '+str(params.stopping_probability))
 	count_iteration = [x+1 for x in count_iteration]
 	# start iteration
@@ -558,10 +560,10 @@ def ibs_early_stopping(w1, w2, w3, w4, w5, w6, w7,
 	LL_k = 0
 	while hit_target.count(False) > 0:
 		start_time_k = time.time()
-		# if LL_k < LL_lower: 
-		# 	LL_k = LL_lower
-		# 	print('Exceeds LL_lower, break')
-		# 	break
+		if LL_k < LL_lower: 
+			LL_k = LL_lower
+			print('Exceeds LL_lower, break')
+			break
 		LL_k = 0
 		k += 1
 		print('Iteration K='+str(k))	
@@ -580,9 +582,9 @@ def ibs_early_stopping(w1, w2, w3, w4, w5, w6, w7,
 		print('\thit_target '+str(hit_target.count(True)))
 		print('\tKth LL_k '+str(LL_k))
 		print('\tIBS kth iteration lapse '+str(time.time() - start_time_k))	
-		if k >= 10:
-			print('exceed 10 iterations, break')
-			break
+		# if k >= 10:
+		# 	print('exceed 10 iterations, break')
+		# 	break
 	pool.close()
 	pool.join()
 	print('IBS total time lapse '+str(time.time() - start_time))
@@ -607,6 +609,7 @@ def my_ll_parallel(w1, w2, w3, w4, w5, w6, w7,
 					mu, sigma)
 	list_carlist, user_choice = load_data()
 	pool = mp.Pool(processes=mp.cpu_count())
+	print('cpu count: '+str(mp.cpu_count()))
 	# calculate early stopping LL
 	hit_target = [False]*len(list_carlist)
 	count_iteration = [0]*len(list_carlist)
@@ -724,6 +727,42 @@ def create_data():
 	# np.save("/Users/chloe/Documents/RushHour/scripts/user_choice.npy", user_choice)
 
 
+class MyOLS(GenericLikelihoodModel):
+	def __init__(self, endog, exog, **kwds): # endog=y, exog=x
+		super(MyOLS, self).__init__(endog, exog, **kwds)
+	def nloglikeobs(self, params):
+		sigma = params[-1]
+		beta = params[:-1]
+		# print('params: '+str(params))
+		# print('sigma: '+str(sigma))
+		# print('beta: '+str(beta))
+		return my_negll(self.exog, self.endog, beta, sigma)
+	def fit(self, start_params=None, maxiter=10000, maxfun=5000, **kwds):
+		# we have one additional parameter and we need to add it for summary
+		self.exog_names.append('sigma')
+		if start_params == None:
+		    # Reasonable starting values
+		    start_params = np.append(np.zeros(self.exog.shape[1]), .5)
+		return super(MyOLS, self).fit(start_params=start_params,
+					     maxiter=maxiter, maxfun=maxfun,
+					     **kwds)
+
+list_carlist, user_choice = load_data()
+N = 10
+x = 10 + 2*np.random.randn(N)
+y = 5 + x + np.random.randn(N)
+df = pd.DataFrame({'y':y, 'x':x})
+df['constant'] = 1
+
+print('x: '+str(x))
+print('y: '+str(y))
+
+
+sm_ols_manual = MyOLS(df.y,df[['constant','x']]).fit()
+print(sm_ols_manual.summary())
+print('find_line: '+str(find_line(x,y)))
+
+
 # def MakeMove_plot(root, params):
 # 	''' 
 # 		MakeMove function with movie plotting arguments,
@@ -787,31 +826,29 @@ def create_data():
 # 	return ArgmaxChild(root)
 
 
-if __name__ == '__main__':
-# # # 	# create_data()
-# # # 	# sys.exit()
-	# my_ll_sequential(0.7,0.6,0.5,0.4,0.3,0.2,0.1, 
+# if __name__ == '__main__':
+# 	ibs_early_stopping(0.7,0.6,0.5,0.4,0.3,0.2,0.1, 
+# 					stopping_probability=0.1,
+# 					feature_dropping_rate=0.0, 
+# 					pruning_threshold=10.0, 
+# 					lapse_rate=0.05,
+# 					mu=0.0, sigma=1.0)
+	# params = Params(0.7,0.6,0.5,0.4,0.3,0.2,0.1, 
 	# 				stopping_probability=0.1,
 	# 				feature_dropping_rate=0.0, 
 	# 				pruning_threshold=10.0, 
 	# 				lapse_rate=0.05,
 	# 				mu=0.0, sigma=1.0)
-	params = Params(0.7,0.6,0.5,0.4,0.3,0.2,0.1, 
-					stopping_probability=0.1,
-					feature_dropping_rate=0.0, 
-					pruning_threshold=10.0, 
-					lapse_rate=0.05,
-					mu=0.0, sigma=1.0)
-	list_carlist, user_choice = load_data()
-	list_answer = [Node(cl, params).board_to_str() for cl in user_choice] # str
-	t = []
-	ts = time.time()
-	for curlist, answer in zip(list_carlist, list_answer):
-		harmonic_sum_Luigi(ibs(curlist, answer, params))
-		# print(tt)
-		# t.append(tt)
-	# print(np.mean(t))
-	print((time.time()-ts)/len(list_carlist))
+	# list_carlist, user_choice = load_data()
+	# list_answer = [Node(cl, params).board_to_str() for cl in user_choice] # str
+	# t = []
+	# ts = time.time()
+	# for curlist, answer in zip(list_carlist, list_answer):
+	# 	harmonic_sum_Luigi(ibs(curlist, answer, params))
+	# 	# print(tt)
+	# 	# t.append(tt)
+	# # print(np.mean(t))
+	# print((time.time()-ts)/len(list_carlist))
 
 
 

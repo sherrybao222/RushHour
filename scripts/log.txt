@@ -1,3 +1,24 @@
+--------------------- Discussion with Bas -------------
+test_MakeMove(human move):
+	return 50% human move
+calculate the LL of this function 
+over a fake dataset
+LL=log2
+
+use numpy
+
+Lk would be 0 if stops at the first time
+
+run python, see how much cpu
+run matlab, see which cores are working
+print cpu_count in both python and matlab
+(sometimes run more parallel jobs than cpu number)
+test with a smaller dataset
+
+python random number seed, explicitly pass a seed.
+
+
+
 
 ------------------------- Parameters ---------------
 Parameters used for Weiji's talk in London Jan 16th.
@@ -15,7 +36,6 @@ setenv('PATH','/anaconda3/condabin:/Library/Frameworks/Python.framework/Versions
 pyversion('/Library/Frameworks/Python.framework/Versions/3.7/bin/python3')
 py.importlib.import_module('BFS')
 
-py.importlib.import_module('BFS')
 // end
 
 

@@ -1,0 +1,32 @@
+by March 30:
+	try python optimization on cluster
+	cross-validation (multi-start)
+	fit myopic and BFS
+	fit all subject data on cluster
+		parameters estimates across subjects, mean loglikelihood across subjects
+April 6:
+	summary statistics predicted (data vs model vs random) F2.14
+	value-based stopping model (best option hasn't changed for k iterations then stop)
+	response time
+	model predicts individual difference F2.15
+April 13:
+	thinking theoretically about restart and surrender
+	code restart and surrender model
+April 20:
+	fit restart and surrender model
+	summary statistics for restart and surrender
+April 27:
+	code lesion models (remove certain parameters)
+May 4:
+	fit lesion models
+	comparing lesion models with full model
+May 11:
+	//writing
+May 18:
+	//writing
+
+Summer:
+	writing
+	NTH: try BADS
+	NTH: compare optimal model with other models, optrand model
+	NTH: misremember car location, forgetting cars
