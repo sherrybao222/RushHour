@@ -1,9 +1,6 @@
 from BFS import *
 import pandas as pd
-import numdifftools as ndt
-import statsmodels.api as sm
 from statsmodels.base.model import GenericLikelihoodModel
-from scipy.optimize import minimize
 
 def test_all_legal_moves(car_list, answer):
 	all_moves = all_legal_moves(car_list, Board(car_list))
@@ -105,7 +102,7 @@ ibs_early_stopping(0.7,0.6,0.5,0.4,0.3,0.2,0.1,
 					pruning_threshold=10.0, 
 					lapse_rate=0.05,
 					mu=0.0, sigma=1.0)
-					
+
 # print(my_ll(-2,4))
 # if __name__ == '__main__':
 # 	params = Params(1.1,0.7,0.6,0.5,0.4,0.3,0.2, 
