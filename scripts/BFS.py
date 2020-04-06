@@ -14,7 +14,9 @@ import pandas as pd
 from datetime import datetime
 # from plot_movie import *
 import pandas as pd
-from statsmodels.base.model import GenericLikelihoodModel
+# from statsmodels.base.model import GenericLikelihoodModel
+from scipy.optimize import minimize
+import scipy.stats as stats
 
 
 ######################################## MAG CONTENT ##############
@@ -376,9 +378,9 @@ class Node:
 class Params:
 	def __init__(self, w1, w2, w3, w4, w5, w6, w7, 
 					stopping_probability,
-					feature_dropping_rate=0.0, 
-					pruning_threshold=10.0, 
-					lapse_rate=0.05,
+					pruning_threshold,
+					lapse_rate,
+					feature_dropping_rate=0.0,
 					mu=0.0, sigma=1.0):
 		self.w0 = 0.0
 		self.w1 = w1
@@ -447,11 +449,11 @@ def ExpandNode(node, params):
 		if abs(child.value - Vmax) > params.pruning_threshold:
 			node.remove_child(child)
 
-def Backpropagate(this_node, root_node):
+def Backpropagate(this_node, root_node, value):
 	''' update value back until root node '''
-	this_node.value = ArgmaxChild(this_node).value
+	this_node.value = value
 	if this_node != root_node:
-		Backpropagate(this_node.parent, root_node)
+		Backpropagate(this_node.parent, root_node, value)
 
 def ArgmaxChild(node): 
 	''' 
@@ -478,10 +480,10 @@ def MakeMove(root, params, hit=False):
 		while not Stop(probability=params.stopping_probability):
 			leaf, leaf_is_solution = SelectNode(root)
 			if leaf_is_solution:
-				Backpropagate(leaf.parent, root)
+				Backpropagate(leaf.parent, root, leaf.value)
 				break
 			ExpandNode(leaf, params)
-			Backpropagate(leaf, root)
+			Backpropagate(leaf, root, ArgmaxChild(leaf).value)
 			# print('\tnew simulation')
 		# print('Simulation terminated')
 	if root.children == []:
@@ -502,7 +504,7 @@ def ibs(root_car_list, expected_board, params):
 		num_simulated += 1
 		if model_decision.board_to_str() == expected_board:
 			return num_simulated
-		elif num_simulated > 15:
+		elif num_simulated > 20:
 			return num_simulated
 
 def harmonic_sum_Luigi(n):
@@ -520,28 +522,86 @@ def harmonic_sum(n):
 		return sum of harmonic series from 1 to n
 		when n=1, return 1
 	'''
-	s = 0.0
-	for i in range(1, n+1):
+	s = 1.0
+	for i in range(1, n):
 		s += 1.0/i
 	return s
 
-def ibs_early_stopping(list_carlist, user_choice, w1, w2, w3, w4, w5, w6, w7, 
-					stopping_probability,
-					feature_dropping_rate=0.0, 
-					pruning_threshold=10.0, 
-					lapse_rate=0.05,
-					mu=0.0, sigma=1.0): # parallel computing
+def ibs_early_stopping(list_carlist, user_choice, inparams, pool): # parallel computing
+	params = Params(w1=inparams[0], w2=inparams[1], w3=inparams[2], 
+							w4=inparams[3], w5=inparams[4], w6=inparams[5], 
+							w7=inparams[6], 
+							stopping_probability=inparams[7],
+							pruning_threshold=inparams[8],
+							lapse_rate=inparams[9],
+							feature_dropping_rate=0.0,
+							mu=0.0, sigma=1.0)
 	sys.setrecursionlimit(10000)
 	start_time = time.time()
-	params = Params(w1, w2, w3, w4, w5, w6, w7, 
-					stopping_probability,
-					feature_dropping_rate, 
-					pruning_threshold, 
-					lapse_rate,
-					mu, sigma)
 	list_rootnode = [Node(cur_root, params) for cur_root in list_carlist]
 	list_answer = [Node(cl, params).board_to_str() for cl in user_choice]
-	pool = mp.Pool(processes=mp.cpu_count())
+	print('cpu count: '+str(mp.cpu_count()))
+	# calculate early stopping LL
+	hit_target = [False]*len(list_rootnode)
+	count_iteration = [0]*len(list_rootnode)
+	print('Sample size '+str(len(list_rootnode)))
+	LL_lower = 0
+	children_count = []
+	for node in list_rootnode:
+		children_count.append(len(all_legal_moves(node.car_list, node.board)))
+	LL_lower = len(list_rootnode)*np.log(1.0/np.mean([n for n in children_count]))
+	print('LL_lower '+str(LL_lower))
+	print('inparams '+str(inparams))
+	count_iteration = [x+1 for x in count_iteration]
+	# start iteration
+	k = 0
+	LL_k = 0
+	while hit_target.count(False) > 0:
+		start_time_k = time.time()
+		if LL_k < LL_lower: 
+			LL_k = LL_lower
+			print('******************* Exceeds LL_lower, break')
+			break
+		LL_k = 0
+		k += 1
+		print('Iteration K='+str(k))	
+		list_rootnode = [Node(cur_root, params) for cur_root in list_carlist]
+		model_decision = [pool.apply_async(MakeMove, args=(cur_root, params, hit)).get() for cur_root, hit in zip(list_rootnode, hit_target)]
+		# print('post makemove')
+		for i in range(len(count_iteration)):
+			if not hit_target[i]:
+				count_iteration[i] += 1
+		hit_target = [a or b for a,b in zip(hit_target, [decision.board_to_str()==answer for decision, answer in zip(model_decision, list_answer)])]
+		new_hit = [False]*len(list_rootnode)
+		new_hit[:min(k*200, len(list_rootnode)-1)] = [True]*min(k*200, len(list_rootnode)-1)
+		hit_target = [a or b for a,b in zip(hit_target, new_hit)]
+		for i in range(len(count_iteration)):
+			if hit_target[i]:
+				LL_k += harmonic_sum(count_iteration[i])
+		LL_k = (-1.0)*LL_k - (hit_target.count(False))*harmonic_sum(k)
+		print('\thit_target '+str(hit_target.count(True)))
+		print('\tKth LL_k '+str(LL_k))
+		print('\tIBS kth iteration lapse '+str(time.time() - start_time_k))	
+	print('IBS total time lapse '+str(time.time() - start_time))
+	print('now time: '+str(datetime.now()))
+	print('Final LL_k: '+str(LL_k))
+	return LL_k
+
+
+
+def fake_ibs_early_stopping(list_carlist, user_choice, inparams, pool): # parallel computing
+	params = Params(w1=inparams[0], w2=inparams[1], w3=inparams[2], 
+							w4=inparams[3], w5=inparams[4], w6=inparams[5], 
+							w7=inparams[6], 
+							stopping_probability=inparams[7],
+							pruning_threshold=inparams[8],
+							lapse_rate=inparams[9],
+							feature_dropping_rate=0.0,
+							mu=0.0, sigma=1.0)
+	sys.setrecursionlimit(10000)
+	start_time = time.time()
+	list_rootnode = [Node(cur_root, params) for cur_root in list_carlist]
+	list_answer = [Node(cl, params).board_to_str() for cl in user_choice]
 	print('cpu count: '+str(mp.cpu_count()))
 	# calculate early stopping LL
 	hit_target = [False]*len(list_rootnode)
@@ -574,10 +634,10 @@ def ibs_early_stopping(list_carlist, user_choice, w1, w2, w3, w4, w5, w6, w7,
 			if not hit_target[i]:
 				count_iteration[i] += 1
 		hit_target = [a or b for a,b in zip(hit_target, [decision.board_to_str()==answer for decision, answer in zip(model_decision, list_answer)])]
+		hit_target = []
 		for i in range(len(count_iteration)):
 			if hit_target[i]:
 				LL_k += harmonic_sum(count_iteration[i])
-		print('\thit_target.count(False): '+str(hit_target.count(False)))
 		LL_k = (-1.0/len(hit_target))*LL_k - (hit_target.count(False)/len(hit_target))*harmonic_sum(k)
 		print('\thit_target '+str(hit_target.count(True)))
 		print('\tKth LL_k '+str(LL_k))
@@ -585,28 +645,80 @@ def ibs_early_stopping(list_carlist, user_choice, w1, w2, w3, w4, w5, w6, w7,
 		# if k >= 10:
 		# 	print('exceed 10 iterations, break')
 		# 	break
-	pool.close()
-	pool.join()
 	print('IBS total time lapse '+str(time.time() - start_time))
 	print('now time: '+str(datetime.now()))
 	print('Final LL_k: '+str(LL_k))
 	return LL_k
 
 
-def my_ll_parallel(w1, w2, w3, w4, w5, w6, w7, 
-					stopping_probability,
-					feature_dropping_rate=0.0, 
-					pruning_threshold=10.0, 
-					lapse_rate=0.05,
-					mu=0.0, sigma=1.0): # parallel computing
+
+def ibs_early_stopping_sequential(list_carlist, user_choice, inparams): # parallel computing
+	params = Params(w1=inparams[0], w2=inparams[1], w3=inparams[2], 
+							w4=inparams[3], w5=inparams[4], w6=inparams[5], 
+							w7=inparams[6], 
+							stopping_probability=inparams[7],
+							pruning_threshold=inparams[8],
+							lapse_rate=inparams[9],
+							feature_dropping_rate=0.0,
+							mu=0.0, sigma=1.0)
 	sys.setrecursionlimit(10000)
 	start_time = time.time()
-	params = Params(w1, w2, w3, w4, w5, w6, w7, 
-					stopping_probability,
-					feature_dropping_rate, 
-					pruning_threshold, 
-					lapse_rate,
-					mu, sigma)
+	list_rootnode = [Node(cur_root, params) for cur_root in list_carlist]
+	list_answer = [Node(cl, params).board_to_str() for cl in user_choice]
+	print('cpu count: '+str(mp.cpu_count()))
+	# calculate early stopping LL
+	hit_target = [False]*len(list_rootnode)
+	count_iteration = [0]*len(list_rootnode)
+	print('Sample size '+str(len(list_rootnode)))
+	LL_lower = 0
+	children_count = []
+	for node in list_rootnode:
+		children_count.append(len(all_legal_moves(node.car_list, node.board)))
+	LL_lower = np.mean([np.log(1.0/n) for n in children_count])
+	print('LL_lower '+str(LL_lower))
+	print('Params sp '+str(params.stopping_probability))
+	count_iteration = [x+1 for x in count_iteration]
+	# start iteration
+	k = 0
+	LL_k = 0
+	while hit_target.count(False) > 0:
+		start_time_k = time.time()
+		if LL_k < LL_lower: 
+			LL_k = LL_lower
+			print('Exceeds LL_lower, break')
+			break
+		LL_k = 0
+		k += 1
+		print('Iteration K='+str(k))	
+		list_rootnode = [Node(cur_root, params) for cur_root in list_carlist]
+		model_decision = []
+		for cur_root, hit in zip(list_rootnode, hit_target):
+			model_decision.append(MakeMove(cur_root, params, hit))
+		print('post makemove')
+		for i in range(len(count_iteration)):
+			if not hit_target[i]:
+				count_iteration[i] += 1
+		hit_target = [a or b for a,b in zip(hit_target, [decision.board_to_str()==answer for decision, answer in zip(model_decision, list_answer)])]
+		for i in range(len(count_iteration)):
+			if hit_target[i]:
+				LL_k += harmonic_sum(count_iteration[i])
+		# print('\thit_target.count(False): '+str(hit_target.count(False)))
+		LL_k = (-1.0/len(hit_target))*LL_k - (hit_target.count(False)/len(hit_target))*harmonic_sum(k)
+		print('\thit_target '+str(hit_target.count(True)))
+		print('\tKth LL_k '+str(LL_k))
+		print('\tIBS kth iteration lapse '+str(time.time() - start_time_k))	
+		# if k >= 10:
+		# 	print('exceed 10 iterations, break')
+		# 	break
+	print('IBS total time lapse '+str(time.time() - start_time))
+	print('now time: '+str(datetime.now()))
+	print('Final LL_k: '+str(LL_k))
+	return LL_k
+
+
+def my_ll_parallel(params): # parallel computing
+	sys.setrecursionlimit(10000)
+	start_time = time.time()
 	list_carlist, user_choice = load_data()
 	pool = mp.Pool(processes=mp.cpu_count())
 	print('cpu count: '+str(mp.cpu_count()))
@@ -631,136 +743,59 @@ def my_ll_parallel(w1, w2, w3, w4, w5, w6, w7,
 	return ll_result
 
 
-def my_ll_sequential(w1, w2, w3, w4, w5, w6, w7, 
-					stopping_probability,
-					feature_dropping_rate=0.0, 
-					pruning_threshold=10.0, 
-					lapse_rate=0.05,
-					mu=0.0, sigma=1.0): # parallel computing
+def my_ll_sequential(list_carlist, user_choice, inparams): # parallel computing
+	params = Params(w1=inparams[0], w2=inparams[1], w3=inparams[2], 
+							w4=inparams[3], w5=inparams[4], w6=inparams[5], 
+							w7=inparams[6], 
+							stopping_probability=inparams[7],
+							pruning_threshold=inparams[8],
+							lapse_rate=inparams[9],
+							feature_dropping_rate=0.0,
+							mu=0.0, sigma=1.0)
 	sys.setrecursionlimit(10000)
-	start_time = time.time()
-	params = Params(w1, w2, w3, w4, w5, w6, w7, 
-					stopping_probability,
-					feature_dropping_rate, 
-					pruning_threshold, 
-					lapse_rate,
-					mu, sigma)
-	list_carlist, user_choice = load_data()
+	# start_time = time.time()
 	# calculate early stopping LL
 	hit_target = [False]*len(list_carlist)
 	count_iteration = [0]*len(list_carlist)
-	print('Sample size '+str(len(list_carlist)))
+	# print('Sample size '+str(len(list_carlist)))
 	list_answer = [Node(cl, params).board_to_str() for cl in user_choice] # str
-	print('\tParams sp '+str(params.stopping_probability))
+	print(inparams)
 	all_ibs = []
-	t = []
+	# t = []
 	for curlist, answer in zip(list_carlist, list_answer):
-		t1 = time.time()
+		# t1 = time.time()
 		all_ibs.append(ibs(curlist, answer, params))
 		# print('\tll for one trial: '+str(time.time()-t1))
-		t.append(time.time()-t1)
-	print('\tAvg time per trial '+str(np.mean(t)))
+		# t.append(time.time()-t1)
+	# print('\tAvg time per trial '+str(np.mean(t)))
 	print('\tAvg Num: '+str(np.mean(all_ibs)))
 	all_ll = []
 	for n in all_ibs:
 		all_ll.append(harmonic_sum_Luigi(n))
 	ll_result = -np.sum(all_ll)
-	print('\ttime lapse '+str(time.time() - start_time))
+	# print('\ttime lapse '+str(time.time() - start_time))
 	print('\tnow time: '+str(datetime.now()))
 	print('\tFinal LL: '+str(ll_result))
 	return ll_result
 
-def load_data(path='/Users/chloe/Desktop/A289D98Z4GAZ28-3ZV9H2YQQEFR2R3JK2IXZUJPXAF3WW.xlsx'): 
-	# sub_data = recfromcsv(path)
-	sub_data = pd.read_excel(path)
-	list_carlist = [] # list of node from data
-	user_choice = [] # list of expected human move node, str
-	cur_carlist = None
-	for index, row in sub_data.iterrows():
-		if row['event'] == 'start':
-			instance = row['instance']
-			ins_file = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/'+instance+'.json'
-			cur_carlist = json_to_car_list(ins_file)
-			continue
-		if row['piece'] == 'r' and row['move'] == 16:
-			continue
-		piece = str(row['piece'])
-		move_to = int(row['move'])
-		list_carlist.append(cur_carlist) # previous carlist
-		cur_carlist, _ = move(cur_carlist, piece, move_to)
-		user_choice.append(cur_carlist)
-	return list_carlist, user_choice
+if __name__ == "__main__":
 
+	positions = pickle.load(open('/Users/chloe/Desktop/carlists/A1AKX1C8GCVCTP:3H0W84IWBLAP4T2UASPNVMF5ZH7ER9_positions.pickle', 'rb'))[:500]
+	decisions = pickle.load(open('/Users/chloe/Desktop/carlists/A1AKX1C8GCVCTP:3H0W84IWBLAP4T2UASPNVMF5ZH7ER9_decisions.pickle', 'rb'))[:500]
 
-def create_data():
-	trial_start = 2 # 2072 # starting row number in the raw data
-	trial_end = 18 # 2114
-	sub_data = recfromcsv('/Users/chloe/Desktop/trialdata_valid_true_dist7_processed.csv')
-	# construct initial node
-	list_carlist = [] # list of node from data
-	user_choice = [] # list of expected human move node, str
-	cur_carlist = None
-	for i in range(trial_start-2, trial_end-1):
-		# load data from datafile
-		row = sub_data[i]
-		if row['event'] == 'start':
-			instance = row['instance']
-			ins_file = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/'+instance+'.json'
-			cur_carlist = json_to_car_list(ins_file)
-			continue
-		if row['piece'] == 'r':
-			piece = 'r'
-		piece = row['piece']
-		move_to = int(row['move'])
-		list_carlist.append(cur_carlist) # previous carlist
-		cur_carlist, _ = move(cur_carlist, piece, move_to)
-		user_choice.append(cur_carlist)
-	for i in range(6): # dummy repeating data
-		list_carlist.extend(list_carlist)
-		user_choice.extend(user_choice)
-	# save list
-	with open("/Users/chloe/Documents/RushHour/scripts/list_carlist.pickle", "w") as fp:
-		pickle.dump(list_carlist, fp)
-	# np.save("/Users/chloe/Documents/RushHour/scripts/list_carlist.npy", list_carlist)
-	with open("/Users/chloe/Documents/RushHour/scripts/user_choice.pickle", "w") as fp:
-		pickle.dump(user_choice, fp)
-	# np.save("/Users/chloe/Documents/RushHour/scripts/user_choice.npy", user_choice)
+	pool = mp.Pool(processes=mp.cpu_count())
+	guess = np.array([0.7,0.6,0.5,0.4,0.3,0.2,0.1,0.1,6,0.1])
 
+	def MLERegression(params):
+		return ibs_early_stopping(positions, decisions, params, pool)
+		# return my_ll_sequential(positions, decisions, params)
 
-class MyOLS(GenericLikelihoodModel):
-	def __init__(self, endog, exog, **kwds): # endog=y, exog=x
-		super(MyOLS, self).__init__(endog, exog, **kwds)
-	def nloglikeobs(self, params):
-		sigma = params[-1]
-		beta = params[:-1]
-		# print('params: '+str(params))
-		# print('sigma: '+str(sigma))
-		# print('beta: '+str(beta))
-		return my_negll(self.exog, self.endog, beta, sigma)
-	def fit(self, start_params=None, maxiter=10000, maxfun=5000, **kwds):
-		# we have one additional parameter and we need to add it for summary
-		self.exog_names.append('sigma')
-		if start_params == None:
-		    # Reasonable starting values
-		    start_params = np.append(np.zeros(self.exog.shape[1]), .5)
-		return super(MyOLS, self).fit(start_params=start_params,
-					     maxiter=maxiter, maxfun=maxfun,
-					     **kwds)
+	results = minimize(MLERegression, guess, method = 'Nelder-Mead',
+						options={'disp': True})
+	print(results)
+	pool.join()
+	pool.close()
 
-list_carlist, user_choice = load_data()
-N = 10
-x = 10 + 2*np.random.randn(N)
-y = 5 + x + np.random.randn(N)
-df = pd.DataFrame({'y':y, 'x':x})
-df['constant'] = 1
-
-print('x: '+str(x))
-print('y: '+str(y))
-
-
-sm_ols_manual = MyOLS(df.y,df[['constant','x']]).fit()
-print(sm_ols_manual.summary())
-print('find_line: '+str(find_line(x,y)))
 
 
 # def MakeMove_plot(root, params):
@@ -824,32 +859,6 @@ print('find_line: '+str(find_line(x,y)))
 # 	plot_board_and_tree(root, board_node=ArgmaxChild(root), decision_node=ArgmaxChild(root), text='Decision', text2='Move 1')
 # 	make_movie()
 # 	return ArgmaxChild(root)
-
-
-# if __name__ == '__main__':
-# 	ibs_early_stopping(0.7,0.6,0.5,0.4,0.3,0.2,0.1, 
-# 					stopping_probability=0.1,
-# 					feature_dropping_rate=0.0, 
-# 					pruning_threshold=10.0, 
-# 					lapse_rate=0.05,
-# 					mu=0.0, sigma=1.0)
-	# params = Params(0.7,0.6,0.5,0.4,0.3,0.2,0.1, 
-	# 				stopping_probability=0.1,
-	# 				feature_dropping_rate=0.0, 
-	# 				pruning_threshold=10.0, 
-	# 				lapse_rate=0.05,
-	# 				mu=0.0, sigma=1.0)
-	# list_carlist, user_choice = load_data()
-	# list_answer = [Node(cl, params).board_to_str() for cl in user_choice] # str
-	# t = []
-	# ts = time.time()
-	# for curlist, answer in zip(list_carlist, list_answer):
-	# 	harmonic_sum_Luigi(ibs(curlist, answer, params))
-	# 	# print(tt)
-	# 	# t.append(tt)
-	# # print(np.mean(t))
-	# print((time.time()-ts)/len(list_carlist))
-
 
 
 
