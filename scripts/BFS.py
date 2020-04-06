@@ -567,14 +567,13 @@ def ibs_early_stopping(list_carlist, user_choice, inparams, pool): # parallel co
 		print('Iteration K='+str(k))	
 		list_rootnode = [Node(cur_root, params) for cur_root in list_carlist]
 		model_decision = [pool.apply_async(MakeMove, args=(cur_root, params, hit)).get() for cur_root, hit in zip(list_rootnode, hit_target)]
-		# print('post makemove')
 		for i in range(len(count_iteration)):
 			if not hit_target[i]:
 				count_iteration[i] += 1
 		hit_target = [a or b for a,b in zip(hit_target, [decision.board_to_str()==answer for decision, answer in zip(model_decision, list_answer)])]
-		new_hit = [False]*len(list_rootnode)
-		new_hit[:min(k*200, len(list_rootnode)-1)] = [True]*min(k*200, len(list_rootnode)-1)
-		hit_target = [a or b for a,b in zip(hit_target, new_hit)]
+		# new_hit = [False]*len(list_rootnode)
+		# new_hit[:min(k*200, len(list_rootnode)-1)] = [True]*min(k*200, len(list_rootnode)-1)
+		# hit_target = [a or b for a,b in zip(hit_target, new_hit)]
 		for i in range(len(count_iteration)):
 			if hit_target[i]:
 				LL_k += harmonic_sum(count_iteration[i])
