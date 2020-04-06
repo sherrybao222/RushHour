@@ -549,7 +549,7 @@ def ibs_early_stopping(list_carlist, user_choice, inparams, pool): # parallel co
 	children_count = []
 	for node in list_rootnode:
 		children_count.append(len(all_legal_moves(node.car_list, node.board)))
-	LL_lower = len(list_rootnode)*np.log(1.0/np.mean([n for n in children_count]))
+	LL_lower = (-1.0)*len(list_rootnode)*np.log(np.mean([n for n in children_count]))
 	print('LL_lower '+str(LL_lower))
 	print('inparams '+str(inparams))
 	count_iteration = [x+1 for x in count_iteration]
