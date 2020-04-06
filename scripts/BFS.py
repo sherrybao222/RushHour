@@ -154,7 +154,7 @@ def ibs_original(root_car_list, expected_board, params):
 		# elif num_simulated > 20:
 		# 	return num_simulated
 
-def harmonic_sum_Luigi(n):
+def harmonic_sum(n):
 	''' 
 		return sum of harmonic series from 1 to n-1
 		when n=1, return 0
@@ -164,17 +164,8 @@ def harmonic_sum_Luigi(n):
 		s += 1.0/i
 	return s
 
-def harmonic_sum(n):
-	''' 
-		return sum of harmonic series from 1 to n
-		when n=1, return 1
-	'''
-	s = 1.0
-	for i in range(1, n):
-		s += 1.0/i
-	return s
 
-def ibs_early_stopping(list_carlist, user_choice, inparams, pool): # parallel computing
+def ibs_early_stopping(list_carlist, user_choice, inparams, pool, fun=MakeMove): # parallel computing
 	params = Params(w1=inparams[0], w2=inparams[1], w3=inparams[2], 
 							w4=inparams[3], w5=inparams[4], w6=inparams[5], 
 							w7=inparams[6], 
@@ -213,13 +204,13 @@ def ibs_early_stopping(list_carlist, user_choice, inparams, pool): # parallel co
 		k += 1
 		print('Iteration K='+str(k))	
 		list_rootnode = [Node(cur_root, params) for cur_root in list_carlist]
-		model_decision = [pool.apply_async(MakeMove, args=(cur_root, params, hit)).get() for cur_root, hit in zip(list_rootnode, hit_target)]
+		model_decision = [pool.apply_async(fun, args=(cur_root, params, hit)).get() for cur_root, hit in zip(list_rootnode, hit_target)]
 		for i in range(len(count_iteration)):
 			if not hit_target[i]:
 				count_iteration[i] += 1
 		hit_target = [a or b for a,b in zip(hit_target, [decision.board_to_str()==answer for decision, answer in zip(model_decision, list_answer)])]
 		new_hit = [False]*len(list_rootnode)
-		new_hit[:min(k*30, len(list_rootnode)-1)] = [True]*min(k*30, len(list_rootnode)-1)
+		new_hit[:min(k*10, len(list_rootnode)-1)] = [True]*min(k*10, len(list_rootnode)-1)
 		hit_target = [a or b for a,b in zip(hit_target, new_hit)]
 		for i in range(len(count_iteration)):
 			if hit_target[i]:
