@@ -1,5 +1,5 @@
 ''' 
-Myopic BFS model self-defined ll function,
+BFS model self-defined ll function,
 speeded version, prepared for BADS in MATLAB,
 python3 or py27
 '''
@@ -18,13 +18,13 @@ from Car import *
 from Board import *
 from Node import *
 
-######################################## Myopic MODEL ##############
+######################################## BFS MODEL ##############
 
 class Params:
 	def __init__(self, w1, w2, w3, w4, w5, w6, w7, 
+					stopping_probability,
 					pruning_threshold,
 					lapse_rate,
-					stopping_probabilit=1.0,
 					feature_dropping_rate=0.0,
 					mu=0.0, sigma=1.0):
 		self.w0 = 0.0
@@ -114,17 +114,24 @@ def MakeMove(root, params, hit=False):
 	'''
 	if hit:
 		return root
+	# start_time = time.time()
 	assert len(root.children) == 0
 	if Lapse(params.lapse_rate):
+		# print('Random move made')
+		# print('MakeMove Time lapse: '+format(time.time()-start_time, '.6f'))
 		return RandomMove(root, params)
 	else:
 		DropFeatures(params.feature_dropping_rate)
-		leaf, leaf_is_solution = SelectNode(root)
-		ExpandNode(leaf, params)
+		while not Stop(probability=params.stopping_probability):
+			leaf, leaf_is_solution = SelectNode(root)
+			if leaf_is_solution:
+				Backpropagate(leaf.parent, root, leaf.value)
+				break
+			ExpandNode(leaf, params)
+			Backpropagate(leaf, root, ArgmaxChild(leaf).value)
+			# print('\tnew simulation')
+		# print('Simulation terminated')
 	if root.children == []:
 		ExpandNode(root, params)
+	# print('\t\t MakeMove time lapse: '+str(time.time()-start_time))
 	return ArgmaxChild(root)
-
-
-
-
