@@ -8,28 +8,70 @@ import sys
 import numpy as np
 
 df = pd.read_csv('/Users/chloe/Desktop/trialdata_valid_true_dist7_processed.csv')
-restart_rows = df.loc[df['restart'] == 1]
-surrender_rows = df.loc[df['surrender'] == 1]
 
-print(restart_rows[restart_rows.move_num==0].shape[0])
-print(surrender_rows[surrender_rows.move_num<6].shape[0])
-print(surrender_rows.move_num==0)
+restart7 = df[(df.restart==1) & (df.initial==7)]
+restart11 = df[(df.restart==1) & (df.initial==11)]
+restart14 = df[(df.restart==1) & (df.initial==14)]
+restart16 = df[(df.restart==1) & (df.initial==16)]
 
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(4,1, figsize=(10,7))
 
-a_heights, a_bins = np.histogram(restart_rows['move_num'], bins=20)
-b_heights, b_bins = np.histogram(surrender_rows['move_num'], bins=a_bins)
+ax[0].hist(restart7.move_num, bins=80, range=(0, 80), density=True, align='left')
+ax[0].set_title('Level 7', fontsize=10)
+ax[0].axvline(restart7.move_num.median(), color='k', linestyle='dashed', linewidth=1)
+# ax[0].set_ylim([0, .7])
+ax[1].hist(restart11.move_num, bins=80, range=(0, 80), density=True, align='left')
+ax[1].set_title('Level 11', fontsize=10)
+ax[1].set_ylabel('Frequency', fontsize=14)
+ax[1].axvline(restart11.move_num.median(), color='k', linestyle='dashed', linewidth=1)
+# ax[1].set_ylim([0, .7])
+ax[2].hist(restart14.move_num, bins=80, range=(0, 80), density=True, align='left')
+ax[2].set_title('Level 14', fontsize=10)
+ax[2].axvline(restart14.move_num.median(), color='k', linestyle='dashed', linewidth=1)
+# ax[2].set_ylim([0, .7])
+ax[3].hist(restart16.move_num, bins=80, range=(0, 80), density=True, align='left')
+ax[3].set_title('Level 16', fontsize=10)
+ax[3].set_xlabel('Number of Moves', fontsize=14)
+ax[3].axvline(restart16.move_num.median(), color='k', linestyle='dashed', linewidth=1)
+# ax[3].set_ylim([0, .7])
 
-width = (a_bins[1] - a_bins[0])/3
+fig.tight_layout(pad=.8, rect=[0, 0.03, 1, 0.95])
+fig.suptitle('Number of Moves When Restarted', fontsize=16)
 
-ax.bar(a_bins[:-1], a_heights, width=width, facecolor='cornflowerblue', label='restart')
-ax.bar(b_bins[:-1]+width, b_heights, width=width, facecolor='seagreen', label='surrender')
-plt.grid(alpha=0.5)
-plt.legend()
+
 plt.show()
+plt.close()
 
 
-restart_rows.hist(column='move_num', bins=20, edgecolor='black', linewidth=1)
+surrender7 = df[(df.surrender==1) & (df.initial==7)]
+surrender11 = df[(df.surrender==1) & (df.initial==11)]
+surrender14 = df[(df.surrender==1) & (df.initial==14)]
+surrender16 = df[(df.surrender==1) & (df.initial==16)]
+
+fig, ax = plt.subplots(4,1, figsize=(10,7))
+
+ax[0].hist(surrender7.move_num, bins=80, range=(0, 80), density=True, align='left')
+ax[0].set_title('Level 7', fontsize=10)
+ax[0].axvline(surrender7.move_num.median(), color='k', linestyle='dashed', linewidth=1)
+# ax[0].set_ylim([0, .7])
+ax[1].hist(surrender11.move_num, bins=80, range=(0, 80), density=True, align='left')
+ax[1].set_title('Level 11', fontsize=10)
+ax[1].set_ylabel('Frequency', fontsize=14)
+ax[1].axvline(surrender11.move_num.median(), color='k', linestyle='dashed', linewidth=1)
+# ax[1].set_ylim([0, .7])
+ax[2].hist(surrender14.move_num, bins=80, range=(0, 80), density=True, align='left')
+ax[2].set_title('Level 14', fontsize=10)
+ax[2].axvline(surrender14.move_num.median(), color='k', linestyle='dashed', linewidth=1)
+# ax[2].set_ylim([0, .7])
+ax[3].hist(surrender16.move_num, bins=80, range=(0, 80), density=True, align='left')
+ax[3].set_title('Level 16', fontsize=10)
+ax[3].set_xlabel('Number of Moves', fontsize=14)
+ax[3].axvline(surrender16.move_num.median(), color='k', linestyle='dashed', linewidth=1)
+# ax[3].set_ylim([0, .7])
+
+fig.tight_layout(pad=.8, rect=[0, 0.03, 1, 0.95])
+fig.suptitle('Number of Moves When Surrendered', fontsize=16)
+
 plt.show()
-surrender_rows.hist(column='move_num', bins=20, edgecolor='black', linewidth=1)
-plt.show()
+plt.close()
+

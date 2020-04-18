@@ -12,6 +12,7 @@ from json import dump, load
 import pandas as pd
 from datetime import datetime
 from scipy.optimize import minimize
+from scipy.optimize import differential_evolution
 import scipy.stats as stats
 from sklearn.model_selection import KFold
 from Car import *
@@ -181,7 +182,7 @@ def ibs_early_stopping(list_carlist, user_choice, inparams, pool, fun=MakeMove):
 	print('cpu count: '+str(mp.cpu_count()))
 	# calculate early stopping LL
 	hit_target = [False]*len(list_rootnode)
-	count_iteration = [0]*len(list_rootnode)
+	count_iteration = [1]*len(list_rootnode)
 	print('Sample size '+str(len(list_rootnode)))
 	LL_lower = 0
 	children_count = []
@@ -190,12 +191,11 @@ def ibs_early_stopping(list_carlist, user_choice, inparams, pool, fun=MakeMove):
 	LL_lower = np.sum([np.log(1/n) for n in children_count])
 	print('LL_lower '+str(LL_lower))
 	print('inparams '+str(inparams))
-	count_iteration = [x+1 for x in count_iteration]
 	# start iteration
 	k = 0
 	LL_k = 0
 	while hit_target.count(False) > 0:
-		start_time_k = time.time()
+		# start_time_k = time.time()
 		if LL_k < LL_lower: 
 			LL_k = LL_lower
 			print('******************* Exceeds LL_lower, break')
@@ -205,20 +205,20 @@ def ibs_early_stopping(list_carlist, user_choice, inparams, pool, fun=MakeMove):
 		print('Iteration K='+str(k))	
 		list_rootnode = [Node(cur_root, params) for cur_root in list_carlist]
 		model_decision = [pool.apply_async(fun, args=(cur_root, params, hit)).get() for cur_root, hit in zip(list_rootnode, hit_target)]
+		hit_target = [a or b for a,b in zip(hit_target, [decision.board_to_str()==answer for decision, answer in zip(model_decision, list_answer)])]
 		for i in range(len(count_iteration)):
 			if not hit_target[i]:
 				count_iteration[i] += 1
-		hit_target = [a or b for a,b in zip(hit_target, [decision.board_to_str()==answer for decision, answer in zip(model_decision, list_answer)])]
-		new_hit = [False]*len(list_rootnode)
-		new_hit[:min(k*10, len(list_rootnode)-1)] = [True]*min(k*10, len(list_rootnode)-1)
-		hit_target = [a or b for a,b in zip(hit_target, new_hit)]
+		# new_hit = [False]*len(list_rootnode)
+		#  new_hit[:min(k*5, len(list_rootnode)-1)] = [True]*min(k*5, len(list_rootnode)-1)
+		# hit_target = [a or b for a,b in zip(hit_target, new_hit)]
 		for i in range(len(count_iteration)):
 			if hit_target[i]:
 				LL_k += harmonic_sum(count_iteration[i])
 		LL_k = (-1.0)*LL_k - (hit_target.count(False))*harmonic_sum(k)
 		print('\thit_target '+str(hit_target.count(True)))
 		print('\tKth LL_k '+str(LL_k))
-		print('\tIBS kth iteration lapse '+str(time.time() - start_time_k))	
+		# print('\tIBS kth iteration lapse '+str(time.time() - start_time_k))	
 	print('IBS total time lapse '+str(time.time() - start_time))
 	print('now time: '+str(datetime.now()))
 	print('Final LL_k: '+str(LL_k))
@@ -353,15 +353,15 @@ def my_ll_sequential(list_carlist, user_choice, inparams): # parallel computing
 
 if __name__ == "__main__":
 
-	all_positions = pickle.load(open('/Users/chloe/Desktop/carlists/A1AKX1C8GCVCTP:3H0W84IWBLAP4T2UASPNVMF5ZH7ER9_positions.pickle', 'rb'))[:150]
-	all_decisions = pickle.load(open('/Users/chloe/Desktop/carlists/A1AKX1C8GCVCTP:3H0W84IWBLAP4T2UASPNVMF5ZH7ER9_decisions.pickle', 'rb'))[:150]
+	all_positions = pickle.load(open('/Users/chloe/Desktop/carlists/A1AKX1C8GCVCTP:3H0W84IWBLAP4T2UASPNVMF5ZH7ER9_positions.pickle', 'rb'))[:300]
+	all_decisions = pickle.load(open('/Users/chloe/Desktop/carlists/A1AKX1C8GCVCTP:3H0W84IWBLAP4T2UASPNVMF5ZH7ER9_decisions.pickle', 'rb'))[:300]
 
 	kfold = 3
 
 	guesses = []
 	for k in range(kfold):
 		guesses.append(np.array([random.random(),random.random(),random.random(),random.random(),random.random(),random.random(),random.random(),
-						random.random(), random.random()*10, random.random()]))
+						random.random(), random.random()*10, random.random()], np.float))
 
 	kf = KFold(n_splits=kfold, shuffle=True, random_state=42)
 	positions_train = []
@@ -377,10 +377,19 @@ if __name__ == "__main__":
 	results = []
 	for k in range(kfold):
 		pool = mp.Pool(processes=mp.cpu_count())
-		def MLERegression(params):
+		# def MLERegression(params):
+		# 	return ibs_early_stopping(positions_train[k], decisions_train[k], params, pool)
+		# result = minimize(MLERegression, guesses[k], method = 'Nelder-Mead',
+		# 					options={'disp': True})
+
+		bounds = [(0,2),(0,2),(0,2),(0,2),(0,2),(0,2),(0,2),(0,1),(0,20),(0,1)]
+		u = np.array((0,0,0,0,0,0,0,0,0,0), np.float) # lower bound
+		v = np.array((2,2,2,2,2,2,2,1,20,1), np.float) # upper bound
+		def func(params):
 			return ibs_early_stopping(positions_train[k], decisions_train[k], params, pool)
-		result = minimize(MLERegression, guesses[k], method = 'Nelder-Mead',
-							options={'disp': True})
+		# result = optimize.dual_annealing(func, bounds)
+		result = differential_evolution(func, bounds)
+
 		print(result)
 		results.append(result)
 		pool.join()

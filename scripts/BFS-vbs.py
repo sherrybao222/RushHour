@@ -1,5 +1,6 @@
 ''' 
-BFS model self-defined ll function,
+value-based stopping BFS model self-defined ll function,
+(best option hasn't changed for k iterations then stop)
 speeded version, prepared for BADS in MATLAB,
 python3 or py27
 '''
@@ -25,6 +26,7 @@ class Params:
 					stopping_probability,
 					pruning_threshold,
 					lapse_rate,
+					stopping_iteration,
 					feature_dropping_rate=0.0,
 					mu=0.0, sigma=1.0):
 		self.w0 = 0.0
@@ -43,6 +45,7 @@ class Params:
 		self.stopping_probability = stopping_probability
 		self.pruning_threshold = pruning_threshold
 		self.lapse_rate = lapse_rate
+		self.stopping_probability
 
 def DropFeatures(probability):
 	pass
