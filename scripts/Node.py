@@ -33,12 +33,8 @@ class Node:
 			if c.board_to_str() == bstr:
 				return c
 		return None
-	def remove_child(self, c):
-		for i in range(len(self.children)):
-			if self.children[i] == c:
-				c.parent = None
-				self.children.pop(i)
-				return	
+	def remove_child(self, idx):
+		return self.children.pop(idx)
 	def board_to_str(self):
 		out_str = ''
 		for i in range(self.board.height):
@@ -59,7 +55,7 @@ class Node:
 		return out_str
 	def heuristic_value_function(self, params):
 		'''
-		value = w0 * num_cars{MAG-level RED}
+		value = (-1) * [w0 * num_cars{MAG-level RED}
 			+ w1 * num_cars{MAG-level 1} 
 			+ w2 * num_cars{MAG-level 2}  
 			+ w3 * num_cars{MAG-level 3} 
@@ -67,7 +63,10 @@ class Node:
 			+ w5 * num_cars{MAG-level 5} 
 			+ w6 * num_cars{MAG-level 6}
 			+ w7 * num_cars{MAG-level 7}  
-			+ noise
+			+ noise]
+		weights are positive numbers
+		value is negative
+		value the larger the better
 		'''
 		value = np.sum(np.array(get_num_cars_from_levels(self.car_list, params.num_weights-1), dtype=np.int64) 
 				* np.array(params.weights, dtype=np.float64), dtype=np.float64)

@@ -60,7 +60,6 @@ def RandomMove(node, params):
 	''' make a random move and return the resulted node '''
 	assert not is_solved(node.board, node.red), "RandomMove input node is already solved."
 	InitializeChildren(node, params)
-	# print('Random Move')
 	return random.choice(node.children)
 	
 def InitializeChildren(node, params):
@@ -90,16 +89,16 @@ def ExpandNode(node, params):
 	'''
 	InitializeChildren(node, params)
 	Vmaxchild = ArgmaxChild(node)
-	Vmax = Vmaxchild.value
-	for child in node.children:
-		if abs(child.value - Vmax) > params.pruning_threshold:
-			node.remove_child(child)
+	for child_idx in range(len(node.children))[::-1]: # iterate in reverse order
+		if abs(node.children[child_idx].value - Vmaxchild.value) > params.pruning_threshold:
+			node.remove_child(child_idx)
 
-def Backpropagate(this_node, root_node, value):
+
+def Backpropagate(this_node, root_node):
 	''' update value back until root node '''
-	this_node.value = value
+	this_node.value = ArgmaxChild(this_node).value
 	if this_node != root_node:
-		Backpropagate(this_node.parent, root_node, value)
+		Backpropagate(this_node.parent, root_node)
 
 def ArgmaxChild(node): 
 	''' 
@@ -113,28 +112,22 @@ def MakeMove(root, params, hit=False):
 	`	returns an optimal move to make next 
 		according to value function and current board position
 	'''
-	if hit:
+	if hit: # for ibs, if matches human decision, return root node
 		return root
-	# start_time = time.time()
 	assert len(root.children) == 0
-	if Lapse(params.lapse_rate):
-		# print('Random move made')
-		# print('MakeMove Time lapse: '+format(time.time()-start_time, '.6f'))
+	if Lapse(params.lapse_rate): # random move
 		return RandomMove(root, params)
 	else:
 		DropFeatures(params.feature_dropping_rate)
 		while not Stop(probability=params.stopping_probability):
 			leaf, leaf_is_solution = SelectNode(root)
 			if leaf_is_solution:
-				Backpropagate(leaf.parent, root, leaf.value)
-				break
+				Backpropagate(leaf.parent, root)
+				continue
 			ExpandNode(leaf, params)
-			Backpropagate(leaf, root, ArgmaxChild(leaf).value)
-			# print('\tnew simulation')
-		# print('Simulation terminated')
-	if root.children == []:
+			Backpropagate(leaf, root)
+	if root.children == []: # if did not enter while loop at all
 		ExpandNode(root, params)
-	# print('\t\t MakeMove time lapse: '+str(time.time()-start_time))
 	return ArgmaxChild(root)
 
 
@@ -152,8 +145,6 @@ def ibs_original(root_car_list, expected_board, params):
 		num_simulated += 1
 		if model_decision.board_to_str() == expected_board:
 			return num_simulated
-		# elif num_simulated > 20:
-		# 	return num_simulated
 
 def harmonic_sum(n):
 	''' 
@@ -231,9 +222,7 @@ def ibs_early_stopping_sequential(list_carlist, user_choice, inparams): # parall
 							w7=inparams[6], 
 							stopping_probability=inparams[7],
 							pruning_threshold=inparams[8],
-							lapse_rate=inparams[9],
-							feature_dropping_rate=0.0,
-							mu=0.0, sigma=1.0)
+							lapse_rate=inparams[9])
 	sys.setrecursionlimit(10000)
 	start_time = time.time()
 	list_rootnode = [Node(cur_root, params) for cur_root in list_carlist]
