@@ -18,7 +18,7 @@ from sklearn.model_selection import KFold
 from Car import *
 from Board import *
 from Node import *
-
+# Zahy Notes
 ######################################## BFS MODEL ##############
 
 class Params:

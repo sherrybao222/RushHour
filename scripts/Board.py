@@ -1,6 +1,6 @@
 from json import dump, load
 from Car import *
-
+#Zahy Notes
 class Board:
 	def __init__(self, car_list):
 		self.height = 6

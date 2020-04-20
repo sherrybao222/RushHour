@@ -1,7 +1,7 @@
 from Car import *
 from Board import *
 import numpy as np
-
+#Zahy Notes
 class Node:
 	def __init__(self, cl, params):
 		self.car_list = cl # list of Car
