@@ -82,19 +82,19 @@ class MyOLS(GenericLikelihoodModel):
 		return super(MyOLS, self).fit(start_params=start_params,
 					     maxiter=maxiter, maxfun=maxfun,
 					     **kwds)
+def test_MLE():
+	N = 10
+	x = 10 + 2*np.random.randn(N)
+	y = 5 + x + np.random.randn(N)
+	df = pd.DataFrame({'y':y, 'x':x})
+	df['constant'] = 1
 
-N = 10
-x = 10 + 2*np.random.randn(N)
-y = 5 + x + np.random.randn(N)
-df = pd.DataFrame({'y':y, 'x':x})
-df['constant'] = 1
+	print('x: '+str(x))
+	print('y: '+str(y))
 
-print('x: '+str(x))
-print('y: '+str(y))
-
-sm_ols_manual = MyOLS(df.y,df[['constant','x']]).fit()
-print(sm_ols_manual.summary())
-print('find_line: '+str(find_line(x,y)))
+	sm_ols_manual = MyOLS(df.y,df[['constant','x']]).fit()
+	print(sm_ols_manual.summary())
+	print('find_line: '+str(find_line(x,y)))
 
 
 

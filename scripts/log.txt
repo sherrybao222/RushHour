@@ -1,3 +1,196 @@
+pregenerate all board
+pregenerate all children, all numinlevel array
+
+MakeMove              0.104382
+insidewhile           0.983798
+beforewhile           0.012146
+afterwhile            0.003923
+Stop                  0.003133
+SelectNode            0.058305
+Backpropagate         0.088352
+ArgmaxChild           0.093595
+ExpandNode            0.835153
+InitializeChildren    0.820941
+all_legal_moves       0.301315
+create_Node           0.514829
+dtype: float64
+----------------------- Time Complexity ---------------
+/Users/chloe/Desktop/subjects/A30KYQGABO7JER:37TD41K0AIHM8AITTQJXV8KY05QCSB.csv
+sample size 1449
+MakeMove                   0.311590(100%)
+insidewhile                0.974630(proportion since now)
+beforewhile                0.008001
+afterwhile                 0.017314
+
+Stop                       0.001985
+SelectNode                 0.033854
+Backpropagate              0.056006
+ArgmaxChild                0.059436
+ExpandNode                 0.898327
+InitializeChildren         0.895489
+all_legal_moves            0.008678
+move_xy                    0.239518
+create_Node                0.638491
+Node_board_time            0.218951
+Node_find_red_time         0.005116
+Node_construct_mag_time    0.159094
+Node_assign_level_time     0.053108
+Node_value_time            0.182738
+
+
+/Users/chloe/Desktop/subjects/A18T3WK7J16C1B:3IJXV6UZ1YR1KY4G6BFEG1DXR47RIC.csv
+sample size 2114
+wrt MakeMove
+MakeMove                   0.245629 (100%)
+insidewhile                0.976682
+beforewhile                0.012736
+afterwhile                 0.010513
+Stop                       0.002127
+SelectNode                 0.033767
+Backpropagate              0.056696
+ArgmaxChild                0.058548
+ExpandNode                 0.892713
+
+InitializeChildren         0.894391
+all_legal_moves            0.009248
+move_xy                    0.237578
+create_Node                0.637928
+
+Node_board_time            0.220090
+Node_find_red_time         0.005075
+Node_construct_mag_time    0.159287
+Node_assign_level_time     0.054281
+Node_value_time            0.178876
+
+wrt create_Node
+create_Node                1.000000
+Node_board_time            0.334355
+Node_find_red_time         0.008133
+Node_construct_mag_time    0.253762
+Node_assign_level_time     0.086137
+Node_value_time            0.285625
+
+/Users/chloe/Desktop/subjects/A18QU0YQB6Q8DF:3VE8AYVF8N5BS2NU6U3TMN50JMNF8V.csv
+sample size 1178
+wrt MakeMove
+MakeMove                   0.289838 (100%)
+insidewhile                0.979009
+beforewhile                0.009813
+afterwhile                 0.011121
+Stop                       0.002274
+SelectNode                 0.036461
+Backpropagate              0.059388
+ArgmaxChild                0.062835
+ExpandNode                 0.890074
+InitializeChildren         0.888314
+all_legal_moves            0.009226
+move_xy                    0.237236
+create_Node                0.632977
+Node_board_time            0.221864
+Node_find_red_time         0.005864
+Node_construct_mag_time    0.155109
+Node_assign_level_time     0.052215
+Node_value_time            0.177862
+wrt create_Node
+create_Node                0.177792 (100%)
+Node_board_time            0.339439
+Node_find_red_time         0.009542
+Node_construct_mag_time    0.249088
+Node_assign_level_time     0.083867
+Node_value_time            0.286303
+
+
+/Users/chloe/Desktop/subjects/A191V7PT3DQKDP:3PMBY0YE28B43VMUKKJ6EDF85RV9C8.csv
+sample size 1595
+wrt MakeMove
+MakeMove                   0.499185 (100%)
+insidewhile                0.984355
+beforewhile                0.006646
+afterwhile                 0.008920
+Stop                       0.002630
+SelectNode                 0.040462
+Backpropagate              0.062817
+ArgmaxChild                0.067286
+ExpandNode                 0.884995
+InitializeChildren         0.879924
+all_legal_moves            0.008586
+move_xy                    0.225596
+create_Node                0.636025
+Node_board_time            0.220617
+Node_find_red_time         0.005151
+Node_construct_mag_time    0.147772
+Node_assign_level_time     0.052390
+Node_value_time            0.189250
+wrt create_Node
+create_Node                0.305649 (100%)
+Node_board_time            0.335157
+Node_find_red_time         0.008373
+Node_construct_mag_time    0.236449
+Node_assign_level_time     0.083577
+Node_value_time            0.303256
+
+----------------------- all subject files -----------
+'A1ZTSCPETU3UJW:3XC1O3LBOTUGQEPEV3HM8W67X4RTLL.csv', 
+	'A2RCYLKY072XXO:3TAYZSBPLMG9ASQRWXURJVBCPLN2SH.csv', 
+	'A1GQS6USF2JEYG:33F859I567LE8WC74WB3GA7E94XBHW.csv', 
+	'A3Q0XAGQ7TD7MP:3GLB5JMZFY3TNXFGYMKRQ0JDXNTDGZ.csv', 
+	'AXKM02NVXNGOM:33PPO7FECWN7JOLBOAKUBCWTC0AIDL.csv', 
+	'A30AGR5KF8IEL:3EWIJTFFVPF14ZIVGF68BQEIRXP0ER.csv', 
+	'ARWF605I7RWM7:3AZHRG4CU5SYU12YRVPCSZALW5003R.csv', 
+	'A2TQNX64349OZ9:3WSELTNVR4AZUVYAYCSWZIQW0J4ATB.csv', 
+	'A2IBQA01NR5N76:3X4MXAO0BHWJLTOLVSJTHSM54OHWRG.csv', 
+	'A28RX7L0QZ993M:3SITXWYCNWHBUMCM90TPJWV8Y7AXBW.csv', 
+	'A15781PHGW377Y:3YW4XOSQKRTI0K0Z2YPDTDJVFABU1I.csv', 
+	'A53S7J4JGWG38:3M0BCWMB8W4W5M7WZVX3HDH1P53WB1.csv', 
+	'A3GOOI75XOF24V:3TMFV4NEP9MD3O9PWJDTQBR0HZYW8I.csv', 
+	'A15FXHC1CVNW31:3TS1AR6UQRM7SOIBWPBN8N9589Y7FV.csv', 
+	'A1XDMS0KFSF5JW:3M0BCWMB8W4W5M7WZVX3HDH1M3FBWL.csv', 
+	'A21S7MA9DCW95E:3X87C8JFV7JQ2BSCY8KSFD9F2ILSQK.csv', 
+	'A3OB6REG5CGHK1:3STRJBFXOXZ5687WA35LTWTS7QZKTT.csv', 
+	'A2RTJ6BDY0DZVZ:3IJXV6UZ1YR1KY4G6BFEG1DXP7SRI1.csv', 
+	'A3NMQ3019X6YE0:3V5Q80FXIYZ5QB5C6ITQBN30WY823U.csv', 
+	'A289D98Z4GAZ28:3ZV9H2YQQEFR2R3JK2IXZUJPXAF3WW.csv', 
+	'ALH1K6ZAQQMN7:3IXEICO793RY7TM78ZBKJDOA7ADT6Q.csv', 
+	'A1EY7WONSYGBVY:3O6CYIULEE9B1LG2ZMEYM39PDJKUWB.csv', 
+	'A2QIZ31TMHU0GD:3FUI0JHJPY6UBT1VAI7VUX8S3KH33W.csv', 
+	'A191V7PT3DQKDP:3PMBY0YE28B43VMUKKJ6EDF85RV9C8.csv', 
+	'A18QU0YQB6Q8DF:3VE8AYVF8N5BS2NU6U3TMN50JMNF8V.csv', 
+	'AO1QGAUZ85T6L:3HWRJOOET6A15827PHPSLWK1MOYSEU.csv', 
+	'A23XJ8I86R0O3B:30IQTZXKALEAAZ9CBKW0ZFZP6O5X07.csv', 
+	'A3GXC3VG37CQ3G:3TPWUS5F8A9FFRZ2DVTYSXNJ6BWWC6.csv', 
+	'A3NMQ3019X6YE0:3I2PTA7R3U2SESF4TZBQORI5LSJQKK.csv', 
+	'A13BZCNJ0WR1T7:3TYCR1GOTDRCCQYD1V64UK7OHTBZLQ.csv', 
+	'AMW2XLD9443OH:37QW5D2ZRHUKW7SGCE3STMOFBMK8SX.csv', 
+	'A214HWAW1PYWO8:34BBWHLWHBJ6SUL255PK30LEGY5IWG.csv', 
+	'A18T3WK7J16C1B:3IJXV6UZ1YR1KY4G6BFEG1DXR47RIC.csv', 
+	'A1N1EF0MIRSEZZ:3R5F3LQFV3SKIB1AENMWM1BICT5OZB.csv', 
+	'A1LR0VQIHQUJAM:3YW4XOSQKRTI0K0Z2YPDTDJVFABU1I.csv', 
+	'A30KYQGABO7JER:37TD41K0AIHM8AITTQJXV8KY05QCSB.csv', 
+	'A3CTXNQ2GXIQSP:34HJIJKLP64Z5YMIU6IKNXSH7PDV4I.csv', 
+	'A23437BMZ5T1FH:3IHR8NYAM89M0EPM8U9LH53ZJDTP4U.csv', 
+	'A1AKX1C8GCVCTP:3H0W84IWBLAP4T2UASPNVMF5ZH7ER9.csv', 
+	'A3BPRPN10HJD4B:3TXD01ZLD5PZSJXIPG8FRBQYTI9U4X.csv', 
+	'A1USR9JCAMDGM3:3PB5A5BD0WED6OE679H5Q89HBDGG71.csv', 
+	'A1F4N58CAX8IMK:35DR22AR5ES6RR89U7EJ1DXW91AX3P.csv', 
+	'A2MYB6MLQW0IGN:3TYCR1GOTDRCCQYD1V64UK7OE48LZS.csv'
+
+----------------------- Code comments ---------------
+Car: 
+	tuple (start, length, tag, orientation)
+	level, edge_to is not a property of Car
+Board:
+	use either board_dict or car_list
+move_xy: 
+	return a board_dict (copy)
+MAG:
+	having a MAG object
+	dictionary {Car1:[Car2, Car3], Car2: [], ...}
+board_id: '0031 0121 ...'
+	0031 = start x, start y, len, h/v
+	iterate through [[00],[01],[02],...]
+mag = mag_dict(get_id(board))
+	this returns a dict {Car1:[Car2, Car3], Car2: [], ...}
+
 --------------------- Discussion with Bas -------------
 test_MakeMove(human move):
 	return 50% human move

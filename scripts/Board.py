@@ -3,6 +3,7 @@ from Car import *
 
 class Board:
 	def __init__(self, car_list):
+		# TODO: change argument car_list to board_dict
 		self.height = 6
 		self.width = 6
 		self.board_dict = {}
@@ -154,11 +155,14 @@ def get_num_cars_from_levels(car_list, highest_level):
 	''' 
 		return the number of cars at each level 
 		highest_level >= any possible min(cur_car.level)
+		if a car level is > highest_level, ignore the car
 	'''
 	list_toreturn = [0] * (highest_level+1)
 	for cur_car in car_list:
 		if cur_car.level != []:
-			list_toreturn[min(cur_car.level)] += 1
+			minlevel = min(cur_car.level)
+			if minlevel <= highest_level:
+				list_toreturn[min(cur_car.level)] += 1
 	return list_toreturn
 
 def construct_mag(board, red):
@@ -233,3 +237,45 @@ def construct_mag(board, red):
 			if cur_car is not None:
 				cur_car.visited = False
 	
+	# TODO should return a dictionary as a mag object
+
+
+def extract_mag(board):
+	"""
+	should return a mag, which is a dict
+	takes the board and understands the connections
+	and returns it
+	"""
+	pass
+
+def apply_mag(board, mag):
+	"""
+	takes the connections represented by mag (dict)
+	applies them to the cars on the board
+	for car in mag:
+		board.car.edge_to = mag[car]
+	if get rid of edge_to in Car, we do not need this function
+	"""
+	pass
+
+def offline_generate_mags():
+	"""
+	for every puzzle, 
+		generate all board configurations (try all positions and drop overlaps)
+		for every configuration(board)
+			call construct_mag(board)
+			mag = extract_mag(board)
+			store mag in a file under id of board
+	"""
+	pass
+
+
+
+
+
+
+
+
+
+
+

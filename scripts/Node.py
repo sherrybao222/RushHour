@@ -1,19 +1,40 @@
 from Car import *
 from Board import *
 import numpy as np
+import time
 
 class Node:
 	def __init__(self, cl, params):
 		self.car_list = cl # list of Car
 		self.parent = None # Node
 		self.children = [] # list of Node
+
+		board_time_start = time.time()
 		self.board = Board(self.car_list) # str
+		self.board_time = time.time() - board_time_start
+		
+		find_red_time_start = time.time()
 		for car in self.car_list: # Car
 				if car.tag == 'r':
 					self.red = car
+		self.find_red_time = time.time() - find_red_time_start
+		
+		construct_mag_time_start = time.time()
 		construct_mag(self.board, self.red)
+		self.construct_mag_time = time.time() - construct_mag_time_start
+		
+		# instead of calling construct_mag(self.board, self.red)
+		# mag = read_from_file(board_id)
+		# apply_mag(board, mag)
+		
+		assign_level_time_start = time.time()
 		assign_level(self.car_list)
+		self.assign_level_time = time.time() - assign_level_time_start
+
+		value_time_start = time.time()
 		self.value = self.heuristic_value_function(params) # float
+		self.value_time = time.time() - value_time_start
+ 
 	def __members(self):
 		return (self.car_list, self.children, self.value, self.red, self.board)
 	def __eq__(self, other):
@@ -104,5 +125,13 @@ class Node:
 			for fromcar in self.car_list:
 				if fromcar.tag == tocar.tag and fromcar.start != tocar.start:
 					return fromcar, tocar
+
+	def print_children(self):
+		print('Printing children of Node \n'+str(self.board_to_str()))
+		print('len(self.children)='+str(len(self.children)))
+		for child in self.children:
+			print('Child')
+			print(child.board_to_str())
+		print('End printing chidren')
 
 
