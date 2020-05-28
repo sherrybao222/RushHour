@@ -261,7 +261,8 @@ py.importlib.import_module('BFS')
 ssh yl3506@gw.hpc.nyu.edu
 ssh -Y prince
 
-srun -c20 -t2:00:00 --mem=60000 --pty /bin/bash
+srun -c8 -t2:00:00 --mem=60000 --pty /bin/bash
+(srun --pty --nodes=1 --ntasks-per-node=1 -c4 -t1:00:00 --mem=60000 --wait=0 /bin/bash)
 
 module load matlab/2019b
 cd /home/yl3506/RushHour/scripts/

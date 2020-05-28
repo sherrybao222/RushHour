@@ -184,15 +184,28 @@ def preload_data(puzzle, preoprocessed_data_path):
 if __name__ == '__main__':
 	bfs_start = time.time()
 	# initialize data 
-	all_datapath = '/Users/yichen/Desktop/trialdata_valid_true_dist7_processed.csv'
-	outputpath = '/Users/yichen/Desktop/timedict_new.csv'
-	instancepath='/Users/yichen/Documents/RushHour/exp_data/data_adopted/'
-	subject_path = '/Users/yichen/Desktop/subjects/' + random.choice(os.listdir('/Users/yichen/Desktop/subjects/'))
+	home_dir = '/Users/yichen/'
+	all_datapath = home_dir+'Desktop/trialdata_valid_true_dist7_processed.csv'
+	outputpath = home_dir+'Desktop/timedict_new.csv'
+	instancepath=home_dir+'Documents/RushHour/exp_data/data_adopted/'
+	subject_path = home_dir+'Desktop/subjects/' + random.choice(os.listdir(home_dir+'Desktop/subjects/'))
 	df = pd.read_csv(subject_path)
-	preoprocessed_data_path = '/Users/yichen/Desktop/preprocessed_positions/'
+	preoprocessed_data_path = home_dir+'Desktop/preprocessed_positions/'
 	
-	# load all preprocessed positions 
+	# initialize preloaded preprocessed positions dictionary 
 	preprocessed_positions = {}
+	
+	# preload all positions
+	for puzzle in os.listdir(preoprocessed_data_path):
+		if not os.path.isdir(os.path.join(preoprocessed_data_path,puzzle)):
+			continue
+		preprocessed_positions[puzzle] = {}
+		print('preloading puzzle '+puzzle)
+		for position_file in os.listdir(os.path.join(preoprocessed_data_path,puzzle)):
+			if not position_file.enndswith('.p'):
+				continue
+			position = position_file[:-2]
+			preprocessed_positions[puzzle][position]=pickle.load(open(os.path.join(preoprocessed_data_path,puzzle,position_file),'rb'))
 
 	# initialize parameters
 	inparams = [0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1,
@@ -230,12 +243,12 @@ if __name__ == '__main__':
 			board = json_to_board(ins_file)
 			if params.puzzle != row['instance']:
 				params.puzzle = row['instance']
-				preload_start = time.time()
+				# preload_start = time.time()
 				print('index '+str(idx))
-				preprocessed_positions = preload_data(puzzle=row['instance'], preoprocessed_data_path=preoprocessed_data_path)
-				preload_time = time.time()-preload_start
-				print('preload time: '+str(preload_time))
-				total_load_time += preload_time
+				# preprocessed_positions = preload_data(puzzle=row['instance'], preoprocessed_data_path=preoprocessed_data_path)
+				# preload_time = time.time()-preload_start
+				# print('preload time: '+str(preload_time))
+				# total_load_time += preload_time
 			continue
 		if row['piece']=='r' and row['move']==16 and row['optlen']==1: # win
 			# skip the winning moves
@@ -256,7 +269,7 @@ if __name__ == '__main__':
 			all_time_dict[key].append(sum(time_dict[key]))
 
 	print(subject_path)
-	print('total preload time '+str(total_load_time))
+	# print('total preload time '+str(total_load_time))
 	print('total BFS time '+str(time.time()-bfs_start))
 	# all moves completed, convert to dataframe
 	all_time_df = pd.DataFrame.from_dict(all_time_dict)
