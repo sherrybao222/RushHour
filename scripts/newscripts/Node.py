@@ -4,8 +4,9 @@ import numpy as np
 import time
 
 class Node:
-	def __init__(self, board, params):
+	def __init__(self, board, mag, params):
 		self.board = board # Board
+		self.mag = mag
 		self.parent = None # Node
 		self.children = [] # list of Node
 		self.params = params
@@ -46,11 +47,9 @@ class Node:
 		value is negative
 		value the larger/closer to 0 the better
 		'''
-		# if self.value == None:
-		# 	self.mag = MAG()
-		# 	v = np.sum(np.array(self.mag.easy_construct(self.board), dtype=np.int64) 
-		# 			* np.array(self.params.weights, dtype=np.float64), dtype=np.float64)
-		# 	self.value = -(v+np.random.normal(loc=self.params.mu, scale=self.params.sigma))
+		if self.value == None:
+			v = np.sum(np.array(self.mag.num_cars_each_level, dtype=np.int64) 
+					* np.array(self.params.weights, dtype=np.float64), dtype=np.float64)
+			self.value = -(v+np.random.normal(loc=self.params.mu, scale=self.params.sigma))
 		
-		# return self.value
-		return np.random.normal(loc=self.params.mu, scale=self.params.sigma)
+		return self.value

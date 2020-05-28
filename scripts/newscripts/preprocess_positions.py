@@ -3,19 +3,23 @@ from MAG import *
 import os, pickle, sys
 
 if __name__ == "__main__":
-	datapath = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/'
-	outpath = '/Users/chloe/Documents/RushHour/exp_data/preprocessed_positions/'
-	all_instances = os.listdir(datapath)
-	for instance in all_instances:
-		instance = instance[:-5]
-		print(instance)
+	datapath = '/Users/yichen/Documents/RushHour/exp_data/data_adopted/'
+	outpath = '/Users/yichen/Desktop/preprocessed_positions/'
+	all_puzzles = os.listdir(datapath)
+	for puzzle in all_puzzles:
+		if not puzzle.endswith('.json'):
+			continue
+		puzzle = puzzle[:-5]
+		print(puzzle)
 		# create puzzle directory
-		if not os.path.exists(outpath+instance+'/'):
-			os.mkdir(outpath+instance+'/')	
+		if not os.path.exists(outpath+puzzle+'/'):
+			os.mkdir(outpath+puzzle+'/')	
+		else:
+			continue
 		# create puzzle info file and pickle it
-		create_puzzle_info_file(instance)
+		create_puzzle_info_file(puzzle)
 		# create initial board
-		board = json_to_board(datapath+instance+'.json')
+		board = json_to_board(datapath+puzzle+'.json')
 		# find all legal positions
 		all_legal_positions = generate_all_positions_of_board(board)
 		for position in all_legal_positions: # for each legal position, 
@@ -35,7 +39,10 @@ if __name__ == "__main__":
 				mag.construct()
 				b_dict['children_mags'].append(mag)
 			# pickle the dictioary and name by position id
-			pickle.dump(b_dict, open(outpath+instance+'/'+position_id+'.p', 'wb'))
+			pickle.dump(b_dict, open(outpath+puzzle+'/'+position_id+'.p', 'wb'))
+			# print this position board for debug
+			# id_to_board(position_id, puzzle).print_board()
+			# b.print_board()
 		# report number of legal positions
 		print(len(list(all_legal_positions)))
-		break
+		# break

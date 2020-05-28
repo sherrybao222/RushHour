@@ -1,6 +1,6 @@
 # PLOTTING: characterize trialdata each move
-# density histograms of distance to goal
-# probability of error as a function of distance to goal
+# density histograms of mag size
+# probability of error as a function of mag size
 # py27 or python3
 import sys, math
 import pandas as pd
@@ -19,7 +19,7 @@ ins_optlen[53:]=[16]*len(ins_optlen[53:])
 optlen_consider = 7 # puzzle difficulty considered in this plot
 
 moves_file = '/Users/yichen/Desktop/trialdata_valid_true_dist7_processed.csv' # input data file
-out_file = '/Users/yichen/Desktop/optlen_error_se.png' # output file
+out_file = '/Users/yichen/Desktop/mag_error_se.png' # output file
 
 
 move_data = pd.read_csv(moves_file)
@@ -38,7 +38,7 @@ max_optlen = ''
 for i in range(len(move_data)):
 	row = move_data.loc[i, :]
 	if i == 0: # first line, initialize data storage
-		max_optlen = int(row['max_optlen'])
+		max_optlen = int(row['max_node'])
 		subject = row['subject']
 		error_optlen[subject]=[0]* (max_optlen + 1) # number of error moves at different optimal length
 		count_optlen[subject]=[0] * (max_optlen + 1) # number of occurance for different optimal length
@@ -49,7 +49,7 @@ for i in range(len(move_data)):
 		error_optlen[row['subject']]=[0]* (max_optlen + 1) # number of error moves at different optimal length
 		count_optlen[row['subject']]=[0] * (max_optlen + 1) # number of occurance for different optimal length
 	if row['event'] == 'start':
-		optlen = row['optlen']
+		optlen = row['node_human_static']
 		continue
 	error = int(row['error_made'])
 	count_optlen[subject][optlen] += 1
@@ -58,7 +58,7 @@ for i in range(len(move_data)):
 		hash_optlen_error.append(int(optlen))
 	else: # non error move
 		hash_optlen.append(int(optlen))
-	optlen = row['optlen'] # update optlen for next iteration
+	optlen = row['node_human_static'] # update optlen for next iteration
 	subject = row['subject']
 
 ####################################### PLOTTING ##################################
@@ -160,8 +160,8 @@ for pos, y, color in zip(np.arange(max_optlen+1), y_array_mean, colors):
 ax[1].set_ylim(top=1)
 ax[1].tick_params(axis='both', which='major', labelsize=80)
 ax[1].set_ylabel('Probability of Error', fontsize=80)
-ax[1].set_xlabel('Distance to Goal', fontsize=80)
-ax[1].set_title('Probability of Error Given Distance to Goal', \
+ax[1].set_xlabel('Graph Size', fontsize=80)
+ax[1].set_title('Probability of Error Given Graph Size', \
 				fontsize=30, weight='bold')
 
 # fig.text(0.5, 0.029, \

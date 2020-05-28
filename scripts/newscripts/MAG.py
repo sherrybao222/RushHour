@@ -5,7 +5,7 @@ class MAG:
 		self.board = board
 		self.car_levels = {} # stores level for each car
 		self.neighbor_dict = {} # store neighbors of each car
-		self.highest_level = 7 # highest mag level, red is level 0
+		self.highest_level = 7 # highest mag level, red is level 0, ignore cars higher than this level
 		self.num_cars_each_level = None
 
 	def construct(self):
@@ -37,7 +37,8 @@ class MAG:
 						self.neighbor_dict[cur_car].append(meet_car)
 						if meet_car not in self.car_levels:
 							self.car_levels[meet_car] = self.car_levels[cur_car]+1
-							self.num_cars_each_level[self.car_levels[cur_car]+1] += 1
+							if self.car_levels[cur_car]+1 <= self.highest_level:
+								self.num_cars_each_level[self.car_levels[cur_car]+1] += 1
 						if meet_car not in visited:
 							queue.append(meet_car)
 							visited.append(meet_car)
@@ -47,7 +48,8 @@ class MAG:
 						self.neighbor_dict[cur_car].append(meet_car)
 						if meet_car not in self.car_levels:
 							self.car_levels[meet_car] = self.car_levels[cur_car]+1
-							self.num_cars_each_level[self.car_levels[cur_car]+1] += 1
+							if self.car_levels[cur_car]+1 <= self.highest_level:
+								self.num_cars_each_level[self.car_levels[cur_car]+1] += 1
 						if meet_car not in visited:
 							queue.append(meet_car)
 							visited.append(meet_car)
@@ -59,7 +61,8 @@ class MAG:
 						self.neighbor_dict[cur_car].append(meet_car)
 						if meet_car not in self.car_levels:
 							self.car_levels[meet_car] = self.car_levels[cur_car]+1
-							self.num_cars_each_level[self.car_levels[cur_car]+1] += 1
+							if self.car_levels[cur_car]+1 <= self.highest_level:
+								self.num_cars_each_level[self.car_levels[cur_car]+1] += 1
 						if meet_car not in visited:
 							queue.append(meet_car)
 							visited.append(meet_car)
@@ -69,7 +72,8 @@ class MAG:
 						self.neighbor_dict[cur_car].append(meet_car)
 						if meet_car not in self.car_levels:
 							self.car_levels[meet_car] = self.car_levels[cur_car]+1
-							self.num_cars_each_level[self.car_levels[cur_car]+1] += 1
+							if self.car_levels[cur_car]+1 <= self.highest_level:
+								self.num_cars_each_level[self.car_levels[cur_car]+1] += 1
 						if meet_car not in visited:
 							queue.append(meet_car)
 							visited.append(meet_car)

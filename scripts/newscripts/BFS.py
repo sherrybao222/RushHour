@@ -3,7 +3,7 @@ from MAG import *
 from Node import *
 from operator import attrgetter
 import pandas as pd
-import random
+import random, pickle
 
 
 class Params:
@@ -11,6 +11,7 @@ class Params:
 					stopping_probability,
 					pruning_threshold,
 					lapse_rate,
+					puzzle,
 					feature_dropping_rate=0.0,
 					mu=0.0, sigma=1.0):
 		self.w0 = 0.0
@@ -29,6 +30,7 @@ class Params:
 		self.stopping_probability = stopping_probability
 		self.pruning_threshold = pruning_threshold
 		self.lapse_rate = lapse_rate
+		self.puzzle = puzzle
 
 def DropFeatures(probability):
 	pass
@@ -46,7 +48,7 @@ def RandomMove(node, params):
 	assert not is_solved(node.board), "RandomMove input node is already solved."
 	all_boards = all_legal_moves(node.board)
 	for new_board in all_boards:
-		child = Node(new_board, params)
+		child = Node(new_board, None, params)
 		child.parent = node
 		node.children.append(child)
 	return random.choice(node.children)
@@ -64,11 +66,11 @@ def ExpandNode(node, params):
 	cut the ones below threshold 
 	'''
 	InitializeChildren_start = time.time()
-	all_boards = all_legal_moves(node.board)
+	all_children = preprocessed_positions[params.puzzle][make_id(node.board)]
 	time_dict['all_legal_moves'].append(time.time() - InitializeChildren_start)
-	for new_board in all_boards:
+	for i in range(len(all_children['children_ids'])):
 		childNode_start = time.time()	
-		child = Node(new_board, params)
+		child = Node(all_children['children_boards'][i], all_children['children_mags'][i], params)
 		child.parent = node
 		child.heuristic_value()
 		node.children.append(child)
@@ -109,7 +111,7 @@ def MakeMove(root, params, hit=False, verbose=False):
 	if is_solved(root.board):
 		# move red car to position 16 if rootis a winning position
 		board = move(root.board, 'r', 16)
-		result = Node(board, params)
+		result = Node(board, None, params)
 		return result
 	if Lapse(params.lapse_rate): # random move
 		RandomMove_start = time.time()
@@ -164,15 +166,34 @@ def MakeMove(root, params, hit=False, verbose=False):
 	return result
 
 
+def preload_data(puzzle, preoprocessed_data_path):
+	'''
+	load preprocessed positions of one particular puzzle into a dictionary
+	'''
+	result = {}
+	result[puzzle]={}
+	print('loading puzzle ' + puzzle)
+	for position_file in os.listdir(os.path.join(preoprocessed_data_path, puzzle)):
+		if not position_file.endswith('.p'):
+			continue
+		position = position_file[:-2]
+		result[puzzle][position] = pickle.load(open(os.path.join(preoprocessed_data_path,puzzle,position_file), 'rb'))
+	return result
+
 
 if __name__ == '__main__':
-	# data path definitions
-	all_datapath = '/Users/chloe/Desktop/trialdata_valid_true_dist7_processed.csv'
-	outputpath = '/Users/chloe/Desktop/timedict_new.csv'
-	instancepath='/Users/chloe/Documents/RushHour/exp_data/data_adopted/'
-	subject_path = '/Users/chloe/Desktop/subjects/' + random.choice(os.listdir('/Users/chloe/Desktop/subjects/'))
+	bfs_start = time.time()
+	# initialize data 
+	all_datapath = '/Users/yichen/Desktop/trialdata_valid_true_dist7_processed.csv'
+	outputpath = '/Users/yichen/Desktop/timedict_new.csv'
+	instancepath='/Users/yichen/Documents/RushHour/exp_data/data_adopted/'
+	subject_path = '/Users/yichen/Desktop/subjects/' + random.choice(os.listdir('/Users/yichen/Desktop/subjects/'))
 	df = pd.read_csv(subject_path)
+	preoprocessed_data_path = '/Users/yichen/Desktop/preprocessed_positions/'
 	
+	# load all preprocessed positions 
+	preprocessed_positions = {}
+
 	# initialize parameters
 	inparams = [0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1,
 				0.01, 10, 0.01]
@@ -183,6 +204,7 @@ if __name__ == '__main__':
 						'InitializeChildren':[], 
 							'all_legal_moves':[], 'create_Node': [], 							
 					}
+	total_load_time = 0
 
 	time_dict = all_time_dict
 	params = Params(w1=inparams[0], w2=inparams[1], w3=inparams[2], 
@@ -190,14 +212,12 @@ if __name__ == '__main__':
 					w7=inparams[6], 
 					stopping_probability=inparams[7],
 					pruning_threshold=inparams[8],
-					lapse_rate=inparams[9])
+					lapse_rate=inparams[9], puzzle='')
 	
 	# iterate over each move
 	for idx, row in df.iterrows():
-		if idx == 300:
+		if idx == 1000:
 			break
-		print(idx)
-		print(subject_path)
 		# initialize record for current move
 		time_dict = {}
 		for key in all_time_dict.keys():
@@ -208,13 +228,23 @@ if __name__ == '__main__':
 			instance = row['instance']
 			ins_file = instancepath+instance+'.json'
 			board = json_to_board(ins_file)
+			if params.puzzle != row['instance']:
+				params.puzzle = row['instance']
+				preload_start = time.time()
+				print('index '+str(idx))
+				preprocessed_positions = preload_data(puzzle=row['instance'], preoprocessed_data_path=preoprocessed_data_path)
+				preload_time = time.time()-preload_start
+				print('preload time: '+str(preload_time))
+				total_load_time += preload_time
 			continue
 		if row['piece']=='r' and row['move']==16 and row['optlen']==1: # win
 			# skip the winning moves
 			continue
 
 		# call makemove and record time data
-		MakeMove(Node(board, params), params)
+		mag = MAG(board)
+		mag.construct()
+		MakeMove(Node(board, mag, params), params)
 		
 		# change the board and perform the current move
 		piece = str(row['piece'])
@@ -225,6 +255,9 @@ if __name__ == '__main__':
 		for key in all_time_dict.keys():
 			all_time_dict[key].append(sum(time_dict[key]))
 
+	print(subject_path)
+	print('total preload time '+str(total_load_time))
+	print('total BFS time '+str(time.time()-bfs_start))
 	# all moves completed, convert to dataframe
 	all_time_df = pd.DataFrame.from_dict(all_time_dict)
 	# save files as csv and calculate summary statistics

@@ -129,32 +129,50 @@ def is_solved(board):
 	return True
 
 
-def id_to_board(self, idstr, puzzle, puzzle_info_path='/Users/chloe/Documents/RushHour/exp_data/preprocessed_positions/'):
+def id_to_board(idstr, puzzle, puzzle_info_path='/Users/yichen/Desktop/preprocessed_positions/'):
 	'''
 	TODO: convert board id string to a real board, puzzle info (car orientation) is stored in puzzle_path
-	tag, len, startx, starty (, vertical1 information saved in separate file) 
+	tag, startx, starty (, vertical1 information saved in separate file) 
 	'''
-	pass
+	idstr = str(idstr)
+	# load puzzle info dict
+	puzzle_dict = pickle.load(open(puzzle_info_path+puzzle+'/'+puzzle+'.p', 'rb'))
+	# initialize board
+	board = Board()
+	# iterate through idstr and read each car
+	for carstr in [idstr[i:i+3] for i in range(0, len(idstr), 3)]:
+		tag = carstr[0]
+		initial_car = puzzle_dict[tag] # (start(x,y), length, tag, orientation)
+		car = ((int(carstr[1]),int(carstr[2])), initial_car[1], tag, initial_car[3])
+		board.tag_dict[tag] = car
+		if car[2] == 'r':
+			board.redxy = car[0]
+		if car[3] == 'horizontal':
+			for x in range(car[1]):
+				board.board_dict[(car[0][0]+x, car[0][1])] = car
+		elif car[3] == 'vertical':
+			for y in range(car[1]):
+				board.board_dict[(car[0][0], car[0][1]+y)] = car
+	return board
 
 def make_id(board):
 	''' 
-	tag, len, startx, starty (, vertical1 information saved in separate file) 
+	tag, startx, starty (length and orientation information saved in separate file) 
 	'''
 	out = ''
 	for tag in sorted(board.tag_dict): # sort tag keys 
 		car = board.tag_dict[tag]
-		out += str(tag)
-		out += str(car[1])
-		out += str(car[0][0])
-		out += str(car[0][1])
+		out += str(tag) # tag
+		out += str(car[0][0]) # x
+		out += str(car[0][1]) # y
 	board.id = out
 	return out
 
-def pickle_board(board, path='/Users/chloe/Documents/RushHour/exp_data/preprocessed_positions/'):
+def pickle_board(board, path='/Users/yichen/Desktop/preprocessed_positions/'):
 	pickle.dump(board, open(path+board.id+'.p', 'wb'))
 	return path+board.id+'.p'
 
-def load_board(board_id, path='/Users/chloe/Documents/RushHour/exp_data/preprocessed_positions/'):
+def load_board(board_id, path='/Users/yichen/Desktop/preprocessed_positions/'):
 	return pickle.load(open(path+board_id+'.p', 'rb'))
 
 def generate_all_positions_of_car(tag, board):
@@ -236,8 +254,8 @@ def position_to_board(position):
 				board.board_dict[(car[0][0], car[0][1]+y)] = car
 	return board
 
-def create_puzzle_info_file(puzzle_id, puzzle_dir='/Users/chloe/Documents/RushHour/exp_data/data_adopted/', 
-										out_dir='/Users/chloe/Documents/RushHour/exp_data/preprocessed_positions/'):
+def create_puzzle_info_file(puzzle_id, puzzle_dir='/Users/yichen/Documents/RushHour/exp_data/data_adopted/', 
+										out_dir='/Users/yichen/Desktop/preprocessed_positions/'):
 	''' create puzzle info dictionary 
 		and save to pickle file
 	'''
@@ -253,10 +271,10 @@ def create_puzzle_info_file(puzzle_id, puzzle_dir='/Users/chloe/Documents/RushHo
 
 
 if __name__ == "__main__":
-	inspath = '/Users/chloe/Documents/RushHour/exp_data/data_adopted/'
+	inspath = '/Users/yichen/Documents/RushHour/exp_data/data_adopted/'
 	ins = random.choice(os.listdir(inspath))
 	print(ins)
-	board = json_to_board('/Users/chloe/Documents/RushHour/exp_data/data_adopted/'+ins)
+	board = json_to_board('/Users/yichen/Documents/RushHour/exp_data/data_adopted/'+ins)
 	print(make_id(board))
 	
 	all_pos = generate_all_positions_of_board(board)
