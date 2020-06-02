@@ -10,7 +10,12 @@ class Node:
 		self.parent = None # Node
 		self.children = [] # list of Node
 		self.params = params
-		self.value = None
+		if self.mag != None:
+			self.value = - (np.sum(np.array(self.mag.num_cars_each_level, dtype=np.int64) 
+					* np.array(self.params.weights, dtype=np.float64), dtype=np.float64)
+					+ np.random.normal(loc=self.params.mu, scale=self.params.sigma))
+		else:
+			self.value=None
 	def __members(self):
 		return (self.board, self.parent, self.children, self.value, self.params)
 	def __eq__(self, other):
