@@ -39,7 +39,7 @@ class LRUCache:
 	least recent used (will be poped) cache
 	each cache is specified for one puzzle only
 	'''
-	def __init__(self, puzzle, capacity=1000):
+	def __init__(self, puzzle, capacity=3000):
 		self.cache = OrderedDict()
 		self.puzzle = puzzle
 		self.capacity = capacity
@@ -54,6 +54,28 @@ class LRUCache:
 		self.cache.move_to_end(board_id)
 		if len(self.cache) > self.capacity:
 			self.cache.popitem(last=False)
+
+class MRUCache:
+	'''
+	most recent used (will be poped) cache
+	each cache is specified for one puzzle only
+	'''
+	def __init__(self, puzzle, capacity=1000):
+		self.cache = OrderedDict()
+		self.puzzle = puzzle
+		self.capacity = capacity
+	def get(self, board_id):
+		if board_id not in self.cache:
+			return None
+		else:
+			self.cache.move_to_end(board_id, last=False)
+			return self.cache[board_id]
+	def put(self, board_id, pickle_object):
+		self.cache[board_id] = pickle_object
+		if len(self.cache) > self.capacity:
+			self.cache.popitem(last=False)
+
+
 
 
 def DropFeatures(probability):
@@ -96,7 +118,6 @@ def ExpandNode_12(node, params):
 		childNode_start = time.time()	
 		child = Node(all_children['children_boards'][i], all_children['children_mags'][i], params)
 		child.parent = node
-		child.heuristic_value()
 		node.children.append(child)
 		time_dict['create_Node'].append(time.time() - childNode_start)
 	time_dict['InitializeChildren'].append(time.time() - InitializeChildren_start)
@@ -118,7 +139,6 @@ def ExpandNode_0(node, params):
 		childNode_start = time.time()	
 		child = Node(all_children['children_boards'][i], all_children['children_mags'][i], params)
 		child.parent = node
-		# child.heuristic_value()
 		node.children.append(child)
 		time_dict['create_Node'].append(time.time() - childNode_start)
 	Vmaxchild = ArgmaxChild(node)
@@ -140,9 +160,7 @@ def ExpandNode(node, params, cache):
 	time_dict['load_preprocessed'].append(time.time() - InitializeChildren_start)
 	for i in range(len(all_children['children_ids'])):
 		childNode_start = time.time()	
-		child = Node(all_children['children_boards'][i], all_children['children_mags'][i], params)
-		child.parent = node
-		# child.heuristic_value()
+		child = Node(all_children['children_boards'][i], all_children['children_mags'][i], params, parent=node)
 		node.children.append(child)
 		time_dict['create_Node'].append(time.time() - childNode_start)
 	Vmaxchild = ArgmaxChild(node)
@@ -263,112 +281,6 @@ def harmonic_sum(n):
 	return s
 
 
-def ibs_early_stopping(inparams,  
-					puzzle_cache,
-					subject_file='',
-					subject_path='/Users/yichen/Desktop/subjects/',
-					preoprocessed_data_path='/Users/yichen/Desktop/preprocessed_positions/',
-					instancepath='/Users/yichen/Documents/RushHour/exp_data/data_adopted/'): # sequantial
-	# initialize data and parameters
-	start_time = time.time()
-	subject_file = random.choice(os.listdir(subject_path))
-	print(subject_file)
-	df = pd.read_csv(os.path.join(subject_path, subject_file))
-	params = Params(w1=inparams[0], w2=inparams[1], w3=inparams[2], 
-							w4=inparams[3], w5=inparams[4], w6=inparams[5], 
-							w7=inparams[6], 
-							stopping_probability=inparams[7],
-							pruning_threshold=inparams[8],
-							lapse_rate=inparams[9],
-							puzzle='')
-	# initialize early stopping LL and hit array
-	subject_data = [] # list of root nodes
-	subject_puzzle = [] # list of puzzle
-	hit_target = [] # True if hit for each move
-	count_iteration = [] # count of iteration for each move
-	LL_lower = 0 # lower bound
-	children_count = [] # number of children for each move
-	k = 0 # number of iteration
-	LL_k = 0 # LL at kth iteration
-
-	# first iteration
-	k += 1
-	LL_k = 0
-	# iterate through each move from data file
-	for idx, row in df.iterrows():
-		# read current move data 
-		if row['event'] == 'start':
-			# load new instance data
-			instance = row['instance']
-			ins_file = instancepath+instance+'.json'
-			board = json_to_board(ins_file)
-			if params.puzzle != row['instance']:
-				params.puzzle = row['instance']
-				print('index '+str(idx))
-				if puzzle_cache.get(params.puzzle)==None:
-					cache=LRUCache(params.puzzle)
-					puzzle_cache[params.puzzle]=cache
-				else:
-					cache=puzzle_cache[params.puzzle]
-			continue
-		if row['piece']=='r' and row['move']==16 and row['optlen']==1: # skip the winning moves
-			continue
-		# call makemove
-		root = Node(board, None, params)
-		decision = MakeMove(root, params, cache)
-		# append move data
-		subject_data.append(root)
-		subject_puzzle.append(params.puzzle)
-		# count children number
-		children_count.append(len(pickle.load(open(os.path.join(preoprocessed_data_path, params.puzzle, make_id(board))+'.p', 'rb'))['children_ids']))
-		# change the board and make the current move
-		piece = str(row['piece'])
-		move_to = int(row['move'])
-		board = move(board, piece, move_to)
-		# check decision
-		if make_id(decision)==make_id(board): # hit target
-			hit_target.append(True)
-			count_iteration.append(1)
-			LL_k += harmonic_sum(1)
-		else: # not hit
-			hit_target.append(False)
-			count_iteration.append(2)
-	# add the last move to subject data 
-	subject_data.append(Node(board, None, params))
-	# calculate current LL and LLlower
-	LL_k = (-1.0)*LL_k - (hit_target.count(False))*harmonic_sum(k)
-	LL_lower = np.sum([np.log(1/n) for n in children_count])
-	print('LL_lower '+str(LL_lower))
-	print('\tFirst LL_k '+str(LL_k))
-	print('\tFirst hit_target '+str(hit_target.count(True)))
-
-	# normal iteration after the first one
-	while hit_target.count(False) > 0:
-		if LL_k	< LL_lower:
-			LL_k = LL_lower
-			print('*********************** exceeds lower bound, break')
-			break
-		LL_k = 0
-		k += 1
-		print('Iteration k='+str(k))
-		for idx in range(len(subject_data)-1):
-			if hit_target[idx]:
-				continue
-			params.puzzle = subject_puzzle[idx]
-			decision = MakeMove(subject_data[idx], params, puzzle_cache[params.puzzle])
-			if make_id(decision)==make_id(subject_data[idx+1]): # hit
-				hit_target[idx] = True
-				LL_k += harmonic_sum(count_iteration[idx])
-			else: # not hit
-				count_iteration[idx] += 1
-		LL_k = (-1.0)*LL_k - (hit_target.count(False))*harmonic_sum(k)
-		print('\thit_target '+str(hit_target.count(True)))
-		print('\tKth LL_k '+str(LL_k))
-	print('IBS total time lapse '+str(time.time() - start_time))
-	print('Final LL_k: '+str(LL_k))
-	return LL_k
-
-
 
 if __name__ == '__main__':
 	'''
@@ -377,22 +289,6 @@ if __name__ == '__main__':
 	2: preload one puzzle as needed;
 	3: load positions as necessary and keep cache
 	'''
-	puzzle_cache = {}
-	inparams = [0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1,
-				0.01, 10, 0.01]
-	ibs_early_stopping(inparams, puzzle_cache)
-	time_dict = {'MakeMove':[], 
-					'insidewhile':[], 'beforewhile':[], 'afterwhile':[],
-					'Stop':[], 'SelectNode':[], 'Backpropagate':[], 'ArgmaxChild':[],
-					'ExpandNode':[], 
-						'load_preprocessed':[], 'create_Node': [], 							
-				}
-	sys.exit()
-
-
-
-
-
 	preload=3
 	bfs_start = time.time()
 	# initialize data 
@@ -403,7 +299,8 @@ if __name__ == '__main__':
 	subject_path = home_dir+'Desktop/subjects/' + random.choice(os.listdir(home_dir+'Desktop/subjects/'))
 	df = pd.read_csv(subject_path)
 	preoprocessed_data_path = home_dir+'Desktop/preprocessed_positions/'
-	
+	print('subject: '+str(subject_path))
+
 	# initialize preloaded preprocessed positions dictionary 
 	preprocessed_positions = {}
 	
@@ -457,7 +354,7 @@ if __name__ == '__main__':
 			board = json_to_board(ins_file)
 			if params.puzzle != row['instance']:
 				params.puzzle = row['instance']
-				print('index '+str(idx))
+				print('switch puzzle at index '+str(idx))
 				if preload == 2:
 					preload_start = time.time()
 					preprocessed_positions = preload_data(puzzle=row['instance'], preoprocessed_data_path=preoprocessed_data_path)
@@ -489,7 +386,7 @@ if __name__ == '__main__':
 		for key in all_time_dict.keys():
 			all_time_dict[key].append(sum(time_dict[key]))
 
-	print(subject_path)
+	print('subject: '+str(subject_path))
 	if preload==2:
 		print('total preload time '+str(total_load_time))
 	print('total BFS time '+str(time.time()-bfs_start))

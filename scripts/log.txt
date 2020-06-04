@@ -223,7 +223,19 @@ Params(0.7,0.6,0.5,0.4,0.3,0.2,0.1,
 					lapse_rate=0.05)
 
 ------------------- local matlab -----------------
+// newscript
+pyversion('/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.7/bin/python3.7')
 
+P = py.sys.path;
+if count(P,'/Users/yichen/Documents/RushHour/scripts/bads/') == 0
+insert(P,int32(0),'/Users/yichen/Documents/RushHour/scripts/bads');
+end
+
+py.importlib.import_module('BFS_ibs')
+// end newscript
+
+
+// old BFS
 setenv('PATH','/anaconda3/condabin:/Library/Frameworks/Python.framework/Versions/3.7/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Library/TeX/texbin:/opt/X11/bin')
 
 pyversion('/Library/Frameworks/Python.framework/Versions/3.7/bin/python3')
@@ -258,6 +270,8 @@ py.importlib.import_module('BFS')
 
 
 ------------------ cluster matlab -------------------
+ssh yl3506@prince.hpc.nyu.edu 
+or
 ssh yl3506@gw.hpc.nyu.edu
 ssh -Y prince
 

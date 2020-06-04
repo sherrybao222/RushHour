@@ -12,11 +12,11 @@ display('Open ''bads_examples.m'' to see additional comments and instructions.')
 % contain the solution. Plausible bounds represent your best guess at 
 % bounding the region where the solution might lie.
 
-x0 = [0.5391 3.9844 3.8281 5.5469 2.5781 8.8867 2.5469 0.05];                 % Starting point
-lb = [-20 -20 -20 -20 -20 -20 -20 0.01];             % Lower bounds
-ub = [10 10 10 10 10 10 10 1];               % Upper bounds
-plb = [-15 -15 -15 -15 -10 -10 -10 0.01];              % Plausible lower bounds
-pub = [5 5 5 5 5 2 2 1];                % Plausible upper bounds
+x0 = [0.5391 3.9844 3.8281 5.5469 2.5781 8.8867 2.5469 0.01 10 0.01];                 % Starting point
+lb = [-10 -10 -10 -10 -10 -10 -10 0.005 10 0.005];             % Lower bounds
+ub = [10 10 10 10 10 10 10 1 100 1];               % Upper bounds
+plb = [-5 -5 -5 -5 -5 -5 -5 0.005 10 0.005];              % Plausible lower bounds
+pub = [5 5 5 5 5 5 5 0.5 50 0.5];                % Plausible upper bounds
 
 % Run BADS, which returns the minimum X and its value FVAL.
 

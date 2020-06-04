@@ -6,8 +6,6 @@ import pandas as pd
 import random, pickle
 from collections import OrderedDict
 import multiprocessing as mp
-import numpy as np
-
 
 
 class Params:
@@ -96,7 +94,9 @@ def ExpandNode(node, params, cache, puzzle, preoprocessed_data_path='/Users/yich
 		cache.put(board_id, pickle.load(open(os.path.join(preoprocessed_data_path, puzzle, board_id)+'.p', 'rb')))
 	all_children = cache.get(board_id)
 	for i in range(len(all_children['children_ids'])):
-		child = Node(all_children['children_boards'][i], all_children['children_mags'][i], params, parent=node)
+		child = Node(all_children['children_boards'][i], all_children['children_mags'][i], params)
+		child.parent = node
+		# child.heuristic_value()
 		node.children.append(child)
 	Vmaxchild = ArgmaxChild(node)
 	for child_idx in range(len(node.children))[::-1]: # iterate in reverse order
