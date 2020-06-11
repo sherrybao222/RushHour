@@ -6,6 +6,8 @@ import pandas as pd
 import random, pickle
 from collections import OrderedDict
 import multiprocessing as mp
+import numpy as np
+import matlab.engine
 
 
 class Params:
@@ -94,9 +96,7 @@ def ExpandNode(node, params, cache, puzzle, preoprocessed_data_path='/Users/yich
 		cache.put(board_id, pickle.load(open(os.path.join(preoprocessed_data_path, puzzle, board_id)+'.p', 'rb')))
 	all_children = cache.get(board_id)
 	for i in range(len(all_children['children_ids'])):
-		child = Node(all_children['children_boards'][i], all_children['children_mags'][i], params)
-		child.parent = node
-		# child.heuristic_value()
+		child = Node(all_children['children_boards'][i], all_children['children_mags'][i], params, parent=node)
 		node.children.append(child)
 	Vmaxchild = ArgmaxChild(node)
 	for child_idx in range(len(node.children))[::-1]: # iterate in reverse order
@@ -181,8 +181,7 @@ def harmonic_sum(n):
 	return s
 
 
-def prepare_ibs(puzzle_cache,
-				subject_file='A1AKX1C8GCVCTP:3H0W84IWBLAP4T2UASPNVMF5ZH7ER9.csv',
+def prepare_ibs(subject_file='A1AKX1C8GCVCTP:3H0W84IWBLAP4T2UASPNVMF5ZH7ER9.csv',
 				subject_path='/Users/yichen/Desktop/subjects/',
 				preoprocessed_data_path='/Users/yichen/Desktop/preprocessed_positions/',
 				instancepath='/Users/yichen/Documents/RushHour/exp_data/data_adopted/'): # sequantial
@@ -192,6 +191,7 @@ def prepare_ibs(puzzle_cache,
 	calculate log likelihood for lower bound,
 	return list of subject moves and answers
 	'''
+	puzzle_cache = {}
 	# read subject data
 	if subject_file == '':
 		subject_file = random.choice(os.listdir(subject_path))
@@ -251,16 +251,6 @@ def prepare_ibs(puzzle_cache,
 	return puzzle_cache, LL_lower, subject_data, subject_answer, subject_puzzle
 
 
-def ibs_interface(w0,w1,w2,w3,w4,w5,w6,sp,pt,lr):
-	puzzle_cache = {}
-	inparams = [w0,w1,w2,w3,w4,w5,w6,sp,pt,lr]
-	puzzle_cache, LL_lower, subject_data, subject_answer, subject_puzzle = prepare_ibs(puzzle_cache)
-	return ibs_early_stopping(inparams,  
-					puzzle_cache,
-					LL_lower,
-					subject_data,
-					subject_answer, 
-					subject_puzzle)
 
 def ibs_early_stopping(inparams,  
 					puzzle_cache,
@@ -304,7 +294,7 @@ def ibs_early_stopping(inparams,
 			break
 		LL_k = 0
 		k += 1
-		print('Iteration k='+str(k))
+		# print('Iteration k='+str(k))
 		print('puzzle_cache length for puzzle '+str(list(puzzle_cache.keys())[0])+': '+str(len(puzzle_cache[list(puzzle_cache.keys())[0]].cache)))
 		for idx in range(len(subject_data)):
 			if hit_target[idx]: # if current move was already hit by previous iterations
@@ -318,8 +308,7 @@ def ibs_early_stopping(inparams,
 				count_iteration[idx] += 1
 		LL_k = -LL_k - (hit_target.count(False))*harmonic_sum(k)
 		hit_number = hit_target.count(True)
-		print('\thit_target '+str(hit_number)+', previous_hit '+str(previous_hit))
-		print('\tKth LL_k '+str(LL_k))
+		print('\tIteration k='+str(k)+', hit_target '+str(hit_number)+', previous_hit '+str(previous_hit)+', Kth LL_k='+str(LL_k))
 		if hit_number == previous_hit:
 			count_repeat += 1
 			print('count repeat increased to '+str(count_repeat)+' for hit number '+str(hit_number))
@@ -402,30 +391,88 @@ def ibs_early_stopping(inparams,
 # 	return LL_k
 
 
+# x0 = matlab.double([0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1,
+# 			0.01, 10, 0.01])
+# lb = matlab.double([-5, -5, -5, -5, -5, -5, -5,
+# 			0, 0, 0])
+# ub = matlab.double([5, 5, 5, 5, 5, 5, 5,
+# 			1, 50, 1])
+# plb = matlab.double([-1, -1, -1, -1, -1, -1, -1,
+# 			0, 1, 0])
+# pub = matlab.double([5, 5, 5, 5, 5, 5, 5,
+# 			0.5, 20, 0.5])
 
-if __name__ == '__main__':
+puzzle_cache, LL_lower, subject_data, subject_answer, subject_puzzle = prepare_ibs()
+
+# eng = matlab.engine.start_matlab()
+
+def ibs_interface(w1,w2,w3,w4,w5,w6,w7,sp,pt,lr):
+	inparams = [w1,w2,w3,w4,w5,w6,w7,sp,pt,lr]
+	# global eng, puzzle_cache, LL_lower, subject_data, subject_answer, subject_puzzle
+	# inparams = np.asarray(eng.workspace['x0'])
+	print('inparams '+str(inparams))
+	return ibs_early_stopping(inparams,  
+					puzzle_cache,
+					LL_lower,
+					subject_data,
+					subject_answer, 
+					subject_puzzle)
+
+
+# if __name__ == '__main__':
+
+	# x0 = matlab.double([0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1,
+	# 			0.01, 10, 0.01])
+	# lb = matlab.double([-5, -5, -5, -5, -5, -5, -5,
+	# 			0, 0, 0])
+	# ub = matlab.double([5, 5, 5, 5, 5, 5, 5,
+	# 			1, 50, 1])
+	# plb = matlab.double([-1, -1, -1, -1, -1, -1, -1,
+	# 			0, 1, 0])
+	# pub = matlab.double([5, 5, 5, 5, 5, 5, 5,
+	# 			0.5, 20, 0.5])
+
+	# puzzle_cache, LL_lower, subject_data, subject_answer, subject_puzzle = prepare_ibs()
+
+
+	# eng = matlab.engine.start_matlab()
+	# sys.setrecursionlimit(31000)
+	# result = eng.bads("@ll", x0,lb,ub,plb,pub, nargout=2)
+	# print(result)
+
+	# eng = matlab.engine.start_matlab()
+	# x0 = matlab.double([0, 0]) #Starting point
+	# lb = matlab.double([-20, -20]) # Lower bounds
+	# ub = matlab.double([20,20]) #               % Upper bounds
+	# plb = matlab.double([-5,-5]) #              % Plausible lower bounds
+	# pub = matlab.double([5,5]) #             % Plausible upper bounds
+
+	# result = eng.bads("@rosenbrocks", x0,lb,ub,plb,pub, nargout=2)
+	# print(result)
+	
+
 	'''
 	preload=0: no preload, load necessary positions in ExpandNode; 
 	1: preload all positions at once; 
 	2: preload one puzzle as needed;
 	3: load positions as necessary and keep cache
 	'''
-	puzzle_cache = {}
-	inparams = [0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1,
-				0.01, 10, 0.01]
-	puzzle_cache, LL_lower, subject_data, subject_answer, subject_puzzle = prepare_ibs(puzzle_cache)
-	# threads = mp.cpu_count()
-	# print('number of cpus '+str(threads))
-	# pool = mp.Pool(processes=threads)
-	ibs_early_stopping(inparams,  
-					puzzle_cache,
-					LL_lower,
-					subject_data,
-					subject_answer, 
-					subject_puzzle)
+	# puzzle_cache = {}
+	# inparams = [0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1,
+	# 			0.01, 10, 0.01]
+	# puzzle_cache, LL_lower, subject_data, subject_answer, subject_puzzle = prepare_ibs(puzzle_cache)
+
+
+	# # threads = mp.cpu_count()
+	# # print('number of cpus '+str(threads))
+	# # pool = mp.Pool(processes=threads)
+	# ibs_early_stopping(inparams,  
+	# 				puzzle_cache,
+	# 				LL_lower,
+	# 				subject_data,
+	# 				subject_answer, 
+	# 				subject_puzzle)
 	
-
-
 
 
 

@@ -4,10 +4,10 @@ import numpy as np
 import time
 
 class Node:
-	def __init__(self, board, mag, params):
+	def __init__(self, board, mag, params, parent=None):
 		self.board = board # Board
 		self.mag = mag
-		self.parent = None # Node
+		self.parent = parent # Node
 		self.children = [] # list of Node
 		self.params = params
 		if self.mag != None:

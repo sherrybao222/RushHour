@@ -270,6 +270,30 @@ def create_puzzle_info_file(puzzle_id, puzzle_dir='/Users/yichen/Documents/RushH
 	return puzzle_dict
 
 
+def get_board_matrix(board):
+	'''
+	returns a 2D numpy matrix of the board, 
+	marking the car tag at each position
+	'''
+	matrix = np.zeros((6,6), dtype=int)
+	line_idx = 0
+	for line in board.print_board().split('\n'):
+		char_idx = 0
+		for char in line:
+			if char == '>':
+				continue
+			elif char == '.':
+				matrix[line_idx][char_idx] = -1
+			elif char == 'R':
+				matrix[line_idx][char_idx] = 0
+			else:
+				matrix[line_idx][char_idx] = int(char)+1
+			char_idx += 1
+		line_idx += 1
+	matrix = np.ma.masked_where(matrix==-1, matrix)
+	return matrix
+
+
 if __name__ == "__main__":
 	inspath = '/Users/yichen/Documents/RushHour/exp_data/data_adopted/'
 	ins = random.choice(os.listdir(inspath))

@@ -59,6 +59,7 @@ class MRUCache:
 	'''
 	most recent used (will be poped) cache
 	each cache is specified for one puzzle only
+	deprecated
 	'''
 	def __init__(self, puzzle, capacity=1000):
 		self.cache = OrderedDict()
@@ -74,8 +75,6 @@ class MRUCache:
 		self.cache[board_id] = pickle_object
 		if len(self.cache) > self.capacity:
 			self.cache.popitem(last=False)
-
-
 
 
 def DropFeatures(probability):
@@ -103,11 +102,13 @@ def SelectNode(root_node):
 	''' return the child with max value '''
 	n = root_node
 	while len(n.children) != 0:
-		n = ArgmaxChild(n)
+		# n = ArgmaxChild(n)
+		n = n.maxchild
 	return n, is_solved(n.board)
  
 def ExpandNode_12(node, params):
 	''' 
+	preload = 1 or 2
 	create all possible nodes under input node, 
 	cut the ones below threshold 
 	'''
@@ -128,6 +129,7 @@ def ExpandNode_12(node, params):
 
 def ExpandNode_0(node, params):
 	''' 
+	preload = 0
 	create all possible nodes under input node, 
 	cut the ones below threshold 
 	loading every board position from file again
@@ -148,6 +150,7 @@ def ExpandNode_0(node, params):
 
 def ExpandNode(node, params, cache):
 	''' 
+	preload = 3
 	create all possible nodes under input node, 
 	cut the ones below threshold 
 	load positions from cache
@@ -158,19 +161,26 @@ def ExpandNode(node, params, cache):
 		cache.put(board_id, pickle.load(open(os.path.join(preoprocessed_data_path, params.puzzle, board_id)+'.p', 'rb')))
 	all_children = cache.get(board_id)
 	time_dict['load_preprocessed'].append(time.time() - InitializeChildren_start)
+	maxchild = None
 	for i in range(len(all_children['children_ids'])):
-		childNode_start = time.time()	
+		childNode_start = time.time()
 		child = Node(all_children['children_boards'][i], all_children['children_mags'][i], params, parent=node)
 		node.children.append(child)
+		if maxchild == None or child.value > maxchild.value:
+			node.maxchild = child
 		time_dict['create_Node'].append(time.time() - childNode_start)
-	Vmaxchild = ArgmaxChild(node)
+	# Vmaxchild = ArgmaxChild(node)
+	Vmaxchild = node.maxchild
 	for child_idx in range(len(node.children))[::-1]: # iterate in reverse order
 		if abs(node.children[child_idx].value - Vmaxchild.value) > params.pruning_threshold:
 			node.remove_child(child_idx)
 	
 def Backpropagate(this_node, root_node):
 	''' update value back until root node '''
-	this_node.value = ArgmaxChild(this_node).value
+	# this_node.value = ArgmaxChild(this_node).value
+	maxchild = ArgmaxChild(this_node)
+	this_node.value = maxchild.value
+	this_node.maxchild = maxchild
 	if this_node != root_node:
 		Backpropagate(this_node.parent, root_node)
 
@@ -247,7 +257,8 @@ def MakeMove(root, params, cache, hit=False, verbose=False):
 		ExpandNode_start = time.time()
 		ExpandNode(root, params, cache)
 		time_dict['ExpandNode'].append(time.time() - ExpandNode_start)
-	result = ArgmaxChild(root)
+	# result = ArgmaxChild(root)
+	result = root.maxchild
 	time_dict['afterwhile'].append(time.time() - afterwhile_start)
 	time_dict['MakeMove'].append(time.time()- MakeMove_start)
 	return result

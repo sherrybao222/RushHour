@@ -7,6 +7,7 @@ import random, pickle
 from collections import OrderedDict
 import multiprocessing as mp
 import numpy as np
+import matlab.engine
 
 
 
@@ -68,13 +69,15 @@ def Stop(probability):
 	''' return true with a probability '''
 	return random.random() < probability
 
-def RandomMove(node, params):
+def RandomMove(node, params, cache, puzzle, preoprocessed_data_path='/Users/yichen/Desktop/preprocessed_positions/'):
 	''' make a random move and return the resulted node '''
 	assert not is_solved(node.board), "RandomMove input node is already solved."
-	all_boards = all_legal_moves(node.board)
-	for new_board in all_boards:
-		child = Node(new_board, None, params)
-		child.parent = node
+	board_id = make_id(node.board)
+	if cache.get(board_id)==None:
+		cache.put(board_id, pickle.load(open(os.path.join(preoprocessed_data_path, puzzle, board_id)+'.p', 'rb')))
+	all_children = cache.get(board_id)
+	for i in range(len(all_children['children_ids'])):
+		child = Node(all_children['children_boards'][i], all_children['children_mags'][i], params, parent=node)
 		node.children.append(child)
 	return random.choice(node.children)
 
@@ -82,7 +85,8 @@ def SelectNode(root_node):
 	''' return the child with max value '''
 	n = root_node
 	while len(n.children) != 0:
-		n = ArgmaxChild(n)
+		# n = ArgmaxChild(n)
+		n = n.maxchild
 	return n, is_solved(n.board)
  
 def ExpandNode(node, params, cache, puzzle, preoprocessed_data_path='/Users/yichen/Desktop/preprocessed_positions/'):
@@ -95,17 +99,24 @@ def ExpandNode(node, params, cache, puzzle, preoprocessed_data_path='/Users/yich
 	if cache.get(board_id)==None:
 		cache.put(board_id, pickle.load(open(os.path.join(preoprocessed_data_path, puzzle, board_id)+'.p', 'rb')))
 	all_children = cache.get(board_id)
+	maxchild = None
 	for i in range(len(all_children['children_ids'])):
 		child = Node(all_children['children_boards'][i], all_children['children_mags'][i], params, parent=node)
 		node.children.append(child)
-	Vmaxchild = ArgmaxChild(node)
+		if maxchild == None or child.value > maxchild.value:
+			node.maxchild = child
+	# Vmaxchild = ArgmaxChild(node)
+	Vmaxchild = node.maxchild
 	for child_idx in range(len(node.children))[::-1]: # iterate in reverse order
 		if abs(node.children[child_idx].value - Vmaxchild.value) > params.pruning_threshold:
 			node.remove_child(child_idx)
 	
 def Backpropagate(this_node, root_node):
 	''' update value back until root node '''
-	this_node.value = ArgmaxChild(this_node).value
+	# this_node.value = ArgmaxChild(this_node).value
+	maxchild = ArgmaxChild(this_node)
+	this_node.value = maxchild.value
+	this_node.maxchild = maxchild
 	if this_node != root_node:
 		Backpropagate(this_node.parent, root_node)
 
@@ -129,9 +140,14 @@ def MakeMove(root, params, cache, puzzle, hit=False, verbose=False):
 		# move red car to position 16 if rootis a winning position
 		board = move(root.board, 'r', 16)
 		result = Node(board, None, params)
-		return result
+		print('root is solved!')
+		# return result
+		ExpandNode(root, params, cache, puzzle)
+		return root
 	if Lapse(params.lapse_rate): # random move
-		return RandomMove(root, params)
+		print('random move')
+		# return RandomMove(root, params, cache, puzzle)
+		return RandomMove(root, params, cache, puzzle).parent
 	else:
 		DropFeatures(params.feature_dropping_rate)
 		while not Stop(probability=params.stopping_probability):
@@ -150,7 +166,9 @@ def MakeMove(root, params, cache, puzzle, hit=False, verbose=False):
 			Backpropagate(leaf, root)
 	if root.children == []: # if did not enter while loop at all
 		ExpandNode(root, params, cache, puzzle)
-	return ArgmaxChild(root)
+	# return ArgmaxChild(root)
+	# return root.maxchild
+	return root
 
 
 def preload_data(puzzle, preoprocessed_data_path):
@@ -182,7 +200,7 @@ def harmonic_sum(n):
 
 
 def prepare_ibs(puzzle_cache,
-				subject_file='A1AKX1C8GCVCTP:3H0W84IWBLAP4T2UASPNVMF5ZH7ER9.csv',
+				subject_file='',
 				subject_path='/Users/yichen/Desktop/subjects/',
 				preoprocessed_data_path='/Users/yichen/Desktop/preprocessed_positions/',
 				instancepath='/Users/yichen/Documents/RushHour/exp_data/data_adopted/'): # sequantial
@@ -289,8 +307,8 @@ def ibs_early_stopping(inparams,
 	count_iteration = [1]*len(subject_data) # count of iteration for each move
 	k = 0
 	LL_k = 0
-	previous_hit = 0
-	count_repeat = 0
+	# previous_hit = 0
+	# count_repeat = 0
 
 	# iterate until meets early stopping criteria
 	while hit_target.count(False) > 0:
@@ -298,10 +316,10 @@ def ibs_early_stopping(inparams,
 			LL_k = LL_lower
 			print('*********************** exceeds LL lower bound, break')
 			break
-		if count_repeat >= threshold_num:
-			LL_k = LL_lower
-			print('*********************** hit number stays same for '+str(threshold_num)+' iterations, break')
-			break
+		# if count_repeat >= threshold_num:
+			# LL_k = LL_lower
+			# print('*********************** hit number stays same for '+str(threshold_num)+' iterations, break')
+			# break
 		LL_k = 0
 		k += 1
 		print('Iteration k='+str(k))
@@ -318,14 +336,14 @@ def ibs_early_stopping(inparams,
 				count_iteration[idx] += 1
 		LL_k = -LL_k - (hit_target.count(False))*harmonic_sum(k)
 		hit_number = hit_target.count(True)
-		print('\thit_target '+str(hit_number)+', previous_hit '+str(previous_hit))
+		# print('\thit_target '+str(hit_number)+', previous_hit '+str(previous_hit))
 		print('\tKth LL_k '+str(LL_k))
-		if hit_number == previous_hit:
-			count_repeat += 1
-			print('count repeat increased to '+str(count_repeat)+' for hit number '+str(hit_number))
-		else:
-			count_repeat = 0
-		previous_hit = hit_number
+		# if hit_number == previous_hit:
+			# count_repeat += 1
+			# print('count repeat increased to '+str(count_repeat)+' for hit number '+str(hit_number))
+		# else:
+			# count_repeat = 0
+		# previous_hit = hit_number
 
 	print('IBS total time lapse '+str(time.time() - start_time))
 	print('Final LL_k: '+str(LL_k))
@@ -404,6 +422,18 @@ def ibs_early_stopping(inparams,
 
 
 if __name__ == '__main__':
+	eng = matlab.engine.start_matlab()
+	x0 = matlab.double([0, 0]) #Starting point
+	lb = matlab.double([-20, -20]) # Lower bounds
+	ub = matlab.double([20,20]) #               % Upper bounds
+	plb = matlab.double([-5,-5]) #              % Plausible lower bounds
+	pub = matlab.double([5,5]) #             % Plausible upper bounds
+
+	eng.bads(rosenbrocks(nargout=0), x0,lb,ub,plb,pub)
+	result = eng.bads("@rosenbrocks", x0,lb,ub,plb,pub, nargout=2)
+	print(result)
+
+	sys.exit()
 	'''
 	preload=0: no preload, load necessary positions in ExpandNode; 
 	1: preload all positions at once; 
@@ -413,7 +443,9 @@ if __name__ == '__main__':
 	puzzle_cache = {}
 	inparams = [0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1,
 				0.01, 10, 0.01]
-	puzzle_cache, LL_lower, subject_data, subject_answer, subject_puzzle = prepare_ibs(puzzle_cache)
+	subject_file = 'A1AKX1C8GCVCTP:3H0W84IWBLAP4T2UASPNVMF5ZH7ER9.csv'
+	puzzle_cache, LL_lower, subject_data, subject_answer, subject_puzzle = prepare_ibs(puzzle_cache, subject_file=subject_file)
+
 	# threads = mp.cpu_count()
 	# print('number of cpus '+str(threads))
 	# pool = mp.Pool(processes=threads)
